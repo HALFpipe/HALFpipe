@@ -2,11 +2,13 @@
 
 from copy import deepcopy
 
-from textual import on
+from rich.text import Text
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import ScrollableContainer
 from textual.message import Message
 
+from ...logging import logger
 from ..general_widgets.custom_general_widgets import LabelWithInputBox
 from ..specialized_widgets.event_file_widget import AtlasFilePanel
 from ..templates.feature_template import FeatureTemplate
@@ -97,7 +99,6 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             yield self.file_panel_class(
                 default_file_tags=self.feature_dict[self.featurefield], id="top_file_panel", classes="components file_panel"
             )
-            # yield SelectionList[str](id="file_tag_selection", classes="components")
             yield LabelWithInputBox(
                 label=self.minimum_coverage_label,
                 value=self.feature_dict[self.minimum_coverage_tag],
@@ -140,6 +141,7 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
 
     @on(FilePanelTemplate.FileTagsChanged)
     def on_file_tag_selection_changed(self, message) -> None:
+
         """
         Handles changes in the tag selection list.
 

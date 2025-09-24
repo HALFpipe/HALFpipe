@@ -89,8 +89,8 @@ class FilePanelTemplate(Widget):
     current_file_pattern_id = None
     # # A reactive attribute that indicates whether the panel's state has changed.
     # value: reactive[bool] = reactive(None, init=False)
-
     filters: dict
+
 
     @dataclass
     class FileItemIsDeleted(Message):
@@ -145,10 +145,9 @@ class FilePanelTemplate(Widget):
         self.file_pattern_counter = cls._counter
         self.value = None
         self.default_file_tags: list[str] = default_file_tags if default_file_tags is not None else []
-        # self.init_file_tags: list[str] | None = init_file_tags if init_file_tags is not None else None
-        # self.file_tag_init_flag: bool = True
         if not hasattr(cls, "filters") or cls.filters is None:
             raise TypeError(f"Class {cls.__name__} must define a class attribute 'filters'")
+
 
     def callback_func(self, message_dict):
         """
@@ -313,6 +312,7 @@ class FilePanelTemplate(Widget):
                             unique_file_items.append(file_item_widget.get_pattern_match_results)
                             self.file_pattern_counter += 1
 
+
     @on(FileItem.IsDeleted)
     async def _on_file_item_is_deleted(self, message):
         """
@@ -331,6 +331,7 @@ class FilePanelTemplate(Widget):
         """
         # self.post_message(self.FileItemIsDeleted(self, message.control.id, self.value))
 
+
         file_pattern = message.value["file_pattern"]
         file_tag = message.value["file_tag"]
         files = message.value["files"]
@@ -347,6 +348,7 @@ class FilePanelTemplate(Widget):
             w.update_file_tag_selection(all_file_tags_based_on_the_current_file_patterns, remove=True)
 
         await message.control.remove()
+
 
     @classmethod
     def reset_all_counters(cls):

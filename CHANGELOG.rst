@@ -1,6 +1,37 @@
 Changelog
 =========
 
+1.3.0 (September 22nd 2025)
+---------------------------
+
+New features and enhancements
+-----------------------------
+
+- Upgrade to fMRIPrep 25.1.1 (#746, #791, #792, #797, #806, #819)
+- Add new terminal-based user interface (#705, #795, #798, #802, #812, #814, #835, #838, #845, #848)
+- Standardize confounds to reduce numerical errors in confounds regression (#785)
+- Add unit tests to evaluate consistency of outputs across version (#803, #807)
+- Support passing lesion masks and brain masks to fMRIPrep for preprocessing (#809, #844)
+- Add option to calculate features in native space (#817, #850)
+- Support single trial estimation with least-squares all and least-squares single (#830, #834)
+- Add GIG-ICA feature to support NeuroMark (#828, #834)
+- Make within-subject z-scoring of ReHo and fALFF optional (#832)
+
+Bug fixes
+---------
+- Fix loading `TotalReadoutTime` for field maps from BIDS metadata (#811)
+- Fix spurious warning about missing slice timing metadata (#832)
+- Add warning for when field maps are skipped due to missing metadata (#843)
+- Fix passing `units` in the JSON sidecar for field map files (#846)
+
+Maintenance
+-----------
+
+- Move container build to conda packages (#746, #792, #815, #826)
+- Ensure compatibility with newer `nipype` (#801)
+
+With many thanks to @lalalavi, @F-Tomas, @gjheij, @jstaph, Charlotte Meinke and Sarah Wellan for contributions
+
 1.2.3 (March 7th 2025)
 -----------------------
 

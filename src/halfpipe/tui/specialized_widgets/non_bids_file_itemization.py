@@ -352,6 +352,7 @@ class FileItem(Widget):
                     pattern_load["file_tag"] = None
                 else:
                     pattern_load["file_tag"] = self.load_object.tags.get("desc", self.load_object.tags.get("atlas"))
+
                 message, filepaths = resolve_path_wildcards(self.load_object.path)
                 pattern_load["message"] = message
                 pattern_load["files"] = filepaths
@@ -530,6 +531,7 @@ class FileItem(Widget):
                 ctx.cache.pop(self.id)
                 self.remove_all_duplicates()
             self.post_message(self.IsDeleted(self, self.pattern_match_results))
+
 
     @on(Button.Pressed, "#show_button")
     def _on_show_button_pressed(self) -> None:
