@@ -176,16 +176,6 @@ class FilePanelTemplate(Widget):
 
         self.callback_message = info_string
 
-    # def watch_value(self) -> None:
-    #     """
-    #     Posts a message when the value changes.
-    #
-    #     This method is called when the `value` attribute changes. It posts
-    #     a `Changed` message to notify other parts of the application about
-    #     the change.
-    #     """
-    #     self.post_message(self.Changed(self, self.value))
-
     def compose(self):
         """
         Composes the widget's components.
@@ -356,26 +346,6 @@ class FilePanelTemplate(Widget):
 
         await message.control.remove()
 
-    # @on(FileItem.IsFinished)
-    # @on(FileItem.PathPatternChanged)
-    # async def _on_update_all_instances(self, event) -> None:
-    #     """
-    #     Updates instances when a file item is finished or its path pattern changes.
-    #
-    #     This method is called when a `FileItem.IsFinished` or
-    #     `FileItem.PathPatternChanged` message is received. It updates the
-    #     panel's `value` attribute to indicate that the panel's state has
-    #     changed.
-    #
-    #     Parameters
-    #     ----------
-    #     event : FileItem.IsFinished | FileItem.PathPatternChanged
-    #         The message object containing information about the event.
-    #     """
-    #     logger.debug(f"UI->_on_update_all_instances->new value: {event.value}, old value: {self.value}")
-    #     self.value = event.value
-    #     self.post_message(self.Changed(self, self.value))
-
     @classmethod
     def reset_all_counters(cls):
         """
@@ -447,23 +417,6 @@ class FilePanelTemplate(Widget):
                 f"UI->AtlasSeedDualRegBasedTemplate->update_file_tag_selection->file_tag_selection._values->\
 {self.get_widget_by_id('file_tag_selection')._values}"
             )
-
-            # After Init the on_file_panel_changed will be automatically activated since the file panel is changed by addition
-            # of the file patterns. If this is the case, we deselect all selections and select only the options selected
-            # previous (either by duplication or on load from a spec file) and select only the ones in the dictionary carrying
-            # previous options, (self.feature_dict[self.featurefield]). If this field is empty, this means that we are not
-            # creating a new feature by duplication or from a spec file load by standardly by just adding a new feature. In
-            # # such case we select all choices
-            # print('.sssssssssssssssssssssssssssssssssssssssssssssssssssssssss', self.file_tag_init_flag, self.init_file_tags)
-            # if self.file_tag_init_flag and self.init_file_tags is not None:
-            #     self.get_widget_by_id("file_tag_selection").deselect_all()
-            #     # for file_tag in self.init_file_tags:
-            #     #     self.get_widget_by_id("file_tag_selection").select(file_tag)
-
-            # self.file_tag_init_flag = False
-            # else:
-            #     # This is run always except from the first time on init.
-            #     self.feature_dict[self.featurefield].append(file_tag)
         else:
             for file_tag in sorted(file_tags):
                 current_options = list(selection_widget._values)
@@ -475,7 +428,6 @@ class FilePanelTemplate(Widget):
                         self.get_widget_by_id("file_tag_selection")._remove_option(current_options.index(file_tag))
                     except AttributeError:
                         pass
-        # self.post_message(self.FileTagsChanged(self, list(selection_widget.selected)))
 
     @on(SelectionList.SelectedChanged)
     def on_file_tag_selection_changed(self, message) -> None:

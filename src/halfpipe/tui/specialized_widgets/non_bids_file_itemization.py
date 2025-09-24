@@ -173,27 +173,6 @@ class FileItem(Widget):
             """Alias for self.file_browser."""
             return self.file_item
 
-    # @dataclass
-    # class IsFinished(Message):
-    #     """
-    #     A message indicating that a file item has finished processing.
-    #
-    #     Attributes
-    #     ----------
-    #     file_item : FileItem
-    #         The file item widget.
-    #     value : str
-    #         The value associated with the completion.
-    #     """
-    #
-    #     file_item: "FileItem"
-    #     value: str
-    #
-    #     @property
-    #     def control(self):
-    #         """Alias for self.file_browser."""
-    #         return self.file_item
-
     def __init__(
         self,
         id: str | None = None,
