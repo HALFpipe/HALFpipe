@@ -90,7 +90,7 @@ class FilePanelTemplate(Widget):
     # # A reactive attribute that indicates whether the panel's state has changed.
     # value: reactive[bool] = reactive(None, init=False)
 
-    filters: dict = {"datatype": "ref", "suffix": "atlas"}
+    filters: dict
 
     @dataclass
     class FileItemIsDeleted(Message):
@@ -147,6 +147,8 @@ class FilePanelTemplate(Widget):
         self.default_file_tags: list[str] = default_file_tags if default_file_tags is not None else []
         # self.init_file_tags: list[str] | None = init_file_tags if init_file_tags is not None else None
         # self.file_tag_init_flag: bool = True
+        if not hasattr(cls, "filters") or cls.filters is None:
+            raise TypeError(f"Class {cls.__name__} must define a class attribute 'filters'")
 
     def callback_func(self, message_dict):
         """

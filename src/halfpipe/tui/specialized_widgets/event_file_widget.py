@@ -127,6 +127,7 @@ class AtlasFilePanel(FilePanelTemplate):
     file_item_id_base = "atlas_file_pattern_"
     # The class used for creating file pattern steps, set to `AddAtlasImageStep`.
     pattern_class = AddAtlasImageStep
+    filters: dict[str, str] = {"datatype": "ref", "suffix": "atlas"}
 
 
 class SeedMapFilePanel(FilePanelTemplate):
@@ -159,6 +160,7 @@ class SeedMapFilePanel(FilePanelTemplate):
     file_item_id_base = "seed_map_file_pattern_"
     # The class used for creating file pattern steps, set to `AddBinarySeedMapStep`.
     pattern_class = AddBinarySeedMapStep
+    filters: dict[str, str] = {"datatype": "ref", "suffix": "seed"}
 
 
 class SpatialMapFilePanel(FilePanelTemplate):
@@ -191,3 +193,4 @@ class SpatialMapFilePanel(FilePanelTemplate):
     file_item_id_base = "spatial_map_file_pattern_"
     # The class used for creating file pattern steps, set to `AddSpatialMapStep`.
     pattern_class = AddSpatialMapStep
+    filters: dict[str, str] = {"datatype": "ref", "suffix": "map"}
