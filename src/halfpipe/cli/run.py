@@ -20,13 +20,11 @@ def run_stage_ui(opts: Namespace):
         from ..tui.base import MainApp
 
         app = MainApp()
-        opts_tui = app.run()
-        if opts_tui.workdir is False:
+        opts.workdir = app.run()
+        if opts.workdir is False:
             import os
 
             os._exit(0)
-        else:
-            opts.workdir = opts_tui.workdir
     else:
         opts.workdir = init_spec_ui(workdir=opts.workdir, debug=opts.debug)
 
