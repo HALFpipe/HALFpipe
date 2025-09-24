@@ -173,26 +173,26 @@ class FileItem(Widget):
             """Alias for self.file_browser."""
             return self.file_item
 
-    @dataclass
-    class IsFinished(Message):
-        """
-        A message indicating that a file item has finished processing.
-
-        Attributes
-        ----------
-        file_item : FileItem
-            The file item widget.
-        value : str
-            The value associated with the completion.
-        """
-
-        file_item: "FileItem"
-        value: str
-
-        @property
-        def control(self):
-            """Alias for self.file_browser."""
-            return self.file_item
+    # @dataclass
+    # class IsFinished(Message):
+    #     """
+    #     A message indicating that a file item has finished processing.
+    #
+    #     Attributes
+    #     ----------
+    #     file_item : FileItem
+    #         The file item widget.
+    #     value : str
+    #         The value associated with the completion.
+    #     """
+    #
+    #     file_item: "FileItem"
+    #     value: str
+    #
+    #     @property
+    #     def control(self):
+    #         """Alias for self.file_browser."""
+    #         return self.file_item
 
     def __init__(
         self,
@@ -264,7 +264,7 @@ class FileItem(Widget):
         else:
             self.callback_message = callback_message
 
-        self.pattern_match_results = {"file_pattern": "", "message": "Found 0 files.", "files": []}
+        self.pattern_match_results: dict = {"file_pattern": "", "message": "Found 0 files.", "files": [], "file_tag": None}
         self.execute_pattern_class_on_mount = execute_pattern_class_on_mount
 
     def prettify_message_dict(self, message_dict: dict[str, list[str]]) -> Text:
@@ -373,7 +373,6 @@ class FileItem(Widget):
                     pattern_load["file_tag"] = None
                 else:
                     pattern_load["file_tag"] = self.load_object.tags.get("desc", self.load_object.tags.get("atlas"))
-
                 message, filepaths = resolve_path_wildcards(self.load_object.path)
                 pattern_load["message"] = message
                 pattern_load["files"] = filepaths
@@ -478,6 +477,8 @@ class FileItem(Widget):
             if len(pattern_match_results["files"]) > 0:
                 self.styles.border = ("solid", "green")
                 self.success_value = True
+                if pattern_match_results["file_tag"] is not None:
+                    self.border_title = f"File tag: {pattern_match_results['file_tag']}"
             else:
                 self.styles.border = ("solid", "red")
                 self.success_value = False

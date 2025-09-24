@@ -123,7 +123,7 @@ class FilePanelTemplate(Widget):
             """Alias for self.file_browser."""
             return self.file_tag_selection
 
-    def __init__(self, init_file_tags=None, id: str | None = None, classes: str | None = None) -> None:
+    def __init__(self, default_file_tags=None, id: str | None = None, classes: str | None = None) -> None:
         """
         Initializes the FilePanelTemplate instance.
 
@@ -144,9 +144,9 @@ class FilePanelTemplate(Widget):
             cls._counter = 0
         self.file_pattern_counter = cls._counter
         self.value = None
-        self.file_tags: list[str] = []
-        self.init_file_tags: list[str] | None = init_file_tags if init_file_tags is not None else None
-        self.file_tag_init_flag: bool = True
+        self.default_file_tags: list[str] = default_file_tags if default_file_tags is not None else []
+        # self.init_file_tags: list[str] | None = init_file_tags if init_file_tags is not None else None
+        # self.file_tag_init_flag: bool = True
 
     def callback_func(self, message_dict):
         """
@@ -287,6 +287,7 @@ class FilePanelTemplate(Widget):
 
                 self.current_file_pattern_id = self.file_item_id_base + str(self.file_pattern_counter)
                 self.file_pattern_counter += 1
+
         return self.current_file_pattern_id
 
     def on_mount(self):
@@ -298,24 +299,27 @@ class FilePanelTemplate(Widget):
         file items from the first feature's panel to the new panel.
         """
         # use first event file panel widget to make copies for the newly created one
+        unique_file_items = []
         if self.app.walk_children(self.the_class) != []:
-            first_file_panel_widget = self.app.walk_children(self.the_class)[0]
-            # only use if it is not the first one!
-            if first_file_panel_widget != self:
-                for file_item_widget in first_file_panel_widget.walk_children(FileItem):
-                    # mounting FileItems when a new Feature is added, this basically copies FileItems from the
-                    # very first Feature
-                    self.get_widget_by_id(self.id_string).mount(
-                        FileItem(
-                            id=file_item_widget.id,
-                            classes="file_patterns",
-                            load_object=file_item_widget.get_pattern_match_results,
-                            callback_message=file_item_widget.get_callback_message,
-                            pattern_class=file_item_widget.get_pattern_class,
-                            execute_pattern_class_on_mount=False,
-                        )
-                    )
-                    self.file_pattern_counter += 1
+            for file_panel_widget in self.app.walk_children(self.the_class):
+                # only use if it is not the first one!
+                if file_panel_widget != self:
+                    for file_item_widget in file_panel_widget.walk_children(FileItem):
+                        if file_item_widget.get_pattern_match_results not in unique_file_items:
+                            # mounting FileItems when a new Feature is added, this basically copies FileItems from the
+                            # very first Feature
+                            self.get_widget_by_id(self.id_string).mount(
+                                FileItem(
+                                    id=file_item_widget.id,
+                                    classes="file_patterns",
+                                    load_object=file_item_widget.get_pattern_match_results,
+                                    callback_message=file_item_widget.get_callback_message,
+                                    pattern_class=file_item_widget.get_pattern_class,
+                                    execute_pattern_class_on_mount=False,
+                                )
+                            )
+                            unique_file_items.append(file_item_widget.get_pattern_match_results)
+                            self.file_pattern_counter += 1
 
     @on(FileItem.IsDeleted)
     async def _on_file_item_is_deleted(self, message):
@@ -408,7 +412,8 @@ class FilePanelTemplate(Widget):
         all_file_tags_based_on_the_current_file_patterns = self._extract_file_tags(file_pattern, files, file_tag)
 
         # XOR (^) to avoid duplicate tags if the same file pattern is added twice
-        file_tags = set(self.file_tags) ^ all_file_tags_based_on_the_current_file_patterns
+        # file_tags = set(self.file_tags) ^ all_file_tags_based_on_the_current_file_patterns
+        file_tags = all_file_tags_based_on_the_current_file_patterns
 
         logger.debug(
             f"UI->AtlasSeedDualRegBasedTemplate->on_file_panel_changed->all_file_tags_based_on_the_current_file_patterns:\
@@ -435,7 +440,9 @@ class FilePanelTemplate(Widget):
             current_options = list(selection_widget._values)
             for file_tag in sorted(file_tags):
                 if file_tag not in current_options:
-                    self.get_widget_by_id("file_tag_selection").add_option(Selection(file_tag, file_tag, initial_state=True))
+                    self.get_widget_by_id("file_tag_selection").add_option(
+                        Selection(file_tag, file_tag, initial_state=file_tag in self.default_file_tags)
+                    )
             logger.debug(
                 f"UI->AtlasSeedDualRegBasedTemplate->update_file_tag_selection->file_tag_selection._values->\
 {self.get_widget_by_id('file_tag_selection')._values}"
@@ -446,13 +453,14 @@ class FilePanelTemplate(Widget):
             # previous (either by duplication or on load from a spec file) and select only the ones in the dictionary carrying
             # previous options, (self.feature_dict[self.featurefield]). If this field is empty, this means that we are not
             # creating a new feature by duplication or from a spec file load by standardly by just adding a new feature. In
-            # such case we select all choices
-            if self.file_tag_init_flag and self.init_file_tags is not None:
-                self.get_widget_by_id("file_tag_selection").deselect_all()
-                for file_tag in self.init_file_tags:
-                    self.get_widget_by_id("file_tag_selection").select(file_tag)
+            # # such case we select all choices
+            # print('.sssssssssssssssssssssssssssssssssssssssssssssssssssssssss', self.file_tag_init_flag, self.init_file_tags)
+            # if self.file_tag_init_flag and self.init_file_tags is not None:
+            #     self.get_widget_by_id("file_tag_selection").deselect_all()
+            #     # for file_tag in self.init_file_tags:
+            #     #     self.get_widget_by_id("file_tag_selection").select(file_tag)
 
-                self.file_tag_init_flag = False
+            # self.file_tag_init_flag = False
             # else:
             #     # This is run always except from the first time on init.
             #     self.feature_dict[self.featurefield].append(file_tag)
@@ -463,8 +471,10 @@ class FilePanelTemplate(Widget):
                 logger.debug(f"UI->update_file_tag_selection-> current_options:{current_options}")
 
                 if file_tag in current_options:
-                    self.get_widget_by_id("file_tag_selection")._remove_option(current_options.index(file_tag))
-
+                    try:
+                        self.get_widget_by_id("file_tag_selection")._remove_option(current_options.index(file_tag))
+                    except AttributeError:
+                        pass
         # self.post_message(self.FileTagsChanged(self, list(selection_widget.selected)))
 
     @on(SelectionList.SelectedChanged)

@@ -95,7 +95,7 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             if self.images_to_use is not None:
                 yield self.tasks_to_use_selection_panel
             yield self.file_panel_class(
-                init_file_tags=self.feature_dict[self.featurefield], id="top_file_panel", classes="components file_panel"
+                default_file_tags=self.feature_dict[self.featurefield], id="top_file_panel", classes="components file_panel"
             )
             # yield SelectionList[str](id="file_tag_selection", classes="components")
             yield LabelWithInputBox(
@@ -113,6 +113,14 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             pass
         self.get_widget_by_id("file_tag_selection").border_title = self.file_selection_widget_header
         self.get_widget_by_id("top_file_panel").border_title = self.widget_header
+
+    def set_file_tag_defaults(self):
+        self.get_widget_by_id("file_tag_selection").deselect_all()
+        if self.feature_dict[self.featurefield] == []:
+            self.get_widget_by_id("file_tag_selection").select_all()
+        else:
+            for file_tag in self.feature_dict[self.featurefield]:
+                self.get_widget_by_id("file_tag_selection").select(file_tag)
 
     @on(LabelWithInputBox.Changed, "#minimum_coverage")
     def _on_label_with_input_box_changed(self, message: Message) -> None:
