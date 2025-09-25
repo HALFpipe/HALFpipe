@@ -216,11 +216,12 @@ class SelectionTemplate(Widget):
         delete its entry from dictionaries.
         """
         current_content_switcher_item_id = self.get_widget_by_id("content_switcher").current
-        name = self.feature_items[current_content_switcher_item_id].name
-        self.app.push_screen(
-            Confirm(f"Are you sure you want to delete {name}?", title="Delete item", classes="confirm_warning"),
-            lambda respond: self._delete_item(respond, check_aggregate=False),
-        )
+        if current_content_switcher_item_id is not None:
+            name = self.feature_items[current_content_switcher_item_id].name
+            self.app.push_screen(
+                Confirm(f"Are you sure you want to delete {name}?", title="Delete item", classes="confirm_warning"),
+                lambda respond: self._delete_item(respond, check_aggregate=False),
+            )
 
     async def add_new_item(self, new_item: tuple | bool) -> None:
         """
@@ -333,19 +334,22 @@ content_switcher_item_new_id:{content_switcher_item_new_id}, collapsible_item_ne
         occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
 
         current_content_switcher_item_id = self.get_widget_by_id("content_switcher").current
-        # deselect current item highlight, because the new copy will be highlighted automatically, avoiding double item
-        # highlighting
-        current_collabsible_item_id = current_content_switcher_item_id + "_flabel"
-        self.get_widget_by_id(current_collabsible_item_id).deselect()
+        if current_content_switcher_item_id is not None:
+            # deselect current item highlight, because the new copy will be highlighted automatically, avoiding double item
+            # highlighting
+            current_collabsible_item_id = current_content_switcher_item_id + "_flabel"
+            self.get_widget_by_id(current_collabsible_item_id).deselect()
 
-        item_name = self.feature_items[current_content_switcher_item_id].name
-        item_name_copy = item_name + "Copy"
-        logger.debug(f"UI->SelectionTemplate.action_duplicate_item: item_name:{item_name}, item_name_copy:{item_name_copy}")
+            item_name = self.feature_items[current_content_switcher_item_id].name
+            item_name_copy = item_name + "Copy"
+            logger.debug(
+                f"UI->SelectionTemplate.action_duplicate_item: item_name:{item_name}, item_name_copy:{item_name_copy}"
+            )
 
-        await self.app.push_screen(
-            NameInput(occupied_feature_names, default_value=item_name_copy),
-            duplicate_item,
-        )
+            await self.app.push_screen(
+                NameInput(occupied_feature_names, default_value=item_name_copy),
+                duplicate_item,
+            )
 
     @on(Button.Pressed, "#sidebar .rename_button")
     async def action_rename_item(self) -> None:
@@ -358,8 +362,8 @@ content_switcher_item_new_id:{content_switcher_item_new_id}, collapsible_item_ne
         """
 
         def rename_item(new_item_name: str) -> None:
+            content_switcher_item_current_id = self.get_widget_by_id("content_switcher").current
             if new_item_name is not None:
-                content_switcher_item_current_id = self.get_widget_by_id("content_switcher").current
                 collapsible_item_current_id = content_switcher_item_current_id + "_flabel"
 
                 old_item_name = self.feature_items[content_switcher_item_current_id].name
@@ -393,12 +397,13 @@ old_item_name:{old_item_name}, new_item_name:{new_item_name}"
 
         occupied_feature_names = [self.feature_items[item].name for item in self.feature_items]
         content_switcher_item_current_id = self.get_widget_by_id("content_switcher").current
-        current_name = self.feature_items[content_switcher_item_current_id].name
+        if content_switcher_item_current_id is not None:
+            current_name = self.feature_items[content_switcher_item_current_id].name
 
-        await self.app.push_screen(
-            NameInput(occupied_feature_names, default_value=current_name),
-            rename_item,
-        )
+            await self.app.push_screen(
+                NameInput(occupied_feature_names, default_value=current_name),
+                rename_item,
+            )
 
     def on_focus_label_selected(self, message: FocusLabel.Selected) -> None:
         """Changes border title color according to the feature type."""
