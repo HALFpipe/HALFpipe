@@ -5,13 +5,18 @@
 import gc
 import os
 from concurrent.futures import ProcessPoolExecutor
+from copy import deepcopy
 from multiprocessing import cpu_count
 from threading import Thread
+from traceback import format_exception
 from typing import Any
 
 import nipype.pipeline.engine as pe
+import numpy as np
+import psutil
 from matplotlib import pyplot as plt
 from nipype.pipeline import plugins as nip
+from nipype.pipeline.engine.nodes import MapNode
 from nipype.utils.gpu_count import gpu_count
 from nipype.utils.profiler import get_system_total_memory_gb
 from stackprinter import format_current_exception
@@ -19,12 +24,6 @@ from stackprinter import format_current_exception
 from ..logging import logger
 from ..utils.multiprocessing import get_init_args, mp_context
 from .reftracer import PathReferenceTracer
-import psutil
-import gc
-from copy import deepcopy
-from traceback import format_exception
-import numpy as np
-from nipype.pipeline.engine.nodes import MapNode
 
 try:
     from textwrap import indent
@@ -36,6 +35,7 @@ except ImportError:
             return text
         splittext = text.splitlines(True)
         return prefix + prefix.join(splittext)
+
 
 SEQUENTIAL_MODE_THRESHOLD_GB = 1.5
 RECOVERY_THRESHOLD_GB = 2.0
@@ -180,15 +180,11 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         # Check to see if a job is available (jobs with all dependencies run)
         # See https://github.com/nipy/nipype/pull/2200#discussion_r141605722
         # See also https://github.com/nipy/nipype/issues/2372
-        jobids = np.flatnonzero(
-            ~self.proc_done & (self.depidx.sum(axis=0) == 0).__array__()
-        )
-
+        jobids = np.flatnonzero(~self.proc_done & (self.depidx.sum(axis=0) == 0).__array__())
 
         free_memory_gb, free_processors = self._check_resources(self.pending_tasks)
         # Accurate memory + CPU check
-        free_real_memory_gb = psutil.virtual_memory().available / (1024 ** 3)
-
+        free_real_memory_gb = psutil.virtual_memory().available / (1024**3)
 
         # Switch between sequential and multiproc mode
         if not getattr(self, "_sequential_mode", False) and free_memory_gb < SEQUENTIAL_MODE_THRESHOLD_GB:
@@ -198,23 +194,18 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             self._sequential_mode = False
             logger.info("[MultiProc] 🧠 Memory freed (> %.2f GB). Switching back to MULTIPROCESSING.", RECOVERY_THRESHOLD_GB)
 
-
         stats = (
-          len(self.pending_tasks),
-          len(jobids),
-          free_memory_gb,
-          self.memory_gb,
-          free_processors,
-          self.processors,
+            len(self.pending_tasks),
+            len(jobids),
+            free_memory_gb,
+            self.memory_gb,
+            free_processors,
+            self.processors,
         )
         if self._stats != stats:
             tasks_list_msg = ""
 
-        
-            running_tasks = [
-                "  * %s" % self.procs[jobid].fullname
-                for _, jobid in self.pending_tasks
-            ]
+            running_tasks = ["  * %s" % self.procs[jobid].fullname for _, jobid in self.pending_tasks]
             if running_tasks:
                 tasks_list_msg = "\nCurrently running:\n"
                 tasks_list_msg += "\n".join(running_tasks)
@@ -229,7 +220,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 free_processors,
                 self.processors,
                 tasks_list_msg,
-                free_real_memory_gb
+                free_real_memory_gb,
             )
             self._stats = stats
 
@@ -238,17 +229,11 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             return
 
         if len(jobids) + len(self.pending_tasks) == 0:
-            logger.debug(
-                "No tasks are being run, and no jobs can "
-                "be submitted to the queue. Potential deadlock"
-            )
+            logger.debug("No tasks are being run, and no jobs can be submitted to the queue. Potential deadlock")
             return
 
-
-      
         jobids = self._sort_jobs(jobids, scheduler=self.plugin_args.get("scheduler"))
         gc.collect()
-
 
         # Submit jobs
         for jobid in jobids:
@@ -278,8 +263,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
             free_memory_gb -= next_job_gb
             free_processors -= next_job_th
             logger.debug(
-                "Allocating %s ID=%d (%0.2fGB, %d threads). Free: "
-                "%0.2fGB, %d threads.",
+                "Allocating %s ID=%d (%0.2fGB, %d threads). Free: %0.2fGB, %d threads.",
                 self.procs[jobid].fullname,
                 jobid,
                 next_job_gb,
@@ -304,7 +288,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 except Exception:
                     traceback = format_exception(*sys.exc_info())
                     self._clean_queue(jobid, graph, result={"result": None, "traceback": traceback})
-                
+
                 # Release resources
                 self._task_finished_cb(jobid)
                 self._remove_node_dirs()
@@ -316,7 +300,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 # Clean up any debris from running node in main process
                 gc.collect()
                 continue
-              
+
             # Task should be submitted to workers
             # Send job to task manager and add to pending tasks
             if self._status_callback:
@@ -329,7 +313,6 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 self.pending_tasks.insert(0, (tid, jobid))
             # Display stats next loop
             self._stats = None
-
 
     def _submit_job(self, node, updatehash=False):
         self._taskid += 1
@@ -384,4 +367,3 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         """
         if self._rt is not None:
             self._rt.collect_and_delete()
-
