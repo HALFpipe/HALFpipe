@@ -186,6 +186,7 @@ class FileItem(Widget):
         callback_message=None,
         message_dict=None,
         execute_pattern_class_on_mount=True,
+        edit_button=True,
     ) -> None:
         """
         Initializes the FileItem widget.
@@ -245,6 +246,7 @@ class FileItem(Widget):
 
         self.pattern_match_results: dict = {"file_pattern": "", "message": "Found 0 files.", "files": [], "file_tag": None}
         self.execute_pattern_class_on_mount = execute_pattern_class_on_mount
+        self.edit_button = edit_button
 
     def prettify_message_dict(self, message_dict: dict[str, list[str]]) -> Text:
         """
@@ -310,8 +312,8 @@ class FileItem(Widget):
         yield HorizontalScroll(Static("Edit to enter the file pattern", id="static_file_pattern"))
         with Horizontal(id="icon_buttons_container"):
             yield Button(" ℹ", id="info_button", classes="icon_buttons")
-
-            yield Button("🖌", id="edit_button", classes="icon_buttons")
+            if self.edit_button:
+                yield Button("🖌", id="edit_button", classes="icon_buttons")
             yield Button("👁", id="show_button", classes="icon_buttons")
             if self.delete_button:
                 yield Button("❌", id="delete_button", classes="icon_buttons")
@@ -328,7 +330,8 @@ class FileItem(Widget):
         this is used when for example we load from a spec file).
         """
         if self.load_object is None:
-            self.get_widget_by_id("edit_button").tooltip = "Edit"
+            if self.edit_button:
+                self.get_widget_by_id("edit_button").tooltip = "Edit"
             if self.delete_button:
                 self.get_widget_by_id("delete_button").tooltip = "Delete"
             if self.pattern_class is not None:

@@ -242,6 +242,7 @@ class FilePanelTemplate(Widget):
                     id=self.file_item_id_base + str(self.file_pattern_counter),
                     classes="file_patterns",
                     pattern_class=self.pattern_class(app=self.app, callback=self.callback_func),
+                    edit_button=False,
                 )
                 # regular FileItem mount when user clicks "Add" and creates the file pattern
                 await self.get_widget_by_id(self.id_string).mount(the_file_item)
@@ -271,6 +272,7 @@ class FilePanelTemplate(Widget):
                             message_dict=message_dict,
                             pattern_class=self.pattern_class(app=self.app, callback=self.callback_func),
                             execute_pattern_class_on_mount=False,
+                            edit_button=False,
                         )
                     )
 
@@ -305,6 +307,7 @@ class FilePanelTemplate(Widget):
                                     callback_message=file_item_widget.get_callback_message,
                                     pattern_class=file_item_widget.get_pattern_class,
                                     execute_pattern_class_on_mount=False,
+                                    edit_button=False,
                                 )
                             )
                             unique_file_items.append(file_item_widget.get_pattern_match_results)

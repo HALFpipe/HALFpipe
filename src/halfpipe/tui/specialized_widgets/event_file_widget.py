@@ -96,6 +96,8 @@ class EventFilePanel(FilePanelTemplate):
             proceed_with_choice,
         )
 
+    filedict = {"datatype": "func", "suffix": "events"}
+
 
 class AtlasFilePanel(FilePanelTemplate):
     """
