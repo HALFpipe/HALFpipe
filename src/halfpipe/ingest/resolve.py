@@ -161,7 +161,6 @@ class ResolvedSpec:
         layout = BIDSLayout(
             root=fileobj.path,
             reset_database=True,  # force reindex in case files have changed
-            absolute_paths=True,
             validate=validate,
             indexer=BIDSLayoutIndexer(
                 validate=validate,
