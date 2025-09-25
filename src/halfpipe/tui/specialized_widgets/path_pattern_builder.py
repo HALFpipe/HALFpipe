@@ -11,6 +11,7 @@ from textual.widgets import Button, Static
 from ...ingest.glob import resolve_path_wildcards, tag_glob
 from ...logging import logger
 from ..data_analyzers.context import ctx
+from ..data_analyzers.file_pattern_steps import AddAtlasImageStep, AddBinarySeedMapStep, AddSpatialMapStep, EventsStep
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.list_of_files_modal import ListOfFiles
 from ..specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
@@ -299,7 +300,7 @@ class PathPatternBuilder(DraggableModalScreen):
             Grid(
                 Button("Browse", id="browse_button"),
                 Button("Reset highlights", id="reset_button"),
-                Button("Reset all", id="reset_all"),
+                # Button("Reset all", id="reset_all"),
                 Button("Clear all", id="clear_all"),
                 Button("Submit", id="submit_button"),
                 id="button_panel",
@@ -525,11 +526,33 @@ Your event file task tags are: \n{sorted(task_set)}.\
             and "{" + self.pattern_class.tag_entity + "}" not in self.pattern_match_results["file_pattern"]
         ):
             self.pattern_match_results["file_tag"] = await self.app.push_screen_wait(
-                NameInput([], default_value="file_tag"),
+                NameInput(self.get_occupied_tags(), default_value=""),
             )
 
         if compatible_task_tags:
             self.dismiss(self.pattern_match_results)
+
+    def get_occupied_tags(self):
+        # Map step classes to the suffix they care about
+        suffix_map = {
+            AddBinarySeedMapStep: "seed",
+            AddSpatialMapStep: "map",
+            AddAtlasImageStep: "atlas",
+            EventsStep: "events",
+        }
+
+        occupied_tags = []
+
+        # Look up the expected suffix for the current pattern class
+        expected_suffix = suffix_map.get(type(self.pattern_class))
+        if expected_suffix:  # only proceed if the class is recognized
+            for name in list(ctx.cache.keys()):
+                if ctx.cache[name]["files"] != {} and name != "bids":
+                    f: Any = ctx.cache[name]["files"]
+                    if f.suffix == expected_suffix:
+                        # collect the first tag value
+                        occupied_tags.append(next(iter(f.tags.values())))
+        return occupied_tags
 
     @on(Button.Pressed, "#cancel_button")
     def _close(self, event: Button.Pressed) -> None:

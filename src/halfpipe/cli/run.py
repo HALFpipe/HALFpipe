@@ -17,11 +17,20 @@ def run_stage_ui(opts: Namespace):
     UIConfig.fs_root = str(opts.fs_root)
 
     if opts.tui:
+        import os
+
         from ..tui.base import MainApp
+
+        if opts.tui_dev:
+            os.environ["TEXTUAL"] = "devtools,debug"
 
         app = MainApp()
         opts.workdir = app.run()
-        if opts.workdir is False:
+        opts_tui = app.run()
+        # update opts based on selection in tui
+        if opts_tui:
+            opts.workdir = Path(opts_tui)
+        else:
             import os
 
             os._exit(0)
