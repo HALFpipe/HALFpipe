@@ -6,7 +6,7 @@ from pathlib import Path
 from rich.console import RenderResult
 
 # from rich_pixels import Pixels
-from textual import events
+from textual import events, on
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.events import Click
@@ -19,6 +19,7 @@ from textual.widgets._header import HeaderTitle
 from ..logging.base import LoggingContext
 from .data_analyzers.context import ctx
 from .data_input.base import DataInput
+from .diagnostics.base import Diagnostics
 from .features.base import FeatureSelection
 from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
@@ -26,46 +27,12 @@ from .run.base import Run
 from .specialized_widgets.confirm_screen import Confirm
 from .specialized_widgets.event_file_widget import FilePanelTemplate
 from .specialized_widgets.filebrowser import FileBrowser
+from .specialized_widgets.quit_modal import quit_modal
 from .standards import global_settings_defaults
 from .working_directory.base import WorkDirectory
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
 BASE_DIR = Path(__file__).resolve().parent
-
-
-async def quit_modal(self):
-    def quit(modal_value):
-        """
-        Callback function to handle the user's quit decision.
-
-        This function is called when the confirmation modal is
-        dismissed. If the user confirms, the application exits.
-
-        Parameters
-        ----------
-        modal_value : bool
-            True if the user confirmed, False otherwise.
-        """
-        if modal_value:
-            self.app.exit(result=False)
-        else:
-            pass
-
-    # raise the modal only once not matter what
-    if "quit_modal" not in [w.id for w in self.app.walk_children()]:
-        await self.app.push_screen(
-            Confirm(
-                "Do you really want to quit?",
-                left_button_text="YES",
-                right_button_text="NO",
-                left_button_variant="error",
-                right_button_variant="success",
-                title="Quit?",
-                id="quit_modal",
-                classes="confirm_warning",
-            ),
-            quit,
-        )
 
 
 class HeaderCloseIcon(Widget):
@@ -95,7 +62,7 @@ class HeaderCloseIcon(Widget):
     }
     """
 
-    icon = Reactive("❌")
+    icon = Reactive("EXIT❌")
     """The character to use as the icon within the header."""
 
     async def on_click(self, event: Click) -> None:
@@ -156,7 +123,7 @@ class HeaderHelpIcon(Widget):
     """
 
     # The character to use as the icon within the header.
-    icon = Reactive("❓")
+    icon = Reactive("HELP❓")
     help_string = "Here should be some general help :) Or maybe link to manual?"
 
     async def on_click(self, event: Click) -> None:
@@ -193,6 +160,61 @@ class HeaderHelpIcon(Widget):
         return self.icon
 
 
+class HeaderSaveIcon(Widget):
+    """
+    A widget to display a close icon in the header.
+
+    This widget provides a clickable close icon (❌) in the header of the
+    application. Clicking this icon prompts the user to confirm whether
+    they want to quit the application.
+
+    Attributes
+    ----------
+    icon : Reactive[str]
+        The character to use as the icon within the header.
+    """
+
+    DEFAULT_CSS = """
+    HeaderSaveIcon {
+        dock: right;
+        padding: 0 1;
+        width: 8;
+        content-align: left middle;
+    }
+
+    HeaderSaveIcon:hover {
+        background: $foreground 10%;
+    }
+    """
+
+    icon = Reactive("SAVE💾")
+    """The character to use as the icon within the header."""
+
+    def render(self) -> RenderResult:
+        """Render the header icon.
+
+        Returns:
+            The rendered icon.
+        """
+        return self.icon
+
+    async def on_click(self, event: Click) -> None:
+        """
+        Handles the click event on the close icon.
+
+        This method is called when the user clicks the close icon. It
+        displays a confirmation modal asking the user if they really want
+        to quit the application.
+
+        Parameters
+        ----------
+        event : Click
+            The click event object.
+        """
+        event.stop()
+        self.app.get_widget_by_id("run").on_save_button_pressed()
+
+
 class MyHeader(Header):
     """
     A custom header widget for the application.
@@ -202,6 +224,7 @@ class MyHeader(Header):
 
     def compose(self):
         yield HeaderTitle()
+        yield HeaderSaveIcon()
         yield HeaderHelpIcon()
         yield HeaderCloseIcon()
 
@@ -322,6 +345,7 @@ class MainApp(App):
         BASE_DIR / "specialized_widgets/tcss/file_browser.tcss",
         BASE_DIR / "specialized_widgets/tcss/path_pattern_builder.tcss",
         BASE_DIR / "general_widgets/tcss/radio_set_changed.tcss",
+        BASE_DIR / "diagnostics/tcss/diagnostics.tcss",
     ]
 
     # TODO: The non active tabs should not show the bindings.
@@ -340,7 +364,9 @@ class MainApp(App):
     # maybe rename to available_tasks? this is a top level class variable that contains available tasks.
     available_images: dict = {}
     # if both flags are True, then we show the hidden tabs.
-    flags_to_show_tabs: reactive[dict] = reactive({"from_working_dir_tab": False, "from_input_data_tab": False})
+    flags_to_show_tabs: reactive[dict] = reactive(
+        {"from_working_dir_tab": False, "from_input_data_tab": False, "fs_license_file_found": False}
+    )
     # flag for bids/non bids data input
     is_bids = True
 
@@ -387,8 +413,14 @@ class MainApp(App):
             with TabPane("Group level models", id="models_tab", classes="tabs2 -hidden"):
                 yield VerticalScroll(GroupLevelModelSelection(id="models_content"))
             with TabPane("Check and run", id="run_tab", classes="tabs"):
-                yield VerticalScroll(Run(), id="run_content")
+                yield VerticalScroll(Run(id="run"), id="run_content")
+            with TabPane("Diagnostics", id="diag_tab", classes="tabs"):
+                yield VerticalScroll(Diagnostics(), id="diag_content")
         yield Footer()
+
+    @on(TabbedContent.TabActivated, pane="#run_tab")
+    def on_run_tab_activated(self) -> None:
+        self.get_widget_by_id("run").refresh_context()
 
     def on_mount(self) -> None:
         """
