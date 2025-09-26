@@ -1,0 +1,50 @@
+BatchOptionModal {
+    align: center middle;
+    #draggable_modal_screen_container_wrapper {
+        width: 72;
+        height: auto;
+        background: black;
+    }
+
+        .labels {
+
+                align: left bottom;
+        border: transparent;
+        width: 38;
+    }
+    .input_number_values {
+        border: white;
+        width: auto;
+    }
+        .input_list_values {
+        border: white;
+        width: 32;
+        height: auto;
+    }
+    .option_bools {
+
+        width: 7;
+        TextSwitch {
+            border: white;
+            width: 17;
+        }
+    }
+    .options {
+
+    height: auto;
+    width:100%;
+
+
+
+    }
+
+
+    #button_panel {
+        align: right bottom;
+        height: 5;
+        Button {
+            margin: 0 1;
+            width: 15;
+        }
+    }
+}
