@@ -1,0 +1,47 @@
+Diagnostics
+{
+    align: center top;
+    height: auto;
+#debuggroup_settings {
+    content-align: center middle;
+
+}
+#keep_selection_panel {
+width: auto;
+height: auto;
+padding: 0 0 0 1;
+#keep_label {
+border: transparent;
+width: 52;
+}
+
+
+    Select {
+
+        width: 16;
+    }
+}
+
+
+
+
+    LabelledSwitch {
+        width: 70;
+        height: 3;
+
+        Grid {
+            align: left middle;
+            grid-size: 2;
+            grid-columns: 56 26 0;
+        }
+        Static {
+            offset-x: 1;
+            border: transparent;
+        }
+        Switch {
+            offset-x: -3;
+        }
+    }
+
+
+}

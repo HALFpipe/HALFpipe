@@ -4,6 +4,7 @@
 import os
 from pathlib import Path
 
+from niworkflows.utils.misc import check_valid_fs_license
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Vertical
@@ -18,6 +19,7 @@ from ..data_analyzers.context import ctx
 from ..help_functions import copy_and_rename_file
 from ..load import cache_file_patterns, fill_ctx_spec, mount_features, mount_file_panels, mount_models
 from ..specialized_widgets.confirm_screen import Confirm
+from ..specialized_widgets.file_browser_modal import path_test_with_isfile_true
 from ..specialized_widgets.filebrowser import FileBrowser
 
 
@@ -92,6 +94,7 @@ class WorkDirectory(Widget):
             Classes for CSS styling, by default None.
         """
         super().__init__(id=id, classes=classes)
+        self.fs_license_file_found = False
 
     def compose(self) -> ComposeResult:
         """
@@ -115,17 +118,29 @@ spec.json file it is possible to load the therein configuration.",
             id="work_directory",
             classes="components",
         )
+        freesurfer_directory = Vertical(
+            Static(
+                "Path to the freesurfer license. By default the path will be set to the working directory.", id="description"
+            ),
+            FileBrowser(
+                path_to="FREESURFER LICENSE", path_test_function=path_test_with_isfile_true, id="fs_license_file_browser"
+            ),
+            id="fs_license_file_panel",
+            classes="components",
+        )
         work_directory.border_title = "Select working directory"
+        freesurfer_directory.border_title = "Select freesurfer license directory"
 
         yield work_directory
+        yield freesurfer_directory
 
-    @on(FileBrowser.Changed)
-    async def _on_file_browser_changed(self, message: Message) -> None:
+    @on(FileBrowser.Changed, "#work_dir_file_browser")
+    async def _on_work_dir_file_browser_changed(self, message: Message) -> None:
         try:
             init_workdir(message.selected_path)
-            await self._working_dir_path_passed(message.selected_path)
+            self._working_dir_path_passed(message.selected_path)
         except RuntimeError as e:
-            self.app.push_screen(
+            await self.app.push_screen(
                 Confirm(
                     f"{e}",
                     left_button_text=False,
@@ -138,6 +153,40 @@ spec.json file it is possible to load the therein configuration.",
             self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "red")
             ctx.workdir = None
 
+    @on(FileBrowser.Changed, "#fs_license_file_browser")
+    async def _on_fs_license_file_browser_changed(self, message: Message) -> None:
+        await self.evaluate_fs_license(message.selected_path)
+
+    async def evaluate_fs_license(self, fs_file_path) -> None:
+        os.environ["FS_LICENSE"] = fs_file_path
+        if not check_valid_fs_license():
+            self.app.push_screen(
+                Confirm(
+                    "No freesurfer license found!\nSet path to a valid Freesurfer license file.",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    title="Path Error",
+                    classes="confirm_error",
+                )
+            )
+            self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "red")
+            self.fs_license_file_found = False
+        else:
+            self.app.push_screen(
+                Confirm(
+                    "Valid freesurfer license found!",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    title="License found",
+                )
+            )
+            ctx.fs_license_file = fs_file_path
+            self.get_widget_by_id("fs_license_file_browser").styles.border = ("solid", "green")
+            self.fs_license_file_found = True
+            self.app.flags_to_show_tabs["fs_license_file_found"] = True
+            self.app.show_hidden_tabs()
+
+    @work(exclusive=False, name="work_dir_path_passed_worker")
     async def _working_dir_path_passed(self, selected_path: str | Path):
         """
         Handles the FileBrowser's Changed event.
@@ -158,11 +207,6 @@ spec.json file it is possible to load the therein configuration.",
         message : Message
             The message object containing information about the change.
         """
-        # Change border to green
-        self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
-        # add flag signaling that the working directory was set
-        self.app.flags_to_show_tabs["from_working_dir_tab"] = True
-        self.app.show_hidden_tabs()
 
         async def working_directory_override(override) -> None:
             """
@@ -213,12 +257,18 @@ spec.json file it is possible to load the therein configuration.",
                     working_directory_override,
                 )
 
+        # Change border to green
+        self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "green")
+        # add flag signaling that the working directory was set
+        self.app.flags_to_show_tabs["from_working_dir_tab"] = True
+        self.app.show_hidden_tabs()
+
         # add path to context object
         ctx.workdir = Path(selected_path)
         # Load the spec and by this we see whether there is existing spec file or not
         self.existing_spec = load_spec(workdir=ctx.workdir)
         if self.existing_spec is not None:
-            self.app.push_screen(
+            result = await self.app.push_screen_wait(
                 Confirm(
                     "Existing spec file was found! Do you want to load the settings or \
 overwrite the working directory and start a new analysis?",
@@ -227,9 +277,11 @@ overwrite the working directory and start a new analysis?",
                     right_button_text="Override",
                     id="confirm_spec_load_modal",
                     classes="confirm_warning",
-                ),
-                existing_spec_file_decision,
+                )
             )
+            await existing_spec_file_decision(result)
+        else:
+            self._evaluate_license_worker(str(selected_path))
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
         """
@@ -255,6 +307,27 @@ overwrite the working directory and start a new analysis?",
                 self._mount_file_panels()
             if event.worker.name == "file_panels_worker":
                 self._mount_models()
+            if event.worker.name == "models_worker":
+                selected_path = self.get_widget_by_id("work_dir_file_browser").selected_path
+                self._evaluate_license_worker(str(selected_path))
+
+    @work(exclusive=True, name="license_worker")
+    async def _evaluate_license_worker(self, selected_path: str):
+        try:
+            full_fs_license_path = os.path.join(selected_path, "license.txt")
+            if not self.app.flags_to_show_tabs["fs_license_file_found"]:
+                self.get_widget_by_id("fs_license_file_browser").update_input(full_fs_license_path, send_message=False)
+                await self.evaluate_fs_license(full_fs_license_path)
+        except Exception as e:
+            self.app.push_screen(
+                Confirm(
+                    f"Error in freesurfer license check. The error message will be shown below.\n{e}",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    title="Path Error",
+                    classes="confirm_error",
+                )
+            )
 
     async def _load_from_spec(self):
         # Go to Stage 1 of the loading process
@@ -286,8 +359,8 @@ overwrite the working directory and start a new analysis?",
         await mount_models(self)
 
     @on(Button.Pressed, ".-read-only")
-    def on_ee_click(self):
-        if sum(self.app.flags_to_show_tabs.values()) == 2:
+    def on_anything_click(self):
+        if sum(self.app.flags_to_show_tabs.values()) == 3:
             self.app.push_screen(
                 Confirm(
                     "Input entries cannot be changes now! Restart UI to change them.",

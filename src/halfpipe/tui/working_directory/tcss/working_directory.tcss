@@ -13,6 +13,19 @@ WorkDirectory {
             border: solid red;
         }
     }
+    #fs_license_file_panel {
+        align: left top;
+        height: auto;
+        grid-size: 1;
+        #description {
+            height: 3;
+            padding: 1;
+            text-align: justify;
+        }
+	#fs_license_file_browser {
+            border: solid red;
+        }
+    }
     #top_event_file_panel {
         height: auto;
         align: center top;

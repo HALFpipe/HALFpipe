@@ -25,12 +25,14 @@ def run_stage_ui(opts: Namespace):
             os.environ["TEXTUAL"] = "devtools,debug"
 
         app = MainApp()
-        opts.workdir = app.run()
         opts_tui = app.run()
         # update opts based on selection in tui
         if opts_tui:
-            opts.workdir = Path(opts_tui)
-        else:
+            for k in vars(opts).keys() & opts_tui.keys():
+                setattr(opts, k, opts_tui[k])
+            logger.info(f"The options selected in TUI are: {opts}")
+
+        if opts.workdir is False:
             import os
 
             os._exit(0)
