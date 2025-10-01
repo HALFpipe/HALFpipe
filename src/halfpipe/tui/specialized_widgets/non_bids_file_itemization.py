@@ -173,27 +173,6 @@ class FileItem(Widget):
             """Alias for self.file_browser."""
             return self.file_item
 
-    @dataclass
-    class IsFinished(Message):
-        """
-        A message indicating that a file item has finished processing.
-
-        Attributes
-        ----------
-        file_item : FileItem
-            The file item widget.
-        value : str
-            The value associated with the completion.
-        """
-
-        file_item: "FileItem"
-        value: str
-
-        @property
-        def control(self):
-            """Alias for self.file_browser."""
-            return self.file_item
-
     def __init__(
         self,
         id: str | None = None,
@@ -207,6 +186,7 @@ class FileItem(Widget):
         callback_message=None,
         message_dict=None,
         execute_pattern_class_on_mount=True,
+        edit_button=True,
     ) -> None:
         """
         Initializes the FileItem widget.
@@ -264,8 +244,9 @@ class FileItem(Widget):
         else:
             self.callback_message = callback_message
 
-        self.pattern_match_results = {"file_pattern": "", "message": "Found 0 files.", "files": []}
+        self.pattern_match_results: dict = {"file_pattern": "", "message": "Found 0 files.", "files": [], "file_tag": None}
         self.execute_pattern_class_on_mount = execute_pattern_class_on_mount
+        self.edit_button = edit_button
 
     def prettify_message_dict(self, message_dict: dict[str, list[str]]) -> Text:
         """
@@ -331,8 +312,8 @@ class FileItem(Widget):
         yield HorizontalScroll(Static("Edit to enter the file pattern", id="static_file_pattern"))
         with Horizontal(id="icon_buttons_container"):
             yield Button(" ℹ", id="info_button", classes="icon_buttons")
-
-            yield Button("🖌", id="edit_button", classes="icon_buttons")
+            if self.edit_button:
+                yield Button("🖌", id="edit_button", classes="icon_buttons")
             yield Button("👁", id="show_button", classes="icon_buttons")
             if self.delete_button:
                 yield Button("❌", id="delete_button", classes="icon_buttons")
@@ -349,7 +330,8 @@ class FileItem(Widget):
         this is used when for example we load from a spec file).
         """
         if self.load_object is None:
-            self.get_widget_by_id("edit_button").tooltip = "Edit"
+            if self.edit_button:
+                self.get_widget_by_id("edit_button").tooltip = "Edit"
             if self.delete_button:
                 self.get_widget_by_id("delete_button").tooltip = "Delete"
             if self.pattern_class is not None:
@@ -478,6 +460,8 @@ class FileItem(Widget):
             if len(pattern_match_results["files"]) > 0:
                 self.styles.border = ("solid", "green")
                 self.success_value = True
+                if pattern_match_results["file_tag"] is not None:
+                    self.border_title = f"File tag: {pattern_match_results['file_tag']}"
             else:
                 self.styles.border = ("solid", "red")
                 self.success_value = False
@@ -549,7 +533,7 @@ class FileItem(Widget):
             if self.id in ctx.cache:
                 ctx.cache.pop(self.id)
                 self.remove_all_duplicates()
-            self.post_message(self.IsDeleted(self, "yes"))
+            self.post_message(self.IsDeleted(self, self.pattern_match_results))
 
     @on(Button.Pressed, "#show_button")
     def _on_show_button_pressed(self) -> None:
