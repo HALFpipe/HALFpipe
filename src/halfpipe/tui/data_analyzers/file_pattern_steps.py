@@ -376,7 +376,8 @@ class EventsStep(FilePatternStep):
                     (self.fileobj.tags["task"],) = self.taskset
 
     header_str = " Input stimulus onset files"  # Event file pattern
-    required_in_path_entities: List[str] = list()
+    required_in_path_entities: List[str] = []
+    allow_file_tagging = True
 
     ask_if_missing_entities: List[str] = list()
     filedict = {"datatype": "func", "suffix": "events"}

@@ -62,23 +62,38 @@
             layout: horizontal;
             height: 5;
             border: red;
+            border-title-color: orange;
+            border-title-style: bold;
             .icon_buttons {
                 width: 3;
                 height: 3;
                 margin: 0 1 0 0;
                 min-width: 6;
                 offset-y: 0;
+
             }
             #static_file_pattern {
                 width: auto;
                 padding: 1;
                 color: white;
+
             }
             #icon_buttons_container {
                 width: auto;
                 height: 4;
                 border: none;
                 padding: 0 1;
+            }
+            #show_button {
+                offset-x: 0;
+            }
+            #delete_button {
+                offset-x: 0;
+            }
+            #edit_button {
+            }
+            #info_button {
+                offset-x: 0;
             }
         }
     }
