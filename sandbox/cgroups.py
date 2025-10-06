@@ -33,9 +33,7 @@ class Cgroup(AbstractContextManager):
             cgroup_lines = cgroup_file_handle.readlines()
 
         for cgroup_line in cgroup_lines:
-            m = re.fullmatch(
-                r"(?P<id>\d+):(?P<controllers>[^:]*):(?P<path>.+)", cgroup_line.strip()
-            )
+            m = re.fullmatch(r"(?P<id>\d+):(?P<controllers>[^:]*):(?P<path>.+)", cgroup_line.strip())
             if m is None:
                 continue
             cgroup_path = cgroup_mount_point / m.group("path").removeprefix("/")

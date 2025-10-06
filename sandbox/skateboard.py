@@ -82,9 +82,7 @@ def run_node(node: pe.Node) -> dict:
 
     check_call(["cgcreate", *cgroup_arguments])
 
-    output_bytes = check_output(
-        ["cgexec", *cgroup_arguments, sys.executable, "-m", "run_node"], input=input_bytes
-    )
+    output_bytes = check_output(["cgexec", *cgroup_arguments, sys.executable, "-m", "run_node"], input=input_bytes)
     output = pickle.loads(output_bytes)
 
     check_call(["cgdelete", *cgroup_arguments])
@@ -101,10 +99,7 @@ def check_result(node: pe.Node, output: dict[str, Any]) -> None:
     predicted = node.mem_gb
 
     if observed > predicted:
-        message = (
-            f"Node {node.fullname} exceeded memory limit: "
-            f"Observed {observed:.2f} GB, predicted {predicted:.2f} GB"
-        )
+        message = f"Node {node.fullname} exceeded memory limit: Observed {observed:.2f} GB, predicted {predicted:.2f} GB"
         console.print(message, style="red on white")
 
     with Path("/work/charite/notebooks/25/10/memory_usage.txt").open("a") as file_handle:
@@ -156,9 +151,7 @@ class Skateboard:
         available_processors = self.processors
         self.update()
 
-        progress_bar = tqdm(
-            total=len(self.nodes), unit="node", options=dict(console=console), leave=False
-        )
+        progress_bar = tqdm(total=len(self.nodes), unit="node", options=dict(console=console), leave=False)
 
         with progress_bar, executor:
             while self.ready or futures:
@@ -176,9 +169,7 @@ class Skateboard:
                     self.ready.remove(job)
 
                 # Wait for at least one job to complete
-                done, _ = concurrent.futures.wait(
-                    futures.keys(), return_when=concurrent.futures.FIRST_COMPLETED
-                )
+                done, _ = concurrent.futures.wait(futures.keys(), return_when=concurrent.futures.FIRST_COMPLETED)
                 for future in done:
                     progress_bar.update(1)
 
