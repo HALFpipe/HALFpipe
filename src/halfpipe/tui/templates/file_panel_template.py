@@ -338,7 +338,7 @@ class FilePanelTemplate(Widget):
         all_file_tags_based_on_the_current_file_patterns = self._extract_file_tags(file_pattern, files, file_tag)
 
         logger.debug(
-            f"UI->AtlasSeedDualRegBasedTemplate->on_file_panel_file_item_is_deleted->tags to remove: \
+            f"UI->FilePanelTemplate->on_file_panel_file_item_is_deleted->tags to remove: \
 {all_file_tags_based_on_the_current_file_patterns}"
         )
         for w in self.app.walk_children(FilePanelTemplate):
@@ -380,6 +380,7 @@ class FilePanelTemplate(Widget):
         file_pattern = message.value["file_pattern"]
         file_tag = message.value["file_tag"]
         files = message.value["files"]
+        logger.debug(f'f"UI->FilePanelTemplate->on_file_panel_changed->message.value:->{message.value}')
 
         all_file_tags_based_on_the_current_file_patterns = self._extract_file_tags(file_pattern, files, file_tag)
 
@@ -388,7 +389,7 @@ class FilePanelTemplate(Widget):
         file_tags = all_file_tags_based_on_the_current_file_patterns
 
         logger.debug(
-            f"UI->AtlasSeedDualRegBasedTemplate->on_file_panel_changed->all_file_tags_based_on_the_current_file_patterns:\
+            f"UI->FilePanelTemplate->on_file_panel_changed->all_file_tags_based_on_the_current_file_patterns:\
 {all_file_tags_based_on_the_current_file_patterns}"
         )
         self.update_file_tag_selection(file_tags)

@@ -48,6 +48,7 @@ async def run_before(
 
     async def add_feature_related_tasks():
         await add_new_feature(pilot)
+        await settable_scroll_screen_down(pilot, 30)
         await select_images(pilot)
 
         await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_pattern=True)

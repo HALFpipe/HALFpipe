@@ -224,7 +224,7 @@ class MyHeader(Header):
 
     def compose(self):
         yield HeaderTitle()
-        yield HeaderSaveIcon()
+        yield HeaderSaveIcon(id="save_button")
         yield HeaderHelpIcon()
         yield HeaderCloseIcon()
 

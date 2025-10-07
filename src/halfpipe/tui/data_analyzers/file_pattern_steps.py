@@ -80,6 +80,7 @@ class FilePatternStep:
     schema: Union[Type[BaseFileSchema], Type[FileSchema]] = FileSchema
     next_step_type: None | type[CheckMetadataStep] = None
     allow_file_tagging: bool = False
+    file_tag: None | str = None
 
     def __init__(self, path="", app=None, callback=None, callback_message=None, id_key=""):
         """
@@ -289,6 +290,8 @@ class AnatStep(FilePatternStep):
 
     schema = T1wFileSchema
 
+    tag_entity = None
+
 
 class AnatMaskStep(FilePatternStep):
     """
@@ -354,6 +357,16 @@ class EventsStep(FilePatternStep):
         The file dictionary for event files.
     """
 
+    header_str = " Input stimulus onset files"  # Event file pattern
+    required_in_path_entities: List[str] = []
+
+    # ask_if_missing_entities: List[str] = list()
+    filedict = {"datatype": "func", "suffix": "events"}
+    filetype_str = "event"
+
+    tag_entity = "task"
+    allow_file_tagging: bool = True
+
     def __init__(self, *args, **kwargs):
         bold_file_paths = find_bold_file_paths()
 
@@ -363,8 +376,8 @@ class EventsStep(FilePatternStep):
         self.taskset = taskset
         logger.info(f"UI->EventsStep->init taskset: {taskset}")
 
-        if len(self.taskset) > 1:
-            self.required_in_path_entities = ["task"]
+        # if len(self.taskset) > 1:
+        #     self.required_in_path_entities = ["task"]
         super().__init__(*args, **kwargs)
 
     def run_before_next_step(self):
@@ -374,14 +387,6 @@ class EventsStep(FilePatternStep):
             if self.fileobj.tags.get("task") is None:
                 if "task" not in get_entities_in_path(self.fileobj.path):
                     (self.fileobj.tags["task"],) = self.taskset
-
-    header_str = " Input stimulus onset files"  # Event file pattern
-    required_in_path_entities: List[str] = []
-    allow_file_tagging = True
-
-    ask_if_missing_entities: List[str] = list()
-    filedict = {"datatype": "func", "suffix": "events"}
-    filetype_str = "event"
 
     def _transform_extension(self, ext):
         raise NotImplementedError()
@@ -473,6 +478,8 @@ class FmapFilePatternStep(FilePatternStep):
     filetype_str = "field map image"
     filetype_str = filetype_str
     filedict = {"datatype": "fmap"}
+
+    tag_entity = None
 
 
 class FieldMapStep(FmapFilePatternStep):
@@ -689,6 +696,8 @@ class BoldStep(FilePatternStep):
     filedict = {"datatype": "func", "suffix": "bold"}
 
     next_step_type = CheckRepetitionTimeStep
+
+    tag_entity = None
 
 
 class AddAtlasImageStep(FilePatternStep):

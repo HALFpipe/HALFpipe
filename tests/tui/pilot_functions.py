@@ -7,39 +7,49 @@ from halfpipe.logging import logger
 
 
 async def _load_data(pilot, data_path) -> None:
-    # switch to input data tab
-    await pilot.press("i")
-    # await pilot.click(offset=(60, 20))
-    # here we need to change scope since the browse button is nested under the data_input_file_browser
-    await pilot.click(pilot.app.get_widget_by_id("data_input_file_browser").get_widget_by_id("file_browser_edit_button"))
-    await enter_browse_path(pilot, data_path)
-    # click Ok on Modal informing us that the data input is success
-    # await pilot.click(offset=(121, 31))
-    await pilot.click("#only_one_button")
-    logger.debug("Bids data directory is set.")
+    try:
+        # switch to input data tab
+        await pilot.press("i")
+        # await pilot.click(offset=(60, 20))
+        # here we need to change scope since the browse button is nested under the data_input_file_browser
+        await pilot.click(pilot.app.get_widget_by_id("data_input_file_browser").get_widget_by_id("file_browser_edit_button"))
+        await enter_browse_path(pilot, data_path)
+        # click Ok on Modal informing us that the data input is success
+        # await pilot.click(offset=(121, 31))
+        await pilot.click("#only_one_button")
+        logger.debug("Bids data directory is set.")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
-    await pilot.press("w")
-    # click on Browse button
-    # await pilot.click(offset=(60, 15))
-    # here we need to change scope since the browse button is nested under the data_input_file_browser
-    await pilot.click(pilot.app.get_widget_by_id("work_dir_file_browser").get_widget_by_id("file_browser_edit_button"))
-    await enter_browse_path(pilot, work_dir_path)
-    if not load_from_spec_file:
-        # non existing path modal, click on "Ok"
-        # await pilot.click(offset=(117, 31))
+    try:
+        await pilot.press("w")
+        # click on Browse button
+        # await pilot.click(offset=(60, 15))
+        # here we need to change scope since the browse button is nested under the data_input_file_browser
+        await pilot.click(pilot.app.get_widget_by_id("work_dir_file_browser").get_widget_by_id("file_browser_edit_button"))
+        await enter_browse_path(pilot, work_dir_path)
+        if not load_from_spec_file:
+            # non existing path modal, click on "Ok"
+            # await pilot.click(offset=(117, 31))
+            await pilot.click("#only_one_button")
+            # Create new dir modal, click on "Ok"
+            # await pilot.click(offset=(100, 31))
+            await pilot.click("#ok_left_button")
+        else:
+            # Spec file found modal, click Load
+            # await pilot.click(offset=(100, 31))
+            await pilot.click("#ok_left_button")
+            # click ok on modal informing us that all went ok
+            await pilot.click("#only_one_button")
         await pilot.click("#only_one_button")
-        # Create new dir modal, click on "Ok"
-        # await pilot.click(offset=(100, 31))
-        await pilot.click("#ok_left_button")
-    else:
-        # Spec file found modal, click Load
-        # await pilot.click(offset=(100, 31))
-        await pilot.click("#ok_left_button")
-        # click ok on modal informing us that all went ok
-        await pilot.click("#only_one_button")
-    logger.debug(f"UI tests -> work directory is set to {work_dir_path}")
+
+        logger.debug(f"UI tests -> work directory is set to {work_dir_path}")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 async def enter_browse_path(pilot, path):
@@ -101,59 +111,67 @@ async def _select_group_level_models_cutoffs_values(pilot):
 
 
 async def add_new_feature(pilot, feature_type=None, label=None, tab_type="f") -> None:
-    feature_type = feature_type if feature_type is not None else "task_based"
-    label = label if label is not None else "task_based_1"
+    try:
+        feature_type = feature_type if feature_type is not None else "task_based"
+        label = label if label is not None else "task_based_1"
 
-    feature_type_yposition = {
-        "task_based": 0,
-        "seed_based": 1,
-        "dual_reg": 2,
-        "atlas": 3,
-        "reho": 4,
-        "falff": 5,
-        "preproc": 6,
-        "intercept_only": 0,
-        "linear_model": 1,
-    }
-    # select feature tab
-    await pilot.press(tab_type)
-    # click on New button
-    # await pilot.click(offset=(10, 8))
-    # await pilot.click("#new_item_button")
-    if tab_type == "f":
-        await pilot.click(pilot.app.get_widget_by_id("feature_selection_content").get_widget_by_id("new_item_button"))
-    elif tab_type == "g":
-        await pilot.click(pilot.app.get_widget_by_id("models_content").get_widget_by_id("new_item_button"))
+        feature_type_yposition = {
+            "task_based": 0,
+            "seed_based": 1,
+            "dual_reg": 2,
+            "atlas": 3,
+            "reho": 4,
+            "falff": 5,
+            "preproc": 6,
+            "intercept_only": 0,
+            "linear_model": 1,
+        }
+        # select feature tab
+        await pilot.press(tab_type)
+        # click on New button
+        # await pilot.click(offset=(10, 8))
+        # await pilot.click("#new_item_button")
+        if tab_type == "f":
+            await pilot.click(pilot.app.get_widget_by_id("feature_selection_content").get_widget_by_id("new_item_button"))
+        elif tab_type == "g":
+            await pilot.click(pilot.app.get_widget_by_id("models_content").get_widget_by_id("new_item_button"))
 
-    # click on Task based
-    # await pilot.click(offset=(100, feature_type_yposition[feature_type]))
-    await pilot.click("#options")
-    for _i in range(feature_type_yposition[feature_type]):
-        await pilot.press("down")
-    await pilot.press("enter")
+        # click on Task based
+        # await pilot.click(offset=(100, feature_type_yposition[feature_type]))
+        await pilot.click("#options")
+        for _i in range(feature_type_yposition[feature_type]):
+            await pilot.press("down")
+        await pilot.press("enter")
 
-    # click in the prompt
-    # await pilot.click(offset=(94, 25))
-    await pilot.click("#feature_name")
-    for letter in label:
-        await pilot.press(letter)
-    # click on Ok button
-    # await pilot.click(offset=(100, 30))
-    await pilot.click("#ok")
+        # click in the prompt
+        # await pilot.click(offset=(94, 25))
+        await pilot.click("#feature_name")
+        for letter in label:
+            await pilot.press(letter)
+        # click on Ok button
+        # await pilot.click(offset=(100, 30))
+        await pilot.click("#ok")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 async def select_images(pilot) -> None:
-    await pilot.click("#tasks_to_use_selection")
-    # select all images
-    # await pilot.click(offset=(71, 9))
-    # await pilot.click(offset=(71, 10))
-    # await pilot.click(offset=(71, 11))
-    await pilot.press("enter")
-    await pilot.press("down")
-    await pilot.press("enter")
-    await pilot.press("down")
-    await pilot.press("enter")
-    await pilot.pause()
+    try:
+        await pilot.click("#tasks_to_use_selection")
+        # select all images
+        # await pilot.click(offset=(71, 9))
+        # await pilot.click(offset=(71, 10))
+        # await pilot.click(offset=(71, 11))
+        await pilot.press("enter")
+        await pilot.press("down")
+        await pilot.press("enter")
+        await pilot.press("down")
+        await pilot.press("enter")
+        await pilot.pause()
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 async def deselect_image(pilot, which_one=2) -> None:
@@ -164,46 +182,58 @@ async def deselect_image(pilot, which_one=2) -> None:
 
 
 async def deselect_conditions(pilot, offset_y=2) -> None:
-    # deselect one of the conditions
-    # await pilot.click(offset=(71, 23 + offset_y))
-    await pilot.click("#model_conditions_selection")
-    for _i in range(offset_y):
-        await pilot.press("down")
-    await pilot.press("enter")
+    try:
+        # deselect one of the conditions
+        # await pilot.click(offset=(71, 23 + offset_y))
+        await pilot.click("#model_conditions_selection")
+        for _i in range(offset_y):
+            await pilot.press("down")
+        await pilot.press("enter")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 async def add_contrast_value_column(pilot, label=None, offset_y=0) -> None:
-    label = "con1" if label is None else label
-    # # click on Add contrast values
-    # await pilot.click(offset=(108, 43 + offset_y))
-    await pilot.click("#add_contrast_values_button")
-    # click in the prompt, for some reasons sometimes needs to be clicked twice
-    # await pilot.click(offset=(99, 16))
-    # await pilot.click(offset=(99, 16))
-    await pilot.click("#contrast_name")
-    for letter in label:
-        await pilot.press(letter)
-    await pilot.press("tab")
-    await pilot.press("1")
-    await pilot.press("tab")
-    await pilot.press("2")
-    await pilot.press("tab")
-    await pilot.press("3")
-    await pilot.press("tab")
-    await pilot.press("4")
-    await pilot.press("tab")
-    await pilot.press("5")
-    await pilot.press("tab")
-    await pilot.press("6")
-    await pilot.press("tab")
-    await pilot.press("enter")
+    try:
+        label = "con1" if label is None else label
+        # # click on Add contrast values
+        # await pilot.click(offset=(108, 43 + offset_y))
+        await pilot.click("#add_contrast_values_button")
+        # click in the prompt, for some reasons sometimes needs to be clicked twice
+        # await pilot.click(offset=(99, 16))
+        # await pilot.click(offset=(99, 16))
+        await pilot.click("#contrast_name")
+        for letter in label:
+            await pilot.press(letter)
+        await pilot.press("tab")
+        await pilot.press("1")
+        await pilot.press("tab")
+        await pilot.press("2")
+        await pilot.press("tab")
+        await pilot.press("3")
+        await pilot.press("tab")
+        await pilot.press("4")
+        await pilot.press("tab")
+        await pilot.press("5")
+        await pilot.press("tab")
+        await pilot.press("6")
+        await pilot.press("tab")
+        await pilot.press("enter")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 async def delete_column(pilot) -> None:
-    # await pilot.click(offset=(136, 43))
-    await pilot.click(
-        pilot.app.get_widget_by_id("model_conditions_and_constrasts").get_widget_by_id("delete_contrast_values_button")
-    )
+    try:
+        # await pilot.click(offset=(136, 43))
+        await pilot.click(
+            pilot.app.get_widget_by_id("model_conditions_and_constrasts").get_widget_by_id("delete_contrast_values_button")
+        )
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 # async def scroll_screen_down(pilot) -> None:
@@ -302,15 +332,12 @@ async def check_and_run_tab_refresh(pilot) -> None:
     # random click before scroll
     await pilot.click(offset=(50, 10))
     await pilot.press("r")
-    # refresh
-    # await pilot.click(offset=(83, 9))
-    await pilot.click("#refresh_button")
     # save
     # await pilot.click(offset=(100, 9))
-    await pilot.click("#save_button")
+    # await pilot.click("#save_button")
     # press 'Ok' to dismiss the modal
     # await pilot.click(offset=(117, 31))
-    await pilot.click("#only_one_button")
+    # await pilot.click("#only_one_button")
 
 
 # async def scroll_screen_down_spec(pilot) -> None:
@@ -336,23 +363,16 @@ async def toggle_bids_non_bids(pilot) -> None:
 #     await pilot.click(offset=(125, 40))
 
 
-async def set_non_bids_data(
-    pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False, noconfirm=False
-) -> None:
-    logger.debug("UI tests -> Running function: set_non_bids_data")
-    await pilot.press("i")
-
-    ### toggle bids to non bids
-    # await pilot.click(offset=(113, 14))
-    # await pilot.click('#bids_non_bids_switch')
-    await toggle_bids_non_bids(pilot)
-    await settable_scroll_screen_down(pilot, 30)
+async def add_t1(pilot, t1_pattern_path) -> None:
     ### add T1
     # await pilot.click(offset=(57, 35))
     await pilot.click("#add_t1_image_button")
     # set the path pattern
     await set_path_in_path_pattern_builder(pilot, t1_pattern_path)
+    await pilot.click(pilot.app.get_widget_by_id("ok_left_button"))
 
+
+async def add_bold(pilot, bold_pattern_path, set_repetition_time) -> None:
     ### add bold
     # await pilot.click(offset=(57, 46))
     await pilot.click("#add_bold_image_button")
@@ -377,33 +397,137 @@ async def set_non_bids_data(
         # await pilot.click(offset=(100, 31))
         await pilot.click(pilot.app.get_widget_by_id("ok_left_button"))
 
-    await settable_scroll_screen_down(pilot, 15)
-    #
-    if not noconfirm:
+
+async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> None:
+    try:
+        await pilot.click("#add_field_map_button")
+        # select 'Siemens' by focusing and going one down and confirming with enter
+        await pilot.press("tab")
+        await pilot.press("down")
+        await pilot.press("enter")
+        # confirm choice of the whole window
+        await pilot.click("#ok")
+        # confirm that we want one magnitude file and one phase difference file
+        await pilot.click("#ok")
+        # enter path pattern for phase difference files
+        # await sleep(5)
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
+
+    await set_path_in_path_pattern_builder(pilot, str(phase_diff_fmap_pattern))
+
+    try:
+        # now there is a modal with prompt for entering the echo time value, we enter there some value
+        for i in range(1, 3):
+            # now there should be a modal informing that first echo times are missing, we dismiss it
+            await pilot.click("#only_one_button")
+            await pilot.click("#input_prompt")
+            # Set echo time to '1'
+            await pilot.press(str(i))
+            # Click Ok to dismiss
+            await pilot.click("#only_one_button")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
+
+    await set_path_in_path_pattern_builder(pilot, str(magnitude_fmap_pattern))
+
+    await settable_scroll_screen_down(pilot, 10)
+
+
+async def associate_fmaps(pilot) -> None:
+    try:
+        await pilot.click("#associate_button")
+        # since it our case there is nothing to associate we will get only the echo spacing missing modal,
+        # dismiss it
+        await pilot.click("#only_one_button")
+        # enter some value
+        await pilot.click("#input_prompt")
+        await pilot.press(str(9))
+        await pilot.click("#only_one_button")
+        # missing phase encoding direction modal
+        # dismiss it
+        await pilot.click("#only_one_button")
+        # select some direction
+        await pilot.press("tab")
+        await pilot.press("down")
+        await pilot.press("enter")
+        await pilot.click("#ok")
         # click confirm
-        # await pilot.click(offset=(100, 47))
         await pilot.click("#confirm_non_bids_button")
         # click Ok on Modal informing us that the data input is success
         await pilot.click("#only_one_button")
         # Click Ok on Modal saying that data and workdir is set and user can proceed further
         await pilot.click("#only_one_button")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
+
+
+async def set_non_bids_data(
+    pilot, t1_pattern_path=None, bold_pattern_path=None, set_repetition_time=False, noconfirm=False
+) -> None:
+    logger.debug("UI tests -> Running function: set_non_bids_data")
+    await pilot.press("i")
+
+    ### toggle bids to non bids
+    # await pilot.click(offset=(113, 14))
+    # await pilot.click('#bids_non_bids_switch')
+    try:
+        await toggle_bids_non_bids(pilot)
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
+
+    await settable_scroll_screen_down(pilot, 30)
+
+    try:
+        await add_t1(pilot, t1_pattern_path)
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
+    try:
+        await add_bold(pilot, bold_pattern_path, set_repetition_time)
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
+
+    await settable_scroll_screen_down(pilot, 15)
+    #
+    if not noconfirm:
+        # click confirm
+        # await pilot.click(offset=(100, 47))
+        try:
+            await pilot.click("#confirm_non_bids_button")
+            # click Ok on Modal informing us that the data input is success
+            await pilot.click("#only_one_button")
+            # Click Ok on Modal saying that data and workdir is set and user can proceed further
+            await pilot.click("#only_one_button")
+        except Exception as e:
+            pilot.app.save_screenshot()
+            logger.info(e)
     logger.debug("UI tests -> set_non_bids_data successful!")
 
 
 async def set_path_in_path_pattern_builder(pilot, path_pattern) -> None:
     # clear all
     # await pilot.click(offset=(120, 30))
-    logger.debug(f"UI tests -> Typing {path_pattern} in the path pattern builder")
-    await pilot.click("#clear_all")
-    # click to prompt
-    # await pilot.click(offset=(60, 22))
-    await pilot.click("#input_prompt")
-    for i in path_pattern:
-        await pilot.press(i)
-    # press ok button
-    # await pilot.click(offset=(125, 40))
-    await pilot.click("#ok_button")
-    logger.debug(f"UI tests -> Success! The path {path_pattern} was set in the path pattern builder.")
+    try:
+        logger.debug(f"UI tests -> Typing {path_pattern} in the path pattern builder")
+        await pilot.click("#clear_all")
+        # click to prompt
+        # await pilot.click(offset=(60, 22))
+        await pilot.click("#input_prompt")
+        for i in path_pattern:
+            await pilot.press(i)
+        # press ok button
+        # await pilot.click(offset=(125, 40))
+        await pilot.click("#ok_button")
+        logger.debug(f"UI tests -> Success! The path {path_pattern} was set in the path pattern builder.")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 async def settable_scroll_screen_down(pilot, how_much=19) -> None:

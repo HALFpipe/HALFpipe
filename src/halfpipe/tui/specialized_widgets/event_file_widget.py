@@ -49,6 +49,8 @@ class EventFilePanel(FilePanelTemplate):
     # The class used for creating file pattern steps, initially None.
     pattern_class = None
 
+    filters: dict[str, str] = {"datatype": "func", "suffix": "events"}
+
     async def add_file_item_pressed(self):
         """
         Handles the event when the add file item button is pressed.
@@ -95,8 +97,6 @@ class EventFilePanel(FilePanelTemplate):
             ),
             proceed_with_choice,
         )
-
-    filedict = {"datatype": "func", "suffix": "events"}
 
 
 class AtlasFilePanel(FilePanelTemplate):

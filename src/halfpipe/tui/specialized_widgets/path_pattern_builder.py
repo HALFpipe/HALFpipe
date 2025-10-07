@@ -259,7 +259,7 @@ class PathPatternBuilder(DraggableModalScreen):
             "file_pattern": self.path,
             "message": "Found 0 files.",
             "files": [],
-            "file_tag": None,
+            "file_tag": pattern_class.tag_entity,
         }
         self.original_value = path
         # TODO: since now we are always passing the particular pattern_class to the path_pattern_builder, we do not need
@@ -538,7 +538,7 @@ Your event file task tags are: \n{sorted(task_set)}.\
             AddBinarySeedMapStep: "seed",
             AddSpatialMapStep: "map",
             AddAtlasImageStep: "atlas",
-            EventsStep: "events",
+            EventsStep: "task",
         }
 
         occupied_tags = []

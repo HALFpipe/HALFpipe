@@ -96,6 +96,7 @@ class TaskBased(FeatureTemplate):
         super().__init__(this_user_selection_dict=this_user_selection_dict, defaults=self.defaults, id=id, classes=classes)
         self.feature_dict.setdefault("conditions", [])
         self.feature_dict.setdefault("model_serial_correlations", True)
+        self.feature_dict.setdefault(self.featurefield, [])
 
         self.estimation_types = {
             "single trial least squares single": "single_trial_least_squares_single",
@@ -201,10 +202,14 @@ class TaskBased(FeatureTemplate):
             self.get_widget_by_id("tasks_to_use_selection_panel").border_title = "Select tasks"
         if self.app.is_bids is not True:
             await self.mount(
-                EventFilePanel(id="top_event_file_panel", classes="file_panel components"),
+                EventFilePanel(
+                    default_file_tags=self.feature_dict[self.featurefield],
+                    id="top_file_panel",
+                    classes="components file_panel",
+                ),
                 after=self.get_widget_by_id("tasks_to_use_selection_panel"),
             )
-            self.get_widget_by_id("top_event_file_panel").border_title = "Event files patterns"
+            self.get_widget_by_id("top_file_panel").border_title = "Event files patterns"
 
     @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
     def _on_tasks_to_use_selection_changed(self, message):
@@ -233,7 +238,7 @@ class TaskBased(FeatureTemplate):
             )
             self.get_widget_by_id(message.control.id).select(message.selection)
 
-    @on(file_panel_class.Changed, "#top_event_file_panel")
+    @on(file_panel_class.Changed, "#top_file_panel")
     @on(SelectionList.SelectionToggled, "#tasks_to_use_selection")
     def _on_selection_list_changed_tasks_to_use_selection(self, message):
         """
