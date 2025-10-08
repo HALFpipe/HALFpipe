@@ -441,9 +441,21 @@ class Run(Widget):
 
         def generate_batch_script(batch_option_values):
             if batch_option_values is not None:
-                batch_options = BatchOptions(batch_option_values)
-                batch_options.workdir = ctx.workdir
-                self._run_stage_workflow(batch_options)
+                try:
+                    batch_options = BatchOptions(batch_option_values)
+                    batch_options.workdir = ctx.workdir
+                    self._run_stage_workflow(batch_options)
+                except BaseException as e:
+                    self.app.push_screen(
+                        Confirm(
+                            f"Error:\n{e}",
+                            title="Error",
+                            left_button_text=False,
+                            right_button_text="OK",
+                            id="batch_script_error",
+                            classes="confirm_error",
+                        )
+                    )
 
         self.app.push_screen(BatchOptionModal(), generate_batch_script)
 

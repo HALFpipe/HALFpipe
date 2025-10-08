@@ -360,7 +360,7 @@ overwrite the working directory and start a new analysis?",
 
     @on(Button.Pressed, ".-read-only")
     def on_anything_click(self):
-        if sum(self.app.flags_to_show_tabs.values()) == 3:
+        if self.app.flags_to_show_tabs["from_working_dir_tab"] and self.app.flags_to_show_tabs["from_input_data_tab"]:
             self.app.push_screen(
                 Confirm(
                     "Input entries cannot be changes now! Restart UI to change them.",

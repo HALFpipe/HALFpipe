@@ -16,7 +16,7 @@ from ..model.filter import FilterSchema
 from .data_analyzers.context import ctx
 
 
-def extract_name_part(template_path: str, file_path: str, suffix: str = "atlas") -> Optional[str]:
+def extract_name_part(template_path: str, file_path: str, tag: str = "desc") -> Optional[str]:
     """
     Extracts a specific part from a file path based on a template.
 
@@ -32,7 +32,7 @@ def extract_name_part(template_path: str, file_path: str, suffix: str = "atlas")
     file_path : str
         The actual file path from which a part will be extracted based on the
         template. Example: "/path/to/data/my_atlas/file.nii.gz".
-    suffix : str, optional
+    file_tag : str, optional
         The suffix used to create the placeholder in the `template_path`
         (default is "atlas").
 
@@ -40,18 +40,18 @@ def extract_name_part(template_path: str, file_path: str, suffix: str = "atlas")
     -------
     Optional[str]
         The extracted part of the file path if a match is found, otherwise
-        None. In the example above, if `suffix` is "atlas", it would return
+        None. In the example above, if `file_tag` is "atlas", it would return
         "my_atlas".
     """
     # Create a regex pattern dynamically based on the template
-    placeholder = f"{{{suffix}}}"
-    pattern = re.escape(template_path).replace(re.escape(placeholder), rf"(?P<{suffix}>.+)")
+    placeholder = f"{{{tag}}}"
+    pattern = re.escape(template_path).replace(re.escape(placeholder), rf"(?P<{tag}>.+)")
     #
     # Search for the atlas part using the regex pattern
     match = re.search(pattern, file_path)
     #
     if match:
-        return match.group(suffix)
+        return match.group(tag)
     else:
         return None  # Return None if no match is found
 

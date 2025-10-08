@@ -131,7 +131,7 @@ def phase_diff_fmap_pattern(downloaded_data_path) -> Path:
     return downloaded_data_path / "sub-{subject}/fmap/sub-{subject}_phasediff.nii.gz"
 
 
-# should yield a fresh instance each time, but apparently it does not
 @pytest.fixture(scope="function")
 def start_app():
-    return MainApp()
+    app = MainApp()
+    return app

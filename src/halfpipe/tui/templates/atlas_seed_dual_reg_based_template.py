@@ -10,7 +10,6 @@ from textual.message import Message
 from ..general_widgets.custom_general_widgets import LabelWithInputBox
 from ..specialized_widgets.event_file_widget import AtlasFilePanel
 from ..templates.feature_template import FeatureTemplate
-from ..templates.file_panel_template import FilePanelTemplate
 
 
 class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
@@ -95,7 +94,10 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             if self.images_to_use is not None:
                 yield self.tasks_to_use_selection_panel
             yield self.file_panel_class(
-                default_file_tags=self.feature_dict[self.featurefield], id="top_file_panel", classes="components file_panel"
+                default_file_tags=self.feature_dict[self.featurefield],
+                file_tagging=True,
+                id="top_file_panel",
+                classes="components file_panel",
             )
             yield LabelWithInputBox(
                 label=self.minimum_coverage_label,
@@ -113,14 +115,6 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
         self.get_widget_by_id("file_tag_selection").border_title = self.file_selection_widget_header
         self.get_widget_by_id("top_file_panel").border_title = self.widget_header
 
-    def set_file_tag_defaults(self):
-        self.get_widget_by_id("file_tag_selection").deselect_all()
-        if self.feature_dict[self.featurefield] == []:
-            self.get_widget_by_id("file_tag_selection").select_all()
-        else:
-            for file_tag in self.feature_dict[self.featurefield]:
-                self.get_widget_by_id("file_tag_selection").select(file_tag)
-
     @on(LabelWithInputBox.Changed, "#minimum_coverage")
     def _on_label_with_input_box_changed(self, message: Message) -> None:
         """
@@ -137,18 +131,18 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
         """
         self.feature_dict[self.minimum_coverage_tag] = message.value
 
-    @on(FilePanelTemplate.FileTagsChanged)
-    def on_file_tag_selection_changed(self, message) -> None:
-        """
-        Handles changes in the tag selection list.
-
-        This method is called when the selection in the `SelectionList`
-        widget changes. It updates the corresponding value in the
-        `feature_dict`.
-
-        Parameters
-        ----------
-        selection_list : SelectionList
-            The selection list widget.
-        """
-        self.feature_dict[self.featurefield] = message.value
+    # @on(FilePanelTemplate.FileTagsChanged)
+    # def on_file_tag_selection_changed(self, message) -> None:
+    #     """
+    #     Handles changes in the tag selection list.
+    #
+    #     This method is called when the selection in the `SelectionList`
+    #     widget changes. It updates the corresponding value in the
+    #     `feature_dict`.
+    #
+    #     Parameters
+    #     ----------
+    #     selection_list : SelectionList
+    #         The selection list widget.
+    #     """
+    #     self.feature_dict[self.featurefield] = message.value

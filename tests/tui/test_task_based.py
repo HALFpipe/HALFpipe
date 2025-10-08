@@ -28,7 +28,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     how_much_down = 0
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -90,7 +90,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await pilot.click("#only_one_button")
+    # await pilot.click("#only_one_button")
 
     for task in tasks_by_stage[stage]:
         await task()

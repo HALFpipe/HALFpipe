@@ -538,7 +538,7 @@ Your event file task tags are: \n{sorted(task_set)}.\
             AddBinarySeedMapStep: "seed",
             AddSpatialMapStep: "map",
             AddAtlasImageStep: "atlas",
-            EventsStep: "events",
+            EventsStep: "task",
         }
 
         occupied_tags = []
