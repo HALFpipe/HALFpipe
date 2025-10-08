@@ -448,7 +448,11 @@ class MainApp(App):
         """
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
         tab_manager = self.tab_manager
-        if sum(self.flags_to_show_tabs.values()) == 2 and not self.tabs_are_visible:
+        if (
+            self.flags_to_show_tabs["from_working_dir_tab"]
+            and self.flags_to_show_tabs["from_input_data_tab"]
+            and not self.tabs_are_visible
+        ):
             tab_manager.show_tab("preprocessing_tab")
             tab_manager.show_tab("feature_selection_tab")
             tab_manager.show_tab("models_tab")
