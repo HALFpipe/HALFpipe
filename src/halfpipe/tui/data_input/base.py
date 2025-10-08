@@ -801,7 +801,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             ctx.refresh_available_images()
 
             self.app.flags_to_show_tabs["from_input_data_tab"] = True
-            # self.app.show_hidden_tabs()
+            self.app.show_hidden_tabs()
             self.update_summaries()
             self.data_input_sucess()
         else:
@@ -888,7 +888,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
     @on(Switch.Changed, ".-read-only")
     @on(Button.Pressed, ".-read-only")
     def _read_mode_lock(self):
-        if sum(self.app.flags_to_show_tabs.values()) == 2:
+        if self.app.flags_to_show_tabs["from_working_dir_tab"] and self.app.flags_to_show_tabs["from_input_data_tab"]:
             self.app.push_screen(
                 Confirm(
                     "Input entries cannot be changes now! Restart UI to change them.",

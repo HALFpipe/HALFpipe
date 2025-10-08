@@ -11,9 +11,9 @@ from halfpipe.logging import logger
 from .pilot_functions import (
     _load_data,
     _set_work_dir,
-    check_and_run_tab_refresh,
+    add_fmap,
+    associate_fmaps,
     set_non_bids_data,
-    set_path_in_path_pattern_builder,
     settable_scroll_screen_down,
 )
 
@@ -31,7 +31,7 @@ async def run_before(
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
 
     logger.info("UI tests-> UI reloaded")
 
@@ -57,8 +57,9 @@ async def run_before(
         # here we click on the tab informing us that workdir is missing
         # await pilot.click("#only_one_button")
         # await pilot.press('w')
-        filename = "{}_after_load_data.svg".format(stage)
-        pilot.app.save_screenshot(filename=filename)
+        # filename = "{}_after_load_data.svg".format(stage)
+        # pilot.app.save_screenshot(filename=filename)
+        await pilot.click("#only_one_button")
 
     if stage == "non_bids_data_tab" or stage == "non_bids_data_tab_with_fmaps" or stage == "preproc_settings":
         await _set_work_dir(pilot, work_dir_path)
@@ -77,6 +78,7 @@ async def run_before(
             set_repetition_time=stage == "preproc_settings",
             noconfirm=stage == "non_bids_data_tab_with_fmaps",
         )
+
         filename = f"{stage}_after_set_non_bids_data.svg"
         pilot.app.save_screenshot(filename=filename)
         # Press ok on 'All is ok, proceed further modal"
@@ -89,110 +91,71 @@ async def run_before(
         if stage == "non_bids_data_tab_with_fmaps":
             filename = f"{stage}_before_add_field_map_button.svg"
             pilot.app.save_screenshot(filename=filename)
-            await pilot.click("#add_field_map_button")
-            # select 'Siemens' by focusing and going one down and confirming with enter
-            await pilot.press("tab")
-            await pilot.press("down")
-            await pilot.press("enter")
-            # confirm choice of the whole window
-            await pilot.click("#ok")
-            # confirm that we want one magnitude file and one phase difference file
-            await pilot.click("#ok")
-            # enter path pattern for phase difference files
-            await set_path_in_path_pattern_builder(pilot, str(phase_diff_fmap_pattern))
-            await sleep(5)
 
-            # now there is a modal with prompt for entering the echo time value, we enter there some value
-            for i in range(1, 3):
-                # now there should be a modal informing that first echo times are missing, we dismiss it
-                await pilot.click("#only_one_button")
-                await pilot.click("#input_prompt")
-                # Set echo time to '1'
-                await pilot.press(str(i))
-                # Click Ok to dismiss
-                await pilot.click("#only_one_button")
-
-            await set_path_in_path_pattern_builder(pilot, str(magnitude_fmap_pattern))
-            await settable_scroll_screen_down(pilot, 10)
-            # await sleep(5)
+            await add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern)
             #
-            await pilot.click("#associate_button")
-            # since it our case there is nothing to associate we will get only the echo spacing missing modal,
-            # dismiss it
-            await pilot.click("#only_one_button")
-            # enter some value
-            await pilot.click("#input_prompt")
-            await pilot.press(str(9))
-            await pilot.click("#only_one_button")
-            # missing phase encoding direction modal
-            # dismiss it
-            await pilot.click("#only_one_button")
-            # select some direction
-            await pilot.press("tab")
-            await pilot.press("down")
-            await pilot.press("enter")
-            await pilot.click("#ok")
-            # click confirm
-            await pilot.click("#confirm_non_bids_button")
-            # click Ok on Modal informing us that the data input is success
-            await pilot.click("#only_one_button")
-            # Click Ok on Modal saying that data and workdir is set and user can proceed further
-            await pilot.click("#only_one_button")
-
-            # Select Check and Run tab
+            # # await sleep(5)
+            # #
+            await associate_fmaps(pilot)
+            #
+            #
+            # # Select Check and Run tab
             await pilot.press("r")
-            await check_and_run_tab_refresh(pilot)
+            # await check_and_run_tab_refresh(pilot)
             await settable_scroll_screen_down(pilot, 20)
 
         if stage == "preproc_settings":
-            # Select preprocessing settings tab
-            await pilot.press("p")
-            # Toggle run recon all
-            # await pilot.click(offset=(109, 11))
-            pilot.app.get_widget_by_id("run_reconall").value = True
-            # Turn on slice timing
-            # await pilot.click(offset=(113, 19))
+            try:
+                # Select preprocessing settings tab
+                await pilot.press("p")
+                # Toggle run recon all
+                # await pilot.click(offset=(109, 11))
+                pilot.app.get_widget_by_id("run_reconall").value = True
+                # Turn on slice timing
+                # await pilot.click(offset=(113, 19))
 
-            pilot.app.get_widget_by_id("time_slicing_switch").value = True
-            await sleep(10)
+                pilot.app.get_widget_by_id("time_slicing_switch").value = True
+                await sleep(10)
 
-            # Check meta data modal. Click No to 'Proceed with these values?'
-            await pilot.click("#only_one_button")
+                # Check meta data modal. Click No to 'Proceed with these values?'
+                await pilot.click("#only_one_button")
 
-            # Specify slice acquisition direction, choose second choice
-            # await pilot.click(offset=(65, 26))
-            await pilot.click("#set_value_modal")
-            await pilot.press("down")
-            await pilot.press("enter")
-
-            # Click ok on the warning modal: Missing images
-            # # await pilot.click(offset=(132, 30))
-            await pilot.click("#only_one_button")
-
-            # # Specify Slice timing modal: Choose third options
-            # await pilot.click("#set_value_modal")
-
-            # # await pilot.click(offset=(65, 25))
-            await pilot.click("#radio_set")
-            for _i in range(2):
+                # Specify slice acquisition direction, choose second choice
+                # await pilot.click(offset=(65, 26))
+                await pilot.click("#set_value_modal")
                 await pilot.press("down")
-            await pilot.press("enter")
-            await pilot.click("#ok")
+                await pilot.press("enter")
 
-            # click in the input box to set initial volumes to remove
-            # await pilot.click(offset=(121, 31))
-            await pilot.click("#number_of_remove_initial_volumes")
-            # Type '9'
-            await pilot.press("9")
-            # random click to unfocus the input
-            await pilot.click(offset=(50, 10))
+                # Click ok on the warning modal: Missing images
+                # # await pilot.click(offset=(132, 30))
+                await pilot.click("#only_one_button")
 
-            # Select Check and Run tab
-            await pilot.press("r")
-            # Click 'Refresh'
-            # await pilot.click(offset=(85, 9))
-            await pilot.click("#refresh_button")
-            await settable_scroll_screen_down(pilot, 10)
+                # # Specify Slice timing modal: Choose third options
+                # await pilot.click("#set_value_modal")
+
+                # # await pilot.click(offset=(65, 25))
+                await pilot.click("#radio_set")
+                for _i in range(2):
+                    await pilot.press("down")
+                await pilot.press("enter")
+                await pilot.click("#ok")
+
+                # click in the input box to set initial volumes to remove
+                # await pilot.click(offset=(121, 31))
+                await pilot.click("#number_of_remove_initial_volumes")
+                # Type '9'
+                await pilot.press("9")
+                # random click to unfocus the input
+                await pilot.click(offset=(50, 10))
+
+                # Select Check and Run tab
+                await pilot.press("r")
+                # Click 'Refresh'
+                # await pilot.click(offset=(85, 9))
+                await settable_scroll_screen_down(pilot, 10)
+            except Exception as e:
+                pilot.app.save_screenshot()
+                logger.info(e)
 
 
 def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:

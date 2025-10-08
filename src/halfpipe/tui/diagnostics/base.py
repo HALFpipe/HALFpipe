@@ -34,7 +34,7 @@ class Diagnostics(Widget):
 
     def compose(self) -> ComposeResult:
         debuggroup_settings_panel = Container(
-            LabelledSwitch("Debug", False, id="debug_switch"),
+            # LabelledSwitch("Debug", False, id="debug_switch"),
             LabelledSwitch("Verbose", False, id="verbose_switch"),
             LabelledSwitch("Watchdog", False, id="watchdog_switch"),
             Horizontal(

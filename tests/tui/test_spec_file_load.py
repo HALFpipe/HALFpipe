@@ -38,7 +38,7 @@ async def run_before(
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     feature_label = feature_label if feature_label is not None else None
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(spec_file_dir_path, Path):

@@ -354,7 +354,9 @@ class FileItem(Widget):
                 if self.load_object.tags == {}:
                     pattern_load["file_tag"] = None
                 else:
-                    pattern_load["file_tag"] = self.load_object.tags.get("desc", self.load_object.tags.get("atlas"))
+                    tag_key = {"atlas": "atlas", "seed": "seed", "map": "map"}.get(self.load_object.suffix)
+
+                    pattern_load["file_tag"] = self.load_object.tags.get("desc", self.load_object.tags.get(tag_key))
 
                 message, filepaths = resolve_path_wildcards(self.load_object.path)
                 pattern_load["message"] = message

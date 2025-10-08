@@ -645,3 +645,29 @@ class FeatureTemplate(Widget):
             self.setting_dict["ica_aroma"] = False
 
         self.setting_dict["confounds_removal"] = confounds
+
+    #############################
+    #
+    # def set_file_tag_defaults(self):
+    #     self.get_widget_by_id("file_tag_selection").deselect_all()
+    #     if self.feature_dict[self.featurefield] == []:
+    #         self.get_widget_by_id("file_tag_selection").select_all()
+    #     else:
+    #         for file_tag in self.feature_dict[self.featurefield]:
+    #             self.get_widget_by_id("file_tag_selection").select(file_tag)
+
+    @on(FilePanelTemplate.FileTagsChanged)
+    def on_file_tag_selection_changed(self, message) -> None:
+        """
+        Handles changes in the tag selection list.
+
+        This method is called when the selection in the `SelectionList`
+        widget changes. It updates the corresponding value in the
+        `feature_dict`.
+
+        Parameters
+        ----------
+        selection_list : SelectionList
+            The selection list widget.
+        """
+        self.feature_dict[self.featurefield] = message.value
