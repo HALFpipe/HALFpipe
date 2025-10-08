@@ -364,8 +364,8 @@ class EventsStep(FilePatternStep):
     filedict = {"datatype": "func", "suffix": "events"}
     filetype_str = "event"
 
-    tag_entity = "task"
-    allow_file_tagging: bool = True
+    tag_entity = None
+    allow_file_tagging: bool = False
 
     def __init__(self, *args, **kwargs):
         bold_file_paths = find_bold_file_paths()

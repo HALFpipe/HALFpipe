@@ -646,19 +646,23 @@ async def remove_confounds_select_all(pilot) -> None:
 async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_pattern=False):
     # click on "Add" (atlas or seed image or map)
     # await pilot.click(offset=(76, 22))
-    await pilot.click("#add_file_button")
+    try:
+        await pilot.click("#add_file_button")
 
-    # select event file type if it is an event file pattern
-    if event_file_pattern is True:
-        await select_event_file_type(pilot)
+        # select event file type if it is an event file pattern
+        if event_file_pattern is True:
+            await select_event_file_type(pilot)
 
-    # add atlas file pattern
-    # await fill_path_pattern_modal(pilot, file_pattern)
-    await set_path_in_path_pattern_builder(pilot, file_pattern)
+        # add atlas file pattern
+        # await fill_path_pattern_modal(pilot, file_pattern)
+        await set_path_in_path_pattern_builder(pilot, file_pattern)
 
-    # make choices of the space if it is not an event file pattern
-    if event_file_pattern is False:
-        await confirm_space_meta_data_after_selecting_file_pattern(pilot)
+        # make choices of the space if it is not an event file pattern
+        if event_file_pattern is False:
+            await confirm_space_meta_data_after_selecting_file_pattern(pilot)
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
 
 async def select_event_file_type(pilot):

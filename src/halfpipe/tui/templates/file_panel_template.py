@@ -122,7 +122,7 @@ class FilePanelTemplate(Widget):
             """Alias for self.file_browser."""
             return self.file_tag_selection
 
-    def __init__(self, default_file_tags=None, id: str | None = None, classes: str | None = None) -> None:
+    def __init__(self, default_file_tags=None, file_tagging=False, id: str | None = None, classes: str | None = None) -> None:
         """
         Initializes the FilePanelTemplate instance.
 
@@ -146,6 +146,7 @@ class FilePanelTemplate(Widget):
         self.default_file_tags: list[str] = default_file_tags if default_file_tags is not None else []
         if not hasattr(cls, "filters") or cls.filters is None:
             raise TypeError(f"Class {cls.__name__} must define a class attribute 'filters'")
+        self.file_tagging = file_tagging
 
     def callback_func(self, message_dict):
         """
@@ -188,7 +189,8 @@ class FilePanelTemplate(Widget):
             The composed widgets.
         """
         yield VerticalScroll(Button("Add", id="add_file_button"), id=self.id_string)
-        yield SelectionList[str](id="file_tag_selection", classes="components")
+        if self.file_tagging:
+            yield SelectionList[str](id="file_tag_selection", classes="components")
 
     @on(Button.Pressed, "#add_file_button")
     async def _on_button_add_file_item_pressed(self):
@@ -376,23 +378,23 @@ class FilePanelTemplate(Widget):
         message : Message
             The message object containing information about the change.
         """
+        if self.file_tagging:
+            file_pattern = message.value["file_pattern"]
+            file_tag = message.value["file_tag"]
+            files = message.value["files"]
+            logger.debug(f'f"UI->FilePanelTemplate->on_file_panel_changed->message.value:->{message.value}')
 
-        file_pattern = message.value["file_pattern"]
-        file_tag = message.value["file_tag"]
-        files = message.value["files"]
-        logger.debug(f'f"UI->FilePanelTemplate->on_file_panel_changed->message.value:->{message.value}')
+            all_file_tags_based_on_the_current_file_patterns = self._extract_file_tags(file_pattern, files, file_tag)
 
-        all_file_tags_based_on_the_current_file_patterns = self._extract_file_tags(file_pattern, files, file_tag)
+            # XOR (^) to avoid duplicate tags if the same file pattern is added twice
+            # file_tags = set(self.file_tags) ^ all_file_tags_based_on_the_current_file_patterns
+            file_tags = all_file_tags_based_on_the_current_file_patterns
 
-        # XOR (^) to avoid duplicate tags if the same file pattern is added twice
-        # file_tags = set(self.file_tags) ^ all_file_tags_based_on_the_current_file_patterns
-        file_tags = all_file_tags_based_on_the_current_file_patterns
-
-        logger.debug(
-            f"UI->FilePanelTemplate->on_file_panel_changed->all_file_tags_based_on_the_current_file_patterns:\
-{all_file_tags_based_on_the_current_file_patterns}"
-        )
-        self.update_file_tag_selection(file_tags)
+            logger.debug(
+                f"UI->FilePanelTemplate->on_file_panel_changed->all_file_tags_based_on_the_current_file_patterns:\
+    {all_file_tags_based_on_the_current_file_patterns}"
+            )
+            self.update_file_tag_selection(file_tags)
 
     @work(exclusive=False, name="update_file_tag_selection")
     async def update_file_tag_selection(self, file_tags: set, remove=False) -> None:
@@ -455,14 +457,32 @@ class FilePanelTemplate(Widget):
         set[str | None]
             A set of extracted file tags.
         """
+        logger.debug(f"UI->_extract_file_tags->file_pattern: {file_pattern}")
+        logger.debug(f"UI->_extract_file_tags->files: {files}")
+        logger.debug(f"UI->_extract_file_tags->file_tag: {file_tag}")
+
+        tag_keys = {
+            # 'events': 'task',
+            "atlas": "atlas",
+            "seed": "seed",
+            "map": "map",
+        }
         if isinstance(file_pattern, Text):
             file_pattern = file_pattern.plain
 
-        if file_tag is None:
-            tags = {extract_name_part(file_pattern, file_path, suffix=self.filters["suffix"]) for file_path in files}
-            if tags == {None}:  # fallback to 'desc'
-                tags = {extract_name_part(file_pattern, file_path, suffix="desc") for file_path in files}
+        if file_tag is not None:
+            # his means that the file pattern was manually tagged
+            tag_labels = {file_tag}
+            logger.debug(f"UI->_extract_file_tags->tag_labels (file_tag is not None): {tag_labels}")
         else:
-            tags = {file_tag}
+            tag = tag_keys[self.filters["suffix"]]
+            logger.debug(f"UI->_extract_file_tags->suffix: {self.filters['suffix']}")
+            logger.debug(f"UI->_extract_file_tags->tag: {tag}")
+            tag_labels = {extract_name_part(file_pattern, file_path, tag=tag) for file_path in files}
+            logger.debug(f"UI->_extract_file_tags->tag_labels (file_tag is None): {tag_labels}")
 
-        return tags
+            if tag_labels == {None}:  # fallback to 'desc'
+                tag_labels = {extract_name_part(file_pattern, file_path, tag="desc") for file_path in files}
+                logger.debug(f"UI->_extract_file_tags->tag_labels (file_tag is None & desc): {tag_labels}")
+
+        return tag_labels

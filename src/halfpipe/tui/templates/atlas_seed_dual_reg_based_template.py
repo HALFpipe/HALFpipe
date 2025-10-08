@@ -94,7 +94,10 @@ class AtlasSeedDualRegBasedTemplate(FeatureTemplate):
             if self.images_to_use is not None:
                 yield self.tasks_to_use_selection_panel
             yield self.file_panel_class(
-                default_file_tags=self.feature_dict[self.featurefield], id="top_file_panel", classes="components file_panel"
+                default_file_tags=self.feature_dict[self.featurefield],
+                file_tagging=True,
+                id="top_file_panel",
+                classes="components file_panel",
             )
             yield LabelWithInputBox(
                 label=self.minimum_coverage_label,

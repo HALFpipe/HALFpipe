@@ -203,7 +203,7 @@ class TaskBased(FeatureTemplate):
         if self.app.is_bids is not True:
             await self.mount(
                 EventFilePanel(
-                    default_file_tags=self.feature_dict[self.featurefield],
+                    # default_file_tags=self.feature_dict[self.featurefield],
                     id="top_file_panel",
                     classes="components file_panel",
                 ),
