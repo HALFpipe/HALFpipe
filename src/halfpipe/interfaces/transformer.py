@@ -149,11 +149,11 @@ class Transformer(SimpleInterface):
 
         in_file = self.inputs.in_file
 
-        array = self._load(in_file)  # observations x variables
+        array = self._transform(
+            self._load(in_file)  # observations x variables
+        )
 
-        array2 = self._transform(array)
-
-        out_file = self._dump(array2)
+        out_file = self._dump(array)
         self._results["out_file"] = out_file
 
         return runtime
