@@ -21,18 +21,17 @@ class TSNR(Transformer):
         if isdefined(self.inputs.dummy_scans):
             array = array[self.inputs.dummy_scans :, ...]
 
-        array = np.nan_to_num(array)
+        array = np.nan_to_num(array, copy=False)
 
         mean = array.mean(axis=0)
-        std = array.std(axis=0)
+        standard_deviation = array.std(axis=0)
 
         _, m = array.shape
         tsnr = np.zeros((m,))
-
-        nonzero = std > 1.0e-3
-        tsnr[nonzero] = mean[nonzero] / std[nonzero]
+        nonzero = standard_deviation > 1.0e-3
+        np.true_divide(mean, standard_deviation, out=tsnr, where=nonzero)
 
         # ensure we have a two-dimensional array
-        tsnr = tsnr[np.newaxis, :]  # type: ignore[assignment]
+        tsnr = tsnr[np.newaxis, :]
 
         return tsnr
