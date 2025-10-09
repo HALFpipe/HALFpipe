@@ -22,7 +22,7 @@ def limit_from_file(file_name: Path) -> Optional[int]:
         return None
 
 
-def cgroup_memory_limit():
+def cgroup_infos() -> dict:
     # translated from
     # https://github.com/openjdk/jdk/blob/jdk-17+18/src/hotspot/os/linux/cgroupSubsystem_linux.cpp
 
@@ -38,7 +38,7 @@ def cgroup_memory_limit():
         with open(proc_cgroups, "r") as cgroups_file_pointer:
             cgroups_lines = cgroups_file_pointer.readlines()
     except (OSError, IOError):
-        return
+        return dict()
     for p in cgroups_lines:
         m = re.fullmatch(r"(?P<name>\w+)\s(?P<hierarchy_id>\d+)\s\d+\s(?P<enabled>\d+)", p.strip())
         if m is None:
@@ -54,10 +54,6 @@ def cgroup_memory_limit():
             )
 
     is_cgroups_v2 = all(cg_info.get("hierarchy_id") == 0 for cg_info in cg_infos.values())
-    all_controllers_enabled = all(cg_info.get("enabled") is True for cg_info in cg_infos.values())
-
-    if not all_controllers_enabled:
-        return
 
     # Read /proc/self/cgroup and determine:
     #   - the cgroup path for cgroups v2 or
@@ -67,7 +63,7 @@ def cgroup_memory_limit():
         with open(proc_self_cgroup, "r") as cgroup_file_pointer:
             cgroup_lines = cgroup_file_pointer.readlines()
     except (OSError, IOError):
-        return
+        return dict()
     for p in cgroup_lines:
         m = re.fullmatch(
             r"(?P<hierarchy_id>\d+):(?P<controllers>[^:]*):(?P<cgroup_path>.+)",
@@ -91,7 +87,7 @@ def cgroup_memory_limit():
         with open(proc_self_mountinfo, "r") as mountinfo_file_pointer:
             mountinfo_lines = mountinfo_file_pointer.readlines()
     except (OSError, IOError):
-        return
+        return dict()
     for p in mountinfo_lines:
         m = re.fullmatch(
             r"\d+\s\d+\s\d+:\d+\s(?P<root>[^\s]+)\s(?P<mount_point>[^\s]+)\s[^-]+-\s(?P<fs_type>[^\s]+)\s[^\s]+\s(?P<cgroups>[^\s]+)",
@@ -116,7 +112,12 @@ def cgroup_memory_limit():
             for cg_info in cg_infos.values():
                 cg_info["mount_path"] = mount_point
 
-    if all(len(cg_info) == 0 for cg_info in cg_infos):
+    return cg_infos
+
+
+def cgroup_memory_limit():
+    cg_infos = cgroup_infos()
+    if not cg_infos or all(len(cg_info) == 0 for cg_info in cg_infos):
         # Neither cgroup2 nor cgroup filesystems mounted via /proc/self/mountinfo
         # No point in continuing.
         return
@@ -140,16 +141,12 @@ def cgroup_memory_limit():
         ]
     ) - set(memory_root_path.parents)
 
-    if not is_cgroups_v2:
-        memory_limit_files = [
-            "memory.limit_in_bytes",
-            "memory.memsw.limit_in_bytes",
-            "memory.soft_limit_in_bytes",
-        ]
-    else:
-        memory_limit_files = [
-            "memory.max",
-        ]
+    memory_limit_files = [
+        "memory.limit_in_bytes",
+        "memory.memsw.limit_in_bytes",
+        "memory.soft_limit_in_bytes",
+        "memory.max",
+    ]
 
     memory_limits = set()
     for path in memory_cgroups_to_consider:
