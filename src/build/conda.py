@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Iterator, Sequence
 
 import boto3
-from botocore.exceptions import ClientError, NoCredentialsError
+from botocore.exceptions import ClientError, EndpointConnectionError, NoCredentialsError
 from conda_build.api import build, get_output_file_paths
 from conda_build.build import clean_build
 from conda_build.config import Config
@@ -92,7 +92,7 @@ def download(keys: list[tuple[Path, str]]) -> bool:
         try:
             s3_client.download_file(s3_bucket, s3_key, output_path)
             continue
-        except (ClientError, NoCredentialsError) as error:
+        except (ClientError, EndpointConnectionError, NoCredentialsError) as error:
             if hasattr(error, "response") and error.response["Error"]["Code"] == "404":
                 logger.info("Not found in registry")
             else:
