@@ -62,6 +62,7 @@ def init_confounds_regression_wf(
     memcalc: MemoryCalculator | None = None,
 ):
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
+
     if suffix is not None:
         name = f"{name}_{suffix}"
     workflow = pe.Workflow(name=name)
@@ -79,26 +80,26 @@ def init_confounds_regression_wf(
     fillna = pe.Node(FillNA(), name="fillna")
     workflow.connect(inputnode, "confounds_selected", fillna, "in_tsv")
 
-    filter_regressor_b = pe.Node(
+    filter_regressor_bold = pe.Node(
         FilterRegressor(aggressive=True, filter_all=True, mask=False),
-        name="filter_regressor_b",
+        name="filter_regressor_bold",
         mem_gb=memcalc.series_std_gb,
     )
-    workflow.connect(inputnode, "bold", filter_regressor_b, "in_file")
-    workflow.connect(inputnode, "mask", filter_regressor_b, "mask")
-    workflow.connect(fillna, "out_no_header", filter_regressor_b, "design_file")
+    workflow.connect(inputnode, "bold", filter_regressor_bold, "in_file")
+    workflow.connect(inputnode, "mask", filter_regressor_bold, "mask")
+    workflow.connect(fillna, "out_no_header", filter_regressor_bold, "design_file")
 
-    workflow.connect(filter_regressor_b, "out_file", outputnode, "bold")
+    workflow.connect(filter_regressor_bold, "out_file", outputnode, "bold")
 
-    filter_regressor_c = pe.Node(
+    filter_regressor_confounds = pe.Node(
         FilterRegressor(aggressive=True, filter_all=True, mask=False),
-        name="filter_regressor_c",
+        name="filter_regressor_confounds",
         mem_gb=memcalc.min_gb,
     )
-    workflow.connect(inputnode, "confounds", filter_regressor_c, "in_file")
-    workflow.connect(fillna, "out_no_header", filter_regressor_c, "design_file")
+    workflow.connect(inputnode, "confounds", filter_regressor_confounds, "in_file")
+    workflow.connect(fillna, "out_no_header", filter_regressor_confounds, "design_file")
 
-    workflow.connect(filter_regressor_c, "out_file", outputnode, "confounds")
+    workflow.connect(filter_regressor_confounds, "out_file", outputnode, "confounds")
 
     update_vals = pe.Node(interface=UpdateVals(), name="update_vals", mem_gb=memcalc.volume_std_gb)
     workflow.connect(inputnode, "vals", update_vals, "vals")
