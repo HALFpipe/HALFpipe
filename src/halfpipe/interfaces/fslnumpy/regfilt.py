@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import warnings
+
 import numpy as np
 import scipy.stats
 from nipype.interfaces.base import File, isdefined, traits
@@ -38,6 +40,7 @@ def regfilt(
     """
     numpy translation of fsl fsl_regfilt.cc dofilter
     """
+
     zero_based_comps = [c - 1 for c in comps]
 
     # setup
@@ -105,7 +108,12 @@ class FilterRegressor(Transformer):
     suffix = "regfilt"
 
     def _transform(self, array: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        design = np.loadtxt(self.inputs.design_file, dtype=np.float64, ndmin=2)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=UserWarning)
+            design = np.loadtxt(self.inputs.design_file, dtype=np.float64, ndmin=2)
+
+        if design.size == 0:
+            return array
 
         filter_all = self.inputs.filter_all
         if filter_all is True:
@@ -117,12 +125,10 @@ class FilterRegressor(Transformer):
 
         np.nan_to_num(array, copy=False)  # nans create problems further down the line
 
-        array2 = regfilt(
+        return regfilt(
             array,
             design,
             filter_columns,
             calculate_mask=calculate_mask,
             aggressive=self.inputs.aggressive,
         )
-
-        return array2
