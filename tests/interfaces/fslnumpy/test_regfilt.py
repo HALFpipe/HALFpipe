@@ -3,10 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
-from random import seed
+from pathlib import Path
 
 import nibabel as nib
 import numpy as np
+import pandas as pd
 import pytest
 from nipype.interfaces import fsl
 
@@ -16,13 +17,12 @@ from halfpipe.logging import logger
 
 @pytest.mark.slow
 @pytest.mark.timeout(60)
-def test_filter_regressor(tmp_path):
-    seed(a=0x5E6128C4)
+def test_filter_regressor(tmp_path: Path) -> None:
+    rng = np.random.default_rng()
 
     os.chdir(str(tmp_path))
 
-    array = np.random.rand(10, 10, 10, 100) * 1000 + 10000
-
+    array = rng.random(size=(10, 10, 10, 100)) * 1000 + 10000
     img = nib.nifti1.Nifti1Image(array, np.eye(4))
     assert isinstance(img.header, nib.nifti1.Nifti1Header)
     img.header.set_data_dtype(np.float64)
@@ -65,3 +65,28 @@ def test_filter_regressor(tmp_path):
     logger.info(f"Mean absolute difference: {np.mean(delta)}")
 
     np.testing.assert_allclose(r0, r1, rtol=1e-6, atol=2e-4)
+
+
+def test_filter_regressor_empty(tmp_path: Path) -> None:
+    os.chdir(str(tmp_path))
+    rng = np.random.default_rng()
+
+    array = rng.random(size=(10, 10, 10, 100)) * 1000 + 10000
+    img = nib.nifti1.Nifti1Image(array, np.eye(4))
+    assert isinstance(img.header, nib.nifti1.Nifti1Header)
+    img.header.set_data_dtype(np.float64)
+
+    in_file = "img.nii.gz"
+    nib.loadsave.save(img, in_file)
+
+    design_file = "design.txt"
+    pd.DataFrame().to_csv(design_file, sep="\t", index=False, na_rep="n/a")
+
+    instance = FilterRegressor()
+    instance.inputs.in_file = in_file
+    instance.inputs.design_file = design_file
+    instance.inputs.filter_all = True
+    result = instance.run()
+
+    array2 = nib.nifti1.load(result.outputs.out_file).get_fdata()
+    np.testing.assert_allclose(array, array2)

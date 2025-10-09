@@ -2,7 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import logging
 import re
 from pathlib import Path
 from typing import Any
@@ -20,12 +19,14 @@ from nipype.interfaces.base import (
 from nipype.interfaces.io import IOBase, add_traits
 
 from ...ingest.spreadsheet import read_spreadsheet
+from ...logging import logger
 from ...utils.ops import ravel
+
+pandas_tocsv_kwargs: dict[str, Any] = {"sep": "\t", "na_rep": "n/a"}
 
 
 class FillNAInputSpec(TraitedSpec):
     in_tsv = File(exists=True, desc="input tsv file")
-    replace_with = traits.Float(default=0.0, usedefault=True)
 
 
 class TsvOutputSpec(TraitedSpec):
@@ -46,29 +47,23 @@ class FillNA(SimpleInterface):
         in_file = self.inputs.in_tsv
 
         if isdefined(in_file):
-            replace_with = self.inputs.replace_with
+            data_frame = read_spreadsheet(in_file)
+            for series_name, series in data_frame.items():
+                non_finite_count = np.count_nonzero(np.logical_not(np.isfinite(series.to_numpy())))
+                if non_finite_count > 0:
+                    logger.warning(
+                        f'Replacing {non_finite_count:d} non-finite values with zero in column "{series_name}" for "{in_file}"'
+                    )
 
-            df = read_spreadsheet(in_file)
-
-            non_finite_count = np.logical_not(np.isfinite(df.values)).sum()
-            if non_finite_count > 0:
-                logging.getLogger("halfpipe").warning(
-                    f'Replacing {non_finite_count:d} non-finite values with {replace_with:f} in file "{in_file}"'
-                )
-
-                df.replace([np.inf, -np.inf], np.nan, inplace=True)
-                df.fillna(replace_with, inplace=True)
+                series.replace([np.inf, -np.inf], 0.0, inplace=True)
+                series.fillna(0.0, inplace=True)
 
             self._results["out_no_header"] = Path.cwd() / "fillna_no_header.tsv"
-            df.to_csv(
-                self._results["out_no_header"],
-                sep="\t",
-                index=False,
-                na_rep="n/a",
-                header=False,
-            )
+            self._results["out_with_header"] = Path.cwd() / "fillna_with_header.tsv"
+            data_frame.to_csv(self._results["out_no_header"], index=False, header=False, **pandas_tocsv_kwargs)
+            data_frame.to_csv(self._results["out_with_header"], index=False, header=True, **pandas_tocsv_kwargs)
 
-            self._results["column_names"] = list(map(str, df.columns))
+            self._results["column_names"] = [str(series_name) for series_name in data_frame]
         return runtime
 
 
@@ -142,9 +137,8 @@ class MergeColumns(IOBase):
         out_with_header = Path.cwd() / "merge_with_header.tsv"
         out_no_header = Path.cwd() / "merge_no_header.tsv"
 
-        kwargs: dict[str, Any] = {"sep": "\t", "na_rep": "n/a"}
-        data_frame.to_csv(out_with_header, index=use_index, header=True, **kwargs)
-        data_frame.to_csv(out_no_header, index=False, header=False, **kwargs)
+        data_frame.to_csv(out_with_header, index=use_index, header=True, **pandas_tocsv_kwargs)
+        data_frame.to_csv(out_no_header, index=False, header=False, **pandas_tocsv_kwargs)
 
         outputs["out_with_header"] = out_with_header
         outputs["out_no_header"] = out_no_header

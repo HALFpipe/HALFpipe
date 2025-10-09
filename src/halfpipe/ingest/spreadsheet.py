@@ -61,6 +61,10 @@ def read_spreadsheet(file_name: Path | str, extension: str | None = None, **kwar
 
     file_lines = [s for s in file_lines if len(s.strip()) > 0]
 
+    if len(file_lines) == 0:
+        # empty file means empty data frame
+        return pd.DataFrame()
+
     comment_prefix: str | None = None
     comment_m = re.match(r"^(?P<prefix>[£$%^#/\\]+)", file_lines[0])  # detect prefix only at start of file
     if comment_m is not None:
