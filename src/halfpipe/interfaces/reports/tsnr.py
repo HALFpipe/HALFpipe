@@ -23,15 +23,21 @@ class TSNR(ArrayTransform):
 
         array = np.nan_to_num(array, copy=False)
 
+        volume_count, _ = array.shape
         mean = array.mean(axis=0)
-        standard_deviation = array.std(axis=0)
+        np.subtract(array, mean, out=array)
+        np.square(array, out=array)
+        standard_deviation = np.sqrt(array.sum(axis=0) / volume_count)
 
-        _, m = array.shape
-        tsnr = np.zeros((m,))
-        nonzero = standard_deviation > 1.0e-3
-        np.true_divide(mean, standard_deviation, out=tsnr, where=nonzero)
+        tsnr = np.zeros_like(mean)
+        np.true_divide(
+            mean,
+            standard_deviation,
+            out=tsnr,
+            where=standard_deviation > 1e-3,
+        )
 
-        # ensure we have a two-dimensional array
+        # Ensure we have a two-dimensional array
         tsnr = tsnr[np.newaxis, :]
 
         return tsnr

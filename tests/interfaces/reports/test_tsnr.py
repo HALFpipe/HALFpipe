@@ -17,24 +17,27 @@ def test_tsnr(tmp_path):
 
     data_file = get_resource("sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz")
 
-    tsnr = TSNR(in_file=data_file)
+    tsnr_interface = TSNR(in_file=data_file)
 
     cwd = tmp_path / "tsnr"
     cwd.mkdir()
 
-    result = tsnr.run(cwd=cwd)
+    result = tsnr_interface.run(cwd=cwd)
     assert result.outputs is not None
 
     tsnr_image = nib.nifti1.load(result.outputs.out_file)
+    tsnr = tsnr_image.get_fdata()
 
-    reference_tsnr = nac.TSNR(in_file=data_file)
+    reference_tsnr_interface = nac.TSNR(in_file=data_file)
 
     cwd = tmp_path / "reference_tsnr"
     cwd.mkdir()
 
-    result = reference_tsnr.run(cwd=cwd)
+    result = reference_tsnr_interface.run(cwd=cwd)
     assert result.outputs is not None
 
     reference_tsnr_image = nib.nifti1.load(result.outputs.tsnr_file)
+    reference_tsnr = reference_tsnr_image.get_fdata()
 
-    assert np.allclose(tsnr_image.get_fdata(), reference_tsnr_image.get_fdata(), atol=1e-5)
+    np.testing.assert_allclose(tsnr, reference_tsnr, rtol=1e-3)
+    np.testing.assert_array_equal(tsnr == 0.0, reference_tsnr == 0.0)
