@@ -19,9 +19,7 @@ def tsnr(array: npt.NDArray[np.float64], tsnr: npt.NDArray[np.float64]) -> None:
     array = np.nan_to_num(array, copy=False)
 
     mean = array.mean()
-    array -= mean
-    array **= 2
-    standard_deviation = np.sqrt(array.mean())
+    standard_deviation = np.sqrt(np.square(array - mean).mean())
 
     if standard_deviation < 1e-3:
         tsnr[0] = 0.0

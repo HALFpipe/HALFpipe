@@ -82,13 +82,13 @@ class ArrayTransform(SimpleInterface):
                 self.mask = binary_mask
                 voxel_count = np.count_nonzero(binary_mask)
 
-            if self.mask is not None:
-                array = np.zeros((volume_count, voxel_count), dtype=np.float64)
-                for i in range(volume_count):
-                    volume_data = array_proxy[..., i]
+            array = np.zeros((volume_count, voxel_count), dtype=np.float64)
+            for i in range(volume_count):
+                volume_data = array_proxy[..., i]
+                if self.mask is not None:
                     array[i, :] = volume_data[self.mask]
-            else:
-                array = np.asarray(array_proxy, dtype=np.float64).reshape((voxel_count, volume_count)).transpose()
+                else:
+                    array[i, :] = volume_data.flatten()
 
         else:  # a text file
             data_frame = read_spreadsheet(in_file)
