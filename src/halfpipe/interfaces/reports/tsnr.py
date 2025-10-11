@@ -6,14 +6,14 @@ import numpy as np
 from nipype.interfaces.base import isdefined, traits
 from numpy import typing as npt
 
-from ..transformer import Transformer, TransformerInputSpec
+from ..array_transform import ArrayTransform, ArrayTransformInputSpec
 
 
-class TSNRInputSpec(TransformerInputSpec):
+class TSNRInputSpec(ArrayTransformInputSpec):
     dummy_scans = traits.Int(default=0, usedefault=True)
 
 
-class TSNR(Transformer):
+class TSNR(ArrayTransform):
     input_spec = TSNRInputSpec
     suffix = "tsnr"
 
