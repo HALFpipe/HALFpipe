@@ -11,10 +11,10 @@ import numpy as np
 from nilearn.image import new_img_like
 from templateflow import api
 
-from halfpipe.interfaces.transformer import Transformer
+from halfpipe.interfaces.array_transform import ArrayTransform
 
 
-def test_transformer_nii(tmp_path: Path) -> None:
+def test_array_transform_nii(tmp_path: Path) -> None:
     os.chdir(str(tmp_path))
 
     api_args: dict[str, Any] = dict(template="MNI152NLin2009cAsym", resolution=2)
@@ -29,14 +29,14 @@ def test_transformer_nii(tmp_path: Path) -> None:
     test_img_data = np.zeros((*ref_mask_img.shape, n_volumes), dtype=float)
     test_img_data[ref_mask, :] = test_array
 
-    img: nib.analyze.Nifti1Image = new_img_like(ref_mask_img, test_img_data, copy_header=True)
+    img: nib.nifti1.Nifti1Image = new_img_like(ref_mask_img, test_img_data, copy_header=True)
     if not isinstance(img.header, nib.nifti1.Nifti1Header):
         raise TypeError("Image header is not a Nifti1Header")
     img.header.set_data_dtype(np.float64)
     test_file = "img.nii.gz"
     nib.loadsave.save(img, test_file)
 
-    tf = Transformer()
+    tf = ArrayTransform()
     tf.inputs.mask = ref_mask_file
 
     array = tf._load(test_file)

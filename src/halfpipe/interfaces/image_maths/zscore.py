@@ -3,18 +3,20 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import numpy as np
+from numpy import typing as npt
 
-from ..transformer import Transformer
+from ..array_transform import ArrayTransform
 
 
-class ZScore(Transformer):
-    def _transform(self, array):
-        mean = np.nanmean(array)
-        std = np.nanstd(array)
+class ZScore(ArrayTransform):
+    def _transform(self, array: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        mean = np.nanmean(array).item()
+        std = np.nanstd(array).item()
 
-        if np.isclose(std, 0):
-            std = 1
+        if np.isclose(std, 0.0):
+            std = 1.0
 
-        array2 = (array - mean) / std
+        np.subtract(array, mean, out=array)
+        np.true_divide(array, std, out=array)
 
-        return array2
+        return array

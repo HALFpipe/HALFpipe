@@ -13,7 +13,7 @@ from nipype.interfaces.base import (
     traits,
 )
 
-from .transformer import Transformer
+from .array_transform import ArrayTransform
 
 
 class GrandMeanScalingInputSpec(BaseInterfaceInputSpec):
@@ -26,7 +26,7 @@ class GrandMeanScalingOutputSpec(TraitedSpec):
     files = traits.List(File(exists=True))
 
 
-class GrandMeanScaling(Transformer):
+class GrandMeanScaling(ArrayTransform):
     """
     Scale voxel values in every image by dividing
     the average global mean intensity of the whole session.

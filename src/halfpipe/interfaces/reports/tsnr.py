@@ -4,16 +4,34 @@
 
 import numpy as np
 from nipype.interfaces.base import isdefined, traits
+from numba import guvectorize
 from numpy import typing as npt
 
-from ..transformer import Transformer, TransformerInputSpec
+from ..array_transform import ArrayTransform, ArrayTransformInputSpec
 
 
-class TSNRInputSpec(TransformerInputSpec):
+@guvectorize(
+    ["void(float64[:], float64[:])"],
+    "(n)->()",
+    nopython=True,
+)
+def tsnr(array: npt.NDArray[np.float64], tsnr: npt.NDArray[np.float64]) -> None:
+    array = np.nan_to_num(array, copy=False)
+
+    mean = array.mean()
+    standard_deviation = np.sqrt(np.square(array - mean).mean())
+
+    if standard_deviation < 1e-3:
+        tsnr[0] = 0.0
+    else:
+        tsnr[0] = mean / standard_deviation
+
+
+class TSNRInputSpec(ArrayTransformInputSpec):
     dummy_scans = traits.Int(default=0, usedefault=True)
 
 
-class TSNR(Transformer):
+class TSNR(ArrayTransform):
     input_spec = TSNRInputSpec
     suffix = "tsnr"
 
@@ -21,17 +39,9 @@ class TSNR(Transformer):
         if isdefined(self.inputs.dummy_scans):
             array = array[self.inputs.dummy_scans :, ...]
 
-        array = np.nan_to_num(array, copy=False)
+        array = tsnr(array.transpose()).transpose()
 
-        mean = array.mean(axis=0)
-        standard_deviation = array.std(axis=0)
+        # Ensure we have a two-dimensional array
+        array = array[np.newaxis, :]
 
-        _, m = array.shape
-        tsnr = np.zeros((m,))
-        nonzero = standard_deviation > 1.0e-3
-        np.true_divide(mean, standard_deviation, out=tsnr, where=nonzero)
-
-        # ensure we have a two-dimensional array
-        tsnr = tsnr[np.newaxis, :]
-
-        return tsnr
+        return array

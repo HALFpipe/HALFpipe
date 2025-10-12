@@ -6,7 +6,7 @@ import numpy as np
 from nipype.interfaces.base import traits
 from numpy import typing as npt
 
-from ..transformer import Transformer, TransformerInputSpec
+from ..array_transform import ArrayTransform, ArrayTransformInputSpec
 
 
 def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
@@ -103,12 +103,12 @@ def bandpass_temporal_filter(array, hp_sigma, lp_sigma):
     return array
 
 
-class TemporalFilterInputSpec(TransformerInputSpec):
+class TemporalFilterInputSpec(ArrayTransformInputSpec):
     lowpass_sigma = traits.Float(default=-1, usedefault=True)
     highpass_sigma = traits.Float(default=-1, usedefault=True)
 
 
-class TemporalFilter(Transformer):
+class TemporalFilter(ArrayTransform):
     input_spec = TemporalFilterInputSpec
 
     suffix = "bptf"
@@ -117,12 +117,8 @@ class TemporalFilter(Transformer):
         lowpass_sigma = self.inputs.lowpass_sigma
         highpass_sigma = self.inputs.highpass_sigma
 
-        np.nan_to_num(array, copy=False)  # nans create problems further down the line
-
-        array = array.T  # need to transpose
-
-        array2 = bandpass_temporal_filter(array, highpass_sigma, lowpass_sigma)
-
-        array2 = array2.T  # restore
-
-        return array2
+        np.nan_to_num(array, copy=False)  # Replace nans and infs with zeros
+        array = array.transpose()
+        array = bandpass_temporal_filter(array, highpass_sigma, lowpass_sigma)
+        array = array.transpose()
+        return array

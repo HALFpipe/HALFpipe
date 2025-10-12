@@ -36,7 +36,6 @@ def init_atlas_based_connectivity_wf(
 ) -> pe.Workflow:
     """
     create workflow for brainatlas
-
     """
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
     if feature is not None:
@@ -49,9 +48,9 @@ def init_atlas_based_connectivity_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "tags",
-                "vals",
-                "metadata",
+                "tags",  # dictionary keys to values
+                "vals",  # fd_mean, etc.
+                "metadata",  # repetition_time, etc.
                 "bold",
                 "mask",
                 "repetition_time",
