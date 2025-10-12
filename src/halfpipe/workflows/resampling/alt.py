@@ -73,7 +73,7 @@ def init_alt_bold_std_trans_wf(
     bold_std_trans_wf = init_bold_volumetric_resample_wf(
         metadata={},  # We pass empty metadata so we can reuse workflow between subjects
         jacobian=True,  # TODO: Need to decide if we want the field map jacobian as an output
-        mem_gb={"resampled": memcalc.volume_std_gb},  # was memcalc.volume_std_gb
+        mem_gb={"resampled": memcalc.series_std_gb},
         omp_nthreads=omp_nthreads,
         name="bold_volumetric_resample_trans_wf",
     )
