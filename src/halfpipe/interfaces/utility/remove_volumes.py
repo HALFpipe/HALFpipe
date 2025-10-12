@@ -6,14 +6,14 @@ import numpy as np
 from nipype.interfaces.base import traits
 from numpy import typing as npt
 
-from ..transformer import Transformer, TransformerInputSpec
+from ..array_transform import ArrayTransform, ArrayTransformInputSpec
 
 
-class RemoveVolumesInputSpec(TransformerInputSpec):
+class RemoveVolumesInputSpec(ArrayTransformInputSpec):
     count = traits.Int(mandatory=True)
 
 
-class RemoveVolumes(Transformer):
+class RemoveVolumes(ArrayTransform):
     input_spec = RemoveVolumesInputSpec
     suffix = "cut"
 

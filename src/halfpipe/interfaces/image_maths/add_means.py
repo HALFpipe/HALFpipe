@@ -5,14 +5,14 @@
 import numpy as np
 from nipype.interfaces.base import File
 
-from ..transformer import Transformer, TransformerInputSpec
+from ..array_transform import ArrayTransform, ArrayTransformInputSpec
 
 
-class AddMeansInputSpec(TransformerInputSpec):
+class AddMeansInputSpec(ArrayTransformInputSpec):
     mean_file = File(exists=True, mandatory=True)
 
 
-class AddMeans(Transformer):
+class AddMeans(ArrayTransform):
     input_spec = AddMeansInputSpec
 
     suffix = "addmean"

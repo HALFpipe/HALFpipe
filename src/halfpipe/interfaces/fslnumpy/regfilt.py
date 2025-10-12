@@ -10,7 +10,7 @@ from nipype.interfaces.base import File, isdefined, traits
 from numpy import typing as npt
 
 from ...logging import logger
-from ..transformer import Transformer, TransformerInputSpec
+from ..array_transform import ArrayTransform, ArrayTransformInputSpec
 
 
 def binarize(array, lowerth, upperth, threstype="inclusive", invert: bool = False):
@@ -89,7 +89,7 @@ def regfilt(
     return temp_vol
 
 
-class FilterRegressorInputSpec(TransformerInputSpec):
+class FilterRegressorInputSpec(ArrayTransformInputSpec):
     design_file = File(desc="design file", exists=True, mandatory=True)
     filter_columns = traits.List(traits.Int)
     filter_all = traits.Bool(default_value=False, usedefault=True)
@@ -102,7 +102,7 @@ class FilterRegressorInputSpec(TransformerInputSpec):
     aggressive = traits.Bool(default_value=False, usedefault=True)
 
 
-class FilterRegressor(Transformer):
+class FilterRegressor(ArrayTransform):
     input_spec = FilterRegressorInputSpec
 
     suffix = "regfilt"
