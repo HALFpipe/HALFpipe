@@ -10,6 +10,7 @@ source:
   git_rev: "0.0.12"
   patches:
     - 001-compat-nilearn-0-12-1.patch
+    - 002-add-mem-gb.patch
 
 build:
   number: 0
