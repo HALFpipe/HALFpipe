@@ -57,7 +57,7 @@ class ArrayTransform(SimpleInterface):
 
             ndim = image.ndim
             if image.ndim == 3:
-                array_proxy.reshape = (*image.shape, 1)
+                array_proxy = array_proxy.reshape((*image.shape, 1))
             elif ndim == 4:
                 pass
             else:
