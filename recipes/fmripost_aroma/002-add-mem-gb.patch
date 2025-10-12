@@ -1,8 +1,16 @@
 diff --git a/src/fmripost_aroma/workflows/aroma.py b/src/fmripost_aroma/workflows/aroma.py
-index 918915a..01443bd 100644
+index 918915a..ffb7ca1 100644
 --- a/src/fmripost_aroma/workflows/aroma.py
 +++ b/src/fmripost_aroma/workflows/aroma.py
-@@ -162,6 +162,7 @@ in the corresponding confounds file.
+@@ -151,6 +151,7 @@ in the corresponding confounds file.
+     rm_non_steady_state = pe.Node(
+         niu.Function(function=_remove_volumes, output_names=['bold_cut']),
+         name='rm_nonsteady',
++        mem_gb=mem_gb['resampled'],
+     )
+     workflow.connect([
+         (inputnode, rm_non_steady_state, [
+@@ -162,6 +163,7 @@ in the corresponding confounds file.
      calc_median_val = pe.Node(
          MedianValue(),
          name='calc_median_val',
@@ -10,7 +18,7 @@ index 918915a..01443bd 100644
      )
      workflow.connect([
          (inputnode, calc_median_val, [('bold_mask_std', 'mask_file')]),
-@@ -171,6 +172,7 @@ in the corresponding confounds file.
+@@ -171,6 +173,7 @@ in the corresponding confounds file.
      calc_bold_mean = pe.Node(
          MeanImage(),
          name='calc_bold_mean',
