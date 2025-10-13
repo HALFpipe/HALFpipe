@@ -13,7 +13,7 @@ from conda_build.build import clean_build
 from conda_build.config import Config
 from conda_build.metadata import MetaDataTuple
 from loguru import logger
-from rattler.index import index_fs, index_s3
+from rattler.index import S3Credentials, index_fs, index_s3
 from setuptools_scm import get_version
 from tqdm.auto import tqdm
 
@@ -155,8 +155,9 @@ async def main() -> None:
 
         await index_fs(channel_directory=build_path, write_zst=False, write_shards=False)
 
-    if push:
-        await index_s3(channel_url=f"s3://{s3_bucket}", region="auto", endpoint_url=endpoint_url)
+    if push and endpoint_url is not None:
+        credentials = S3Credentials(region="auto", endpoint_url=endpoint_url)
+        await index_s3(channel_url=f"s3://{s3_bucket}", credentials=credentials)
 
 
 if __name__ == "__main__":
