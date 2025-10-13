@@ -86,6 +86,7 @@ def get_keys(metadata_tuples: list[MetaDataTuple]) -> Iterator[tuple[Path, str]]
 
 
 def download(keys: list[tuple[Path, str]]) -> bool:
+    success = True
     for output_path, s3_key in keys:
         if output_path.is_file():
             continue
@@ -94,11 +95,11 @@ def download(keys: list[tuple[Path, str]]) -> bool:
             continue
         except (ClientError, EndpointConnectionError, NoCredentialsError) as error:
             if hasattr(error, "response") and error.response["Error"]["Code"] == "404":
-                logger.info("Not found in registry")
+                logger.info(f'Key "{s3_key}" not found in registry: {error}')
             else:
                 logger.opt(exception=error).error("Cannot access registry:")
-        return False
-    return True
+        success = False
+    return success
 
 
 def exists(s3_key: str) -> bool:
@@ -156,8 +157,7 @@ async def main() -> None:
         await index_fs(channel_directory=build_path, write_zst=False, write_shards=False)
 
     if push and endpoint_url is not None:
-        credentials = dict(region="auto", endpoint_url=endpoint_url)
-        await index_s3(channel_url=f"s3://{s3_bucket}", credentials=credentials)  # type: ignore[arg-type]
+        await index_s3(channel_url=f"s3://{s3_bucket}")
 
 
 if __name__ == "__main__":
