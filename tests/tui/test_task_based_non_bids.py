@@ -82,6 +82,13 @@ async def run_before(
     # set data dir
     await set_non_bids_data(pilot, t1_path_pattern, bold_path_pattern)
     # same reason for this as at work_tab case
+    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    try:
+        await pilot.click("#only_one_button")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
+
     await pilot.click(offset=(25, 25))
     await pilot.click(offset=(25, 25))
 

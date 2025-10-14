@@ -49,7 +49,7 @@ class WindowTitleBar(Container):
             layout: horizontal;
             width: 100%;
             height: 3;
-            background: $accent;
+            background: $primary;
             color: auto;
             text-style: bold;
         }
@@ -59,7 +59,7 @@ class WindowTitleBar(Container):
             height: 3;
             padding-top: 0;
             padding-left: 0;
-            background: $accent;
+            background: $primary;
             border: none;
         }
 
@@ -67,7 +67,7 @@ class WindowTitleBar(Container):
             border: none;
             border-top: none;
             border-bottom: none;
-            background: $accent;
+            background: $primary;
             color: black;
             border: thick black;
         }
@@ -130,7 +130,9 @@ class WindowTitleBar(Container):
             restore_button = Button(self.RESTORE_ICON, classes="window_restore")
             restore_button.display = False
             yield restore_button
-        yield Button(self.CLOSE_ICON, classes="window_close")
+        close_button = Button(self.CLOSE_ICON, classes="window_close")
+        close_button.can_focus = False
+        yield close_button
 
 
 class DraggableModalScreen(ModalScreen):
@@ -176,20 +178,20 @@ class DraggableModalScreen(ModalScreen):
         Requests the modal screen to close.
     """
 
-    DEFAULT_CSS = """
-        DraggableModalScreen {
-            align: center middle;
-         }
-
-        #draggable_modal_screen_container_wrapper {
-            width: auto;
-            height: auto;
-            border-left: thick $accent;
-            border-right: thick $accent;
-            border-bottom: thick $accent;
-        }
-
-    """
+    # DEFAULT_CSS = """
+    #     DraggableModalScreen {
+    #         align: center middle;
+    #      }
+    #
+    #     #draggable_modal_screen_container_wrapper {
+    #         width: auto;
+    #         height: auto;
+    #         border-left: thick $primary;
+    #         border-right: thick $primary;
+    #         border-bottom: thick $primary;
+    #     }
+    #
+    # """
 
     def __init__(self, id: str | None = None, classes: str | None = None) -> None:
         """
@@ -209,6 +211,7 @@ class DraggableModalScreen(ModalScreen):
 
         # mouse_at_drag_start also servers as "is dragging"
         self.mouse_at_drag_start: Offset | None = None
+        self.set_focus(None)
 
     def on_resize(self):
         """

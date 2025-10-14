@@ -5,7 +5,7 @@ from typing import Any
 
 from rich.text import Text
 from textual import events, on, work
-from textual.containers import Container, Grid, HorizontalScroll
+from textual.containers import Container, Grid, Horizontal, HorizontalScroll
 from textual.widgets import Button, Static
 
 from ...ingest.glob import resolve_path_wildcards, tag_glob
@@ -17,11 +17,7 @@ from ..general_widgets.list_of_files_modal import ListOfFiles
 from ..specialized_widgets.file_browser_modal import FileBrowserModal, path_test_with_isfile_true
 from ..templates.utils.name_input import NameInput
 from .confirm_screen import Confirm
-from .pattern_suggestor import (
-    InputWithColoredSuggestions,
-    SegmentHighlighting,
-    SelectCurrentWithInputAndSegmentHighlighting,
-)
+from .pattern_suggestor import InputSegmentHighlightingWithUpDownArrows, InputWithColoredSuggestions, SegmentHighlighting
 
 
 # utilities for the widget
@@ -126,6 +122,7 @@ class ColorButton(Button):
         super().__init__(*args, **kwargs)
         self.color = color
         self.styles.background = color
+        self.status = "on"
 
     async def on_click(self, event: events.Click) -> None:
         """
@@ -141,7 +138,16 @@ class ColorButton(Button):
             The click event.
         """
         path_widget = self.app.get_widget_by_id("input_prompt")
-        path_widget.highlight_color = self.color
+        if self.status == "on":
+            color = self.color
+        else:
+            color = "default"
+
+        path_widget.change_highlight_color(color)
+        #     self.status = 'on'
+        # elif self.status == 'on':
+        #     self.status = 'off'
+        #     path_widget.change_highlight_color('default')
 
 
 class PathPatternBuilder(DraggableModalScreen):
@@ -255,6 +261,7 @@ class PathPatternBuilder(DraggableModalScreen):
         self.path = path.plain if isinstance(path, Text) else path
         self.highlight_colors = ["red", "green", "blue", "yellow", "magenta"] if highlight_colors is None else highlight_colors
         self.labels = ["subject", "Session", "Run", "Acquisition", "task"] if labels is None else labels
+
         self.pattern_match_results: dict = {
             "file_pattern": self.path,
             "message": "Found 0 files.",
@@ -267,6 +274,8 @@ class PathPatternBuilder(DraggableModalScreen):
         self.pattern_class = pattern_class
         self.mandatory_tags = [f"{{{label}}}" for label in pattern_class.required_entities]  # f"{{{self.labels[0]}}}"
 
+        self.active_button_id = None
+
     def on_mount(self) -> None:
         """
         Called when the modal is mounted.
@@ -276,64 +285,72 @@ class PathPatternBuilder(DraggableModalScreen):
         and action buttons.
         """
         colors_and_labels = dict(zip(self.highlight_colors, self.labels, strict=False))
-        self.active_button_id = "button_" + self.labels[0]
+        # self.active_button_id = "button_" + self.labels[0]
         color_buttons = [
             ColorButton(label=item[1], color=item[0], id="button_" + item[1], classes="color_buttons")
             for item in colors_and_labels.items()
         ]
-        color_buttons[0].add_class("activated")
+        # color_buttons[0].add_class("activated")
+
         self.content.mount(
-            Grid(
-                *color_buttons,
-                id="color_button_panel",
-            ),
-            HorizontalScroll(
-                InputWithColoredSuggestions(
-                    [(Text(self.path), self.path)],
-                    prompt_default=self.path,
-                    colors_and_labels=colors_and_labels,
-                    top_parent=self,
-                    id="path_widget",
+            Horizontal(
+                Static(
+                    Text(
+                        "                                      !INSTRUCTIONS!\n"
+                        "1) Set the path of the file. Use browse or type or use ctrl+shift+c to paste\n"
+                        "2) If tags are required (such as subject, task, etc.) click on the color buttons below and "
+                        "highlight with mouse part of the path that you want to use as tag wildcard. \n"
+                        "EXAMPLE:\n"
+                        "/home/tomas/github/ds002785_v2/sub-0001/anat/sub-0001_T1w.nii.gz\n"
+                        "After submitting the highlighted parts will be replaced with a particular wildcard tag:\n"
+                        "/home/tomas/github/ds002785_v2/sub-{subject}/anat/sub-{subject}_T1w.nii.gz\n"
+                        "3) Press submit and check whether files were found.\n"
+                        "NOTE: If you paste or type the path already with the tags, steps 2 and 3 are not needed.",
+                        spans=[
+                            # First example highlights
+                            (303 + 39, 307 + 39, "#000000 on red"),
+                            (317 + 39, 321 + 39, "#000000 on red"),
+                            # Second example highlights
+                            (456 + 39, 465 + 39, "#000000 on red"),
+                            (475 + 39, 484 + 39, "#000000 on red"),
+                        ],
+                    )
                 ),
-                id="path_widget_container",
+                id="instruction_text",
             ),
             Grid(
                 Button("Browse", id="browse_button"),
                 Button("Reset highlights", id="reset_button"),
                 # Button("Reset all", id="reset_all"),
                 Button("Clear all", id="clear_all"),
-                Button("Submit", id="submit_button"),
+                # Button("Submit", id="submit_button"),
                 id="button_panel",
             ),
+            HorizontalScroll(
+                InputWithColoredSuggestions(
+                    [(Text(self.path), self.path)],
+                    prompt_default=self.path,
+                    colors_and_labels=colors_and_labels,
+                    id="path_widget",
+                ),
+                id="path_widget_container",
+            ),
+            Grid(
+                *color_buttons,
+                id="color_button_panel",
+            ),
             Container(
-                Container(
+                Horizontal(
                     Static("Found 0 files.", id="feedback"),
                     Button("👁", id="show_button", classes="icon_buttons"),
+                    Button("Submit", id="submit_button"),
                     id="feedback_container",
                 ),
-                Container(Button("OK", id="ok_button"), Button("Cancel", id="cancel_button"), id="testtt"),
+                Container(Button("OK", id="ok_button"), Button("Cancel", id="cancel_button"), id="bottom_button_container"),
                 id="feedback_and_confirm_panel",
             ),
         )
         self.get_widget_by_id("color_button_panel").styles.grid_size_columns = len(self.labels)
-
-    def deactivate_pressed_button(self) -> None:
-        """Deactivates the currently active button. Fade the button when inactive."""
-        if self.active_button_id is not None:
-            self.get_widget_by_id(self.active_button_id).remove_class("activated")
-
-    def activate_pressed_button(self, _id: str) -> None:
-        """
-        Activates the button with the given ID. Light up the button when inactive.
-
-        Parameters
-        ----------
-        _id : str
-            The ID of the button to activate.
-        """
-        clicked_color_button = self.get_widget_by_id(_id)
-        clicked_color_button.add_class("activated")
-        self.active_button_id = _id
 
     @on(Button.Pressed, "#browse_button")
     def open_browse_window(self) -> None:
@@ -410,9 +427,9 @@ class PathPatternBuilder(DraggableModalScreen):
         )
         # Change outine from red to green if some files were found.
         if len(self.pattern_match_results["files"]) > 0:
-            self.query_one(SelectCurrentWithInputAndSegmentHighlighting).styles.outline = ("solid", "green")
+            self.query_one(InputSegmentHighlightingWithUpDownArrows).styles.outline = ("solid", "green")
         else:
-            self.query_one(SelectCurrentWithInputAndSegmentHighlighting).styles.outline = ("solid", "red")
+            self.query_one(InputSegmentHighlightingWithUpDownArrows).styles.outline = ("solid", "red")
 
     @on(Button.Pressed, ".color_buttons")
     def activate_and_deactivate_press(self, event: Button.Pressed) -> None:
@@ -428,8 +445,40 @@ class PathPatternBuilder(DraggableModalScreen):
         event : Button.Pressed
             The button pressed event.
         """
-        self.deactivate_pressed_button()
-        self.activate_pressed_button(event.button.id)
+        _id = event.button.id
+        logger.debug(f"UI->PathPatternBuilder->clicked color button: {_id}")
+        logger.debug(f"UI->PathPatternBuilder->last active color button: {self.active_button_id}")
+        # If there was an active button, deactivate it visually
+        previous_widget = None
+        if self.active_button_id is not None:
+            previous_widget = self.get_widget_by_id(self.active_button_id)
+            previous_widget.remove_class("activated")
+
+        # Clicking a different button
+        if self.active_button_id != _id:
+            new_widget = self.get_widget_by_id(_id)
+            new_widget.add_class("activated")
+            # Update statuses
+            if previous_widget:
+                previous_widget.status = "on"
+            new_widget.status = "off"
+            # Set new active button
+            self.active_button_id = _id
+
+        # Clicking the same button
+        else:
+            # Toggle off if it was active
+            if self.active_button_id is not None:
+                previous_widget.status = "on"
+                self.active_button_id = None
+            # Toggle on if it was inactive
+            else:
+                previous_widget = self.get_widget_by_id(_id)
+                previous_widget.add_class("activated")
+                previous_widget.status = "off"
+                self.active_button_id = _id
+
+        logger.debug(f"UI->PathPatternBuilder->new active color button: {self.active_button_id}")
 
     @on(Button.Pressed, "#ok_button")
     async def _ok(self, event: Button.Pressed) -> None:
@@ -526,7 +575,7 @@ Your event file task tags are: \n{sorted(task_set)}.\
             and "{" + self.pattern_class.tag_entity + "}" not in self.pattern_match_results["file_pattern"]
         ):
             self.pattern_match_results["file_tag"] = await self.app.push_screen_wait(
-                NameInput(self.get_occupied_tags(), default_value=""),
+                NameInput(self.get_occupied_tags(), default_value="", title="File tag label"),
             )
 
         if compatible_task_tags:
@@ -580,25 +629,26 @@ Your event file task tags are: \n{sorted(task_set)}.\
         """
         self.app.push_screen(ListOfFiles(self.pattern_match_results))
 
-    async def on_key(self, event: events.Key) -> None:
-        """
-        Handles keyboard input to navigate and toggle highlights.
-
-        This method is called when a key is pressed. It handles keyboard
-        input to navigate and toggle highlights in the input prompt.
-
-        Parameters
-        ----------
-        event : events.Key
-            The key pressed event.
-        """
-        path_widget = self.get_widget_by_id("input_prompt")
-        if event.key in ["1", "2", "3", "4", "5"]:
-            # Set highlight color based on key pressed.
-            index = int(event.key) - 1
-            path_widget.highlight_color = self.highlight_colors[index]
-            self.deactivate_pressed_button()
-            self.activate_pressed_button("button_" + self.labels[index])
+    #
+    # async def on_key(self, event: events.Key) -> None:
+    #     """
+    #     Handles keyboard input to navigate and toggle highlights.
+    #
+    #     This method is called when a key is pressed. It handles keyboard
+    #     input to navigate and toggle highlights in the input prompt.
+    #
+    #     Parameters
+    #     ----------
+    #     event : events.Key
+    #         The key pressed event.
+    #     """
+    #     path_widget = self.get_widget_by_id("input_prompt")
+    #     if event.key in ["1", "2", "3", "4", "5"]:
+    #         # Set highlight color based on key pressed.
+    #         index = int(event.key) - 1
+    #         path_widget.highlight_color = self.highlight_colors[index]
+    #         self.deactivate_pressed_button()
+    #         self.activate_pressed_button("button_" + self.labels[index])
 
     def key_enter(self) -> None:
         """

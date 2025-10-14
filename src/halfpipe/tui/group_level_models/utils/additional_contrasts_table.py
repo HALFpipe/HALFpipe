@@ -186,7 +186,7 @@ class AdditionalContrastsCategoricalVariablesTable(Widget):
             Custom sort type to override the default cycling sort types.
         """
         condition_selection = self.get_widget_by_id("model_conditions_selection")
-        groups = list(condition_selection._option_ids.keys())
+        groups = [i.value for i in condition_selection._option_to_index.keys()]
         table = self.get_widget_by_id("contrast_table")
         # add this  column for sorting purpose, later it is removed
         table.add_column("condition", key="condition")

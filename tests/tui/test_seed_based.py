@@ -45,7 +45,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         #
         # deselect second seed file
         # await pilot.click(offset=(71, 33))
-        await pilot.click("#tag_selection")
+        await pilot.click("#file_tag_selection")
         await pilot.press("down")
         await pilot.press("down")
         await pilot.press("enter")

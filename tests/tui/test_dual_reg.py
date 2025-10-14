@@ -60,9 +60,10 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    # await pilot.click("#only_one_button")
+    await pilot.click("#only_one_button")
     for task in tasks_by_stage[stage]:
         await task()
+
 
 
 def test_dual_reg_at_features_tab(

@@ -182,8 +182,8 @@ class BidsDatabase:
 
         # image files
         for bids_path_str, file_path in self.file_paths.items():
-            logger.info(f'bids_path_strbids_path_strbids_path_strbids_path_str::: "{bids_path_str}"')
-            logger.info(f'file_pathfile_pathfile_pathfile_pathfile_pathfile_path::: "{file_path}"')
+            logger.debug(f'BidsDatabase->image files->bids_path_str::: "{bids_path_str}"')
+            logger.debug(f'BidsDatabase->image files->file_path::: "{file_path}"')
             if bids_path_str is None:
                 raise ValueError(f'File "{file_path}" has no BIDS path')
             bids_path = Path(bidsdir) / bids_path_str
@@ -202,7 +202,7 @@ class BidsDatabase:
 
         # sidecar files
         for bids_path_str in self.file_paths.keys():
-            logger.info(f'bids_path_strbids_path_strbids_path_strbids_path_str::: "{bids_path_str}"')
+            logger.debug(f'BidsDatabase->sidecar files->bids_path_str::: "{bids_path_str}"')
             metadata = self._metadata.get(bids_path_str)
 
             if metadata is not None and len(metadata) > 0:

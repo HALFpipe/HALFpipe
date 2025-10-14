@@ -41,19 +41,19 @@ FileBrowserModal {
             height: 80%;
             width: 100%;
             padding: 0 1 0 1;
-            border-bottom: tall $accent;
+            border-bottom: tall $primary;
         }
         #path_input_box2 {
             border: none;
         }
 
-        SelectCurrentWithInput {
+        InputWithUpDownArrows {
             height: 3;
             width: 100%;
             margin: 0 0 0 0;
             padding: 0 0 0 0;
             border: none;
-         /*   outline: tall $accent;*/
+         /*   outline: tall $primary;*/
             content-align: center bottom;
             background: transparent;
             MyInput {
@@ -68,18 +68,18 @@ FileBrowserModal {
                 offset-y: -1;
             }
         }
-        SelectCurrentWithInput MyInput#label {
+        InputWithUpDownArrows MyInput#label {
             width: 1fr;
             height: 3;
             color: $text-disabled;
             background: transparent;
-            outline-top: $accent tall;
-            outline-bottom: $accent tall;
+            outline-top: $primary tall;
+            outline-bottom: $primary tall;
             padding: 1;
             border: none;
         }
 
-        SelectCurrentWithInput .arrow {
+        InputWithUpDownArrows .arrow {
             box-sizing: content-box;
 
             width: 1;
@@ -93,7 +93,7 @@ FileBrowserModal {
     }
     /*
     #file_browser_screen{
-        border: thick $accent;
+        border: thick $primary;
         border-top: none;
         align: center top;
         width: 62;

@@ -13,13 +13,12 @@ from textual.events import Click
 from textual.reactive import Reactive, reactive
 from textual.screen import ModalScreen
 from textual.widget import Widget
-from textual.widgets import Footer, Header, TabbedContent, TabPane
+from textual.widgets import Footer, Header, TabbedContent, TabPane, Tabs
 from textual.widgets._header import HeaderTitle
 
 from ..logging.base import LoggingContext
 from .data_analyzers.context import ctx
 from .data_input.base import DataInput
-from .diagnostics.base import Diagnostics
 from .features.base import FeatureSelection
 from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
@@ -33,6 +32,25 @@ from .working_directory.base import WorkDirectory
 
 # The BASE_DIR is here because of some relative path files of the tcss files when running the pytest.
 BASE_DIR = Path(__file__).resolve().parent
+
+
+class TabbedContent2(TabbedContent):
+    def _watch_active(self, active: str) -> None:
+        """Switch tabs when the active attributes changes."""
+        # with self.prevent(Tabs.TabActivated, Tabs.Cleared):
+        #     self.get_child_by_type(ContentTabs).active = ContentTab.add_prefix(active)
+        # self.get_child_by_type(ContentSwitcher).current = active
+        # if active:
+        #     self.post_message(
+        #         TabbedContent.TabActivated(
+        #             tabbed_content=self,
+        #             tab=self.get_child_by_type(ContentTabs).get_content_tab(active),
+        #         )
+        #     )
+        # else:
+        #     self.post_message(
+        #         TabbedContent.Cleared(tabbed_content=self).set_sender(self)
+        #     )
 
 
 class HeaderCloseIcon(Widget):
@@ -331,7 +349,6 @@ class MainApp(App):
 
     CSS_PATH = [
         BASE_DIR / "tcss/base.tcss",
-        BASE_DIR / "tcss/general.tcss",
         BASE_DIR / "features/tcss/base.tcss",
         BASE_DIR / "features/tcss/taskbased.tcss",
         BASE_DIR / "features/utils/tcss/model_conditions_and_contrasts.tcss",
@@ -342,8 +359,13 @@ class MainApp(App):
         BASE_DIR / "data_input/tcss/data_input.tcss",
         BASE_DIR / "preprocessing/tcss/preprocessing.tcss",
         BASE_DIR / "run/tcss/run.tcss",
+        BASE_DIR / "run/tcss/batch_option_modal.tcss",
         BASE_DIR / "specialized_widgets/tcss/file_browser.tcss",
         BASE_DIR / "specialized_widgets/tcss/path_pattern_builder.tcss",
+        BASE_DIR / "general_widgets/tcss/draggable_modal_screen.tcss",
+        BASE_DIR / "general_widgets/tcss/selection_modal.tcss",
+        BASE_DIR / "general_widgets/tcss/custom_general_widgets.tcss",
+        BASE_DIR / "general_widgets/tcss/custom_switch.tcss",
         BASE_DIR / "general_widgets/tcss/radio_set_changed.tcss",
         BASE_DIR / "diagnostics/tcss/diagnostics.tcss",
     ]
@@ -356,7 +378,7 @@ class MainApp(App):
         ("p", "show_tab('preprocessing_tab')", "General preprocessing settings"),
         ("g", "show_tab('models_tab')", "Group level models"),
         ("r", "show_tab('run_tab')", "Check and run"),
-        ("ctrl+c", "action_quit", "Quit"),
+        ("ctrl+q", "action_quit", "Quit"),
         # ("x", "reload", "reload"),
         # ("c", "ctx", "ctx"),
     ]
@@ -385,7 +407,7 @@ class MainApp(App):
         LoggingContext.disable_print()
         super().__init__(**kwargs)
         self._global_settings_defaults = deepcopy(global_settings_defaults)
-        self.tab_manager = TabbedContent(id="tab_manager")
+        self.tab_manager = TabbedContent2(id="tab_manager")
         self.tabs_are_visible = False
 
     def compose(self) -> ComposeResult:
@@ -414,9 +436,15 @@ class MainApp(App):
                 yield VerticalScroll(GroupLevelModelSelection(id="models_content"))
             with TabPane("Check and run", id="run_tab", classes="tabs"):
                 yield VerticalScroll(Run(id="run"), id="run_content")
-            with TabPane("Diagnostics", id="diag_tab", classes="tabs"):
-                yield VerticalScroll(Diagnostics(), id="diag_content")
+            # with TabPane("Diagnostics", id="diag_tab", classes="tabs"):
+            #     yield VerticalScroll(Diagnostics(), id="diag_content")
         yield Footer()
+
+    def next_tab(self):
+        self.tab_manager.query_one(Tabs).action_next_tab()
+
+    def previous_tab(self):
+        self.tab_manager.query_one(Tabs).action_previous_tab()
 
     @on(TabbedContent.TabActivated, pane="#run_tab")
     def on_run_tab_activated(self) -> None:
@@ -494,7 +522,7 @@ The working tab and data tab are now read only! Do not change entries here!",
         tab : str
             The ID of the tab to switch to.
         """
-        self.get_child_by_type(TabbedContent).active = tab
+        self.tab_manager.query_one(Tabs)._activate_tab(self.tab_manager.get_widget_by_id("--content-tab-" + tab))
 
     def action_toggle_dark(self) -> None:
         """
@@ -564,7 +592,7 @@ The working tab and data tab are now read only! Do not change entries here!",
         ctx.spec.global_settings["slice_timing"] = self._global_settings_defaults["slice_timing"]
 
     async def on_key(self, event: events.Key) -> None:
-        if event.key == "ctrl+c":
+        if event.key == "ctrl+q":
             await quit_modal(self)
         elif event.key == "ctrl+s":
             self.app.save_screenshot()

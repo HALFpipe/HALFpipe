@@ -288,6 +288,11 @@ class SwitchWithSelect(SwitchWithInputBox):
         self.switch_value = switch_value
         self.value = self.default_option
 
+    @property
+    def selected(self):
+        # TODO revisite this after textual update
+        return self.query_exactly_one(Select).value
+
     def compose(self) -> ComposeResult:
         yield Grid(
             Static(self.label),

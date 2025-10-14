@@ -67,7 +67,7 @@ class NameInput(DraggableModalScreen):
     }
     """
 
-    def __init__(self, occupied_feature_names, default_value=None) -> None:
+    def __init__(self, occupied_feature_names, default_value=None, title=None) -> None:
         """
         Initializes the NameInput modal.
 
@@ -80,7 +80,7 @@ class NameInput(DraggableModalScreen):
         """
         self.occupied_feature_names = occupied_feature_names
         super().__init__()
-        self.title_bar.title = "Feature name"
+        self.title_bar.title = "Feature name" if title is None else title
         self.default_value = default_value if default_value is not None else None
 
     def on_mount(self) -> None:

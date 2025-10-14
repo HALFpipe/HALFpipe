@@ -56,6 +56,11 @@ async def enter_browse_path(pilot, path):
     # click to the prompt
     # await pilot.click(offset=(80, 38))
     await pilot.click("#input_prompt")
+    logger.debug(f"Entering browse path: {path}")
+    for _i in range(4):
+        await pilot.press("backspace")
+        await pilot.press("delete")
+
     # type in the path
     for letter in path:
         await pilot.press(letter)
@@ -75,6 +80,8 @@ async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
     # await pilot.click(offset=(55, 26))
     await pilot.click("#browse")
     # enter the path
+    logger.debug(f"UI tests -> The spreadsheet path: {spreadsheet_path}")
+
     await enter_browse_path(pilot, spreadsheet_path)
     # set sex as categorical
     # await pilot.click(offset=(119, 32))
@@ -403,15 +410,17 @@ async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> No
     try:
         await pilot.click("#add_field_map_button")
         # select 'Siemens' by focusing and going one down and confirming with enter
-        await pilot.press("tab")
+        # await pilot.press("tab")
         await pilot.press("down")
+        # await pilot.press("down")
+
         await pilot.press("enter")
-        # confirm choice of the whole window
+        # # confirm choice of the whole window
         await pilot.click("#ok")
-        # confirm that we want one magnitude file and one phase difference file
+        # # confirm that we want one magnitude file and one phase difference file
         await pilot.click("#ok")
-        # enter path pattern for phase difference files
-        # await sleep(5)
+        # # enter path pattern for phase difference files
+        # # await sleep(5)
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
@@ -431,10 +440,10 @@ async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> No
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
-
+    #
     await set_path_in_path_pattern_builder(pilot, str(magnitude_fmap_pattern))
-
-    await settable_scroll_screen_down(pilot, 10)
+    #
+    # await settable_scroll_screen_down(pilot, 10)
 
 
 async def associate_fmaps(pilot) -> None:
@@ -630,7 +639,7 @@ async def run_before_for_reho_falff_preproc(
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    # await pilot.click("#only_one_button")
+    await pilot.click("#only_one_button")
 
     for task in tasks_by_stage[stage]:
         await task()
@@ -695,6 +704,7 @@ async def confirm_space_meta_data_after_selecting_file_pattern(pilot):
 async def set_minimum_coverage(pilot, value="0.85"):
     await pilot.click(pilot.app.get_widget_by_id("minimum_coverage").get_widget_by_id("input_label_input_box"))
     for _i in range(5):
+        await pilot.press("delete")
         await pilot.press("backspace")
     for v in value:
         await pilot.press(v)

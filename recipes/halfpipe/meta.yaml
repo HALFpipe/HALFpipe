@@ -82,7 +82,7 @@ requirements:
     - gica_cmd
     - brainspace
     # New user interface
-    - textual==0.85.2
+    - textual
     - pytest-textual-snapshot
 
 test:

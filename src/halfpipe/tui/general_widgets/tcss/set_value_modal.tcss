@@ -1,13 +1,13 @@
 SetValueModal {
+
     #draggable_modal_screen_container_wrapper {
         width: 45;
-        height: 15;
         background: black;
     }
     Vertical {
-        border-left: thick $accent;
-        border-right: thick $accent;
-        border-bottom: thick $accent;
+        border-left: thick $primary;
+        border-right: thick $primary;
+        border-bottom: thick $primary;
     }
     Static {
         height: 2;
@@ -30,7 +30,7 @@ SetValueModal {
         border: tall white;
     }
     Input:focus {
-        border: tall $accent;
+        border: tall $primary;
     }
     .window_title {
         height: auto;
