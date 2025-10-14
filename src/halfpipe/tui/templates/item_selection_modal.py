@@ -8,7 +8,7 @@ from textual.widgets import (
     Button,
     OptionList,
 )
-from textual.widgets.option_list import Option, Separator
+from textual.widgets.option_list import Option
 
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from .utils.name_input import NameInput
@@ -59,7 +59,7 @@ class ItemSelectionModal(DraggableModalScreen):
     DEFAULT_CSS = """
         ItemSelectionModal {
             #draggable_modal_screen_container_wrapper {
-                width: 50;
+                width: 51;
                 height: auto;
                 min-width: 50;
                 min-height: 15;
@@ -101,7 +101,7 @@ class ItemSelectionModal(DraggableModalScreen):
         options = []
         for key in self.ITEM_MAP:
             options.append(Option(self.ITEM_MAP[key], id=key))
-            options.append(Separator())
+            options.append(None)
 
         # Remove the last separator
         options.pop()

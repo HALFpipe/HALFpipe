@@ -7,10 +7,10 @@ from pathlib import Path
 from niworkflows.utils.misc import check_valid_fs_license
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Button, Static
+from textual.widgets import Button, Static, Tabs
 from textual.worker import Worker, WorkerState
 
 from ...model.spec import load_spec
@@ -133,6 +133,11 @@ spec.json file it is possible to load the therein configuration.",
 
         yield work_directory
         yield freesurfer_directory
+        yield Horizontal(Button("Next 🡆", id="next_button", classes="navigation_buttons"), classes="navigation_button_panel")
+
+    @on(Button.Pressed, "#next_button")
+    def on_next_button_pressed(self, event: Button) -> None:
+        self.app.tab_manager.query_one(Tabs).action_next_tab()
 
     @on(FileBrowser.Changed, "#work_dir_file_browser")
     async def _on_work_dir_file_browser_changed(self, message: Message) -> None:

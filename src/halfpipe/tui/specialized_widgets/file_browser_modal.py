@@ -236,7 +236,6 @@ class FileBrowserModal(DraggableModalScreen):
             SelectOrInputPath(
                 [(f, f) for f in create_path_option_list(base=base, include_base=True)],
                 prompt_default=base,
-                top_parent=self,
                 id="path_input_box2",
             ),
             Horizontal(

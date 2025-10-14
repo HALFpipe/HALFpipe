@@ -1,10 +1,40 @@
 Run {
     Button {
         margin: 0 1 0 0;
+
+offset-x: 5;
+
     }
-    Horizontal {
+    #run_button_panel {
         dock: top;
         height: auto;
-        align: center top;
+        align: left top;
+
+    }
+    #keep_selection_panel {
+        offset-x: 1;
+        width: auto;
+        background: green 60%;
+        height: auto;
+        padding: 0 0 0 0;
+        #keep_label {
+            border-top: thick green;
+            border-bottom: thick green;
+            border-left: thick green;
+            width: auto;
+            color: white;
+            text-style: bold;
+            padding: 0 1 0 1;
+        }
+        Select {
+            text-style: bold;
+            width: 22;
+
+        }
+        SelectCurrent {
+            border: thick green;
+            background: green 10%;
+        }
+
     }
 }

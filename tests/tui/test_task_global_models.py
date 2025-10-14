@@ -135,8 +135,8 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
     await _set_work_dir(pilot, work_dir_path)
     # set data dir
     await _load_data(pilot, data_path)
-    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    # await pilot.click("#only_one_button")
+    # # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    await pilot.click("#only_one_button")
     for task in tasks_by_stage[stage]:
         await task()
 

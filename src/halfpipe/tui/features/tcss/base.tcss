@@ -3,7 +3,7 @@ FeatureSelection {
         dock: left;
         width: 40;
         height: 1fr;
-        border: thick $accent;
+        border: thick $primary;
         background: $panel;
         padding: -1 0 0 0;
         Grid {
@@ -13,9 +13,9 @@ FeatureSelection {
             grid-size: 2 2;
             grid-gutter: 1 0;
             height: 9;
-            /*border-bottom: thick $accent;*/
-            /*border-bottom: thick $accent;*/
-            background: $accent;
+            /*border-bottom: thick $primary;*/
+            /*border-bottom: thick $primary;*/
+            background: $primary;
         }
     }
     .list {
@@ -37,8 +37,8 @@ FeatureSelection {
     }
     #content_switcher {
         background: $panel;
-        border: thick $accent;
-        border-title-background: $accent;
+        border: thick $primary;
+        border-title-background: $primary;
         border-title-color: white;
         border-title-style: bold;
     }
@@ -51,6 +51,7 @@ FeatureSelection {
     }
     Button {
         margin: 0 0 0 0;
+        background: $secondary;
     }
     .task_based {
         color: crimson;

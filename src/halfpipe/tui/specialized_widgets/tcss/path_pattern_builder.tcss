@@ -62,7 +62,7 @@ InputWithColoredSuggestions > SelectOverlay {
 }
 
 Select:focus > SelectCurrent {
-    border: tall $accent;
+    border: tall $primary;
 }
 
 Select .up-arrow {
@@ -82,10 +82,10 @@ Select.-expanded > SelectOverlay {
 }
 
 Select.-expanded > SelectCurrent {
-    border: tall $accent;
+    border: tall $primary;
 }
 
-SelectCurrentWithInputAndSegmentHighlighting {
+InputSegmentHighlightingWithUpDownArrows {
     width: auto;
     margin: 0 0 0 0;
     border: none;
@@ -100,18 +100,18 @@ SelectCurrentWithInputAndSegmentHighlighting {
         height: 999;
         color: $text-disabled;
         background: transparent;
-        outline-top: $accent tall;
-        outline-bottom: $accent tall;
+        outline-top: $primary tall;
+        outline-bottom: $primary tall;
         padding: 1;
         border: none;
     }
 }
 
-SelectCurrentWithInputAndSegmentHighlighting.-has-value
+InputSegmentHighlightingWithUpDownArrows.-has-value
     SegmentHighlighting#label {
     color: $text;
 }
-SelectCurrentWithInputAndSegmentHighlighting .arrow {
+InputSegmentHighlightingWithUpDownArrows .arrow {
     box-sizing: content-box;
     width: 1;
     height: 2;
@@ -125,56 +125,56 @@ SelectCurrentWithInputAndSegmentHighlighting .arrow {
 PathPatternBuilder {
     #draggable_modal_screen_container_wrapper {
         width: 101;
-        height: 34;
+        height: 41;
         background: black;
+    }
+    #instruction_text {
+height: 10;
+margin: 1;
     }
     #feedback_and_confirm_panel {
         border: thick transparent;
-        align: right middle;
-        content-align: right middle;
-        width: 100;
+
+
+        width: 100%;
         height: auto;
 
-        Static {
+        #feedback {
             border: tall white;
             width: auto;
-            column-span: 5;
-            row-span: 1;
-            width: 90;
+
+
+            width: 74;
             content-align: center middle;
         }
         #show_button {
-            margin: 0 0 0 0;
-            align: left middle;
+            margin: 0 0 0 1;
+offset-x: -1;
             min-width: 6;
+        }
+        #submit_button {
+                    margin: 0 0 0 0;
         }
         Button {
             margin: 0 0 0 1;
         }
-        #bottom_buttons {
-            grid-size: 2 1;
-            grid-gutter: 0 0;
-            padding: 0 0 0 0;
-            align: right middle;
-            content-align: right middle;
-            height: 7;
-            width: 40;
-            background: white;
-        }
         Grid {
             align: right middle;
         }
-        #testtt {
+        #bottom_button_container {
             align: right middle;
-            content-align: right middle;
+
             height: 5;
             layout: horizontal;
-            padding: 1;
-            margin: 0 0 -1 1;
+
+
         }
         #feedback_container {
-            layout: horizontal;
+
             height: 3;
+            Button {
+
+            }
         }
     }
     #button_panel {
@@ -182,8 +182,9 @@ PathPatternBuilder {
         grid-size: 5 1;
         grid-gutter: 0 0;
         padding: 1 0 0 0;
-        border-bottom: thick $accent;
-        height: 7;
+        border-top: thick $primary;
+
+        height: 5;
         width: 100%;
         offset-x: 0;
     }
@@ -192,10 +193,10 @@ PathPatternBuilder {
         grid-size: 5 1;
         grid-gutter: 1 1;
         padding: 0 0 0 0;
-        border: thick $accent;
-        height: 7;
+
+        height: 6;
         width: 100%;
-        border: transparent;
+        border-bottom: thick $primary;
     }
     #input_prompt {
         height: 999;
@@ -210,28 +211,28 @@ PathPatternBuilder {
     }
     #path_widget {
         height: 15;
-        outline: red;
     }
 
     /* most upper container, needs to have the border */
     #path_widget_container {
-        height: 8;
+        height: 6;
         align: center middle;
-        border-top: thick $accent;
-        border-bottom: thick $accent;
+  /*      border-top: thick $primary;*/
+
         width: 100%;
         overflow: hidden;
     }
     ColorButton {
-        height: 4;
+        height: 3;
         margin: 0 0;
-        /*    border: thick $accent;*/
-        margin: 1 0;
-        border-top: tall $panel-lighten-2;
+        /*    border: thick $primary;*/
+        margin: 0 0;
+    /*    border-top: tall $panel-lighten-2;*/
         border-bottom: tall $panel-darken-3;
         tint: $background 60%;
     }
     ColorButton.activated {
         tint: $background 0%;
     }
+
 }

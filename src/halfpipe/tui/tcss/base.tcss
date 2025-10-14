@@ -12,14 +12,24 @@ MainApp {
     }
     HeaderTitle {
         text-style: bold;
+        color: white;
+        offset-y: 1;
     }
     Header {
         height: 3;
-        background: $accent;
+        background: $primary;
+        align: center top;
+    }
+        TabbedContent {
+        height: auto;
+        &> ContentTabs {
+        height: 3;
+            dock: top;
+        }
     }
     Tab {
         width: auto;
-        height: 2;
+        height: auto;
         padding: 1 1 0 2;
         text-align: center;
         /*  color: 60% red;*/
@@ -27,10 +37,10 @@ MainApp {
     Tab.-active {
         text-style: bold;
         color: $text;
-        background: $accent;
+        background: $primary;
     }
     .tabs {
-        border: thick $accent;
+        border: thick $primary;
     }
     .tabs2 {
         padding: 0 0 0 0;
@@ -41,61 +51,6 @@ MainApp {
     }
 }
 
-#confirm_unlocking {
-    #draggable_modal_screen_container_wrapper {
-        width: 45;
-        height: 15;
-        background: black;
-    }
-    Static {
-        height: 5;
-    }
-    .window_title {
-        color: black;
-        height: auto;
-    }
-}
-
-.error_modal {
-    Vertical {
-        border-left: thick $error;
-        border-right: thick $error;
-        border-bottom: thick $error;
-    }
-    WindowTitleBar {
-        background: $error;
-    }
-    WindowTitleBar Button {
-        background: $error;
-    }
-}
-
-QuitModal {
-    #draggable_modal_screen_container_wrapper {
-        width: 47;
-        height: 11;
-        background: black;
-    }
-    Vertical {
-        border-left: thick $accent;
-        border-right: thick $accent;
-        border-bottom: thick $accent;
-        align: center middle;
-    }
-    Static {
-        height: 1;
-        content-align: center middle;
-        text-style: bold;
-    }
-    Horizontal {
-        height: 4;
-        dock: bottom;
-        offset-x: 10;
-        Button {
-            margin: 1;
-        }
-    }
-}
 
 HeaderCloseIcon {
     dock: right;
@@ -125,4 +80,111 @@ HeaderSaveIcon {
     content-align: right middle;
     border: solid black;
     text-style: bold;
+}
+
+#title {
+    content-align-horizontal: center;
+    text-style: reverse;
+}
+
+
+#confirm_unlocking {
+    #draggable_modal_screen_container_wrapper {
+        width: 45;
+        height: 15;
+        background: black;
+    }
+    Static {
+        height: 5;
+    }
+    .window_title {
+        color: black;
+        height: auto;
+    }
+}
+
+
+QuitModal {
+
+    #draggable_modal_screen_container_wrapper {
+        width: 47;
+        height: 11;
+        background: black;
+
+    }
+    Vertical {
+        border-left: thick $primary;
+        border-right: thick $primary;
+        border-bottom: thick $primary;
+        align: center middle;
+    }
+    Static {
+        height: 1;
+        content-align: center middle;
+        text-style: bold;
+    }
+    Horizontal {
+        height: 4;
+        dock: bottom;
+        offset-x: 10;
+        Button {
+            margin: 1;
+        }
+    }
+}
+
+#help_modal {
+        content-align: center middle;
+        align: center middle;
+}
+
+#check_meta_data_modal {
+    #message {
+        height: auto;
+        content-align: center middle;
+    }
+}
+
+#event_files_type_modal {
+    #draggable_modal_screen_container_wrapper {
+        width: 40;
+    }
+}
+
+.icon_buttons {
+    width: 3;
+    height: 3;
+    margin: 0 1 0 0;
+    min-width: 6;
+    offset-x: 1;
+}
+
+.navigation_button_panel {
+    width: 110;
+    height: auto;
+    border: transparent;
+    align: center top;
+}
+.navigation_buttons {
+    background: $primary;
+    margin: 0 0 0 1;
+
+}
+
+
+
+SwitchWithSelect {
+    SelectCurrent {
+        background: green 25%;
+    }
+}
+
+LabelWithInputBox{
+    background: green 25%;
+}
+
+SwitchWithInputBox {
+ Input {
+ background: green 20%;
+ }
 }
