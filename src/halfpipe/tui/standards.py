@@ -64,8 +64,6 @@ dual_reg_defaults["file_selection_widget_header"] = "Select network templates"
 dual_reg_defaults["minimum_brain_coverage"] = 0.8
 
 gig_ica_defaults = deepcopy(dual_reg_defaults)
-gig_ica_defaults["widget_header"] = "Group-level independent components"
-gig_ica_defaults["file_selection_widget_header"] = "Select group-level independent components"
 
 preproc_output_defaults = deepcopy(task_based_defaults)
 preproc_output_defaults["minimum_coverage_label"] = "None"
@@ -113,8 +111,8 @@ group_level_modesl_defaults: dict[str, list[dict[str, str]]] = {
 feature_label_map: dict[str, str] = {
     "task_based": "Task-based",
     "seed_based_connectivity": "Seed-based connectivity",
-    "dual_regression": "Network Template Regression",
-    "gig_ica": "Group information-guided ICA ",
+    "dual_regression": "Network Template Regression (dual regression)",
+    "gig_ica": "Network Template Regression (Neuromark)",
     "atlas_based_connectivity": "Atlas-based Connectivity",
     "reho": "ReHo",
     "falff": "fALFF",
@@ -136,6 +134,20 @@ entity_colors: dict[str, str] = {
     "echo": "brown",  # Changed to brown for uniqueness
     "desc": "red",  # there is only one entity when desc is used
 }
+
+# to avoid confusion between textual and rich color definitions, we declare the colors in hex
+color_hex_map = {
+    "green": "#008000",
+    "red": "#ff0000",
+    "cyan": "#58d1eb",
+    "magenta": "#f4005f",
+    "yellow": "#ffff00",
+    "brown": "#a52a2a",
+    "orange": "#ffa500",
+    "purple": "#af00ff",
+}
+
+hex_color_map = {v: k for k, v in color_hex_map.items()}
 
 # same as above but for field maps
 field_map_group_labels: dict[str, str] = {

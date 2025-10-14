@@ -1,0 +1,17 @@
+
+SwitchWithSelect {
+    SelectCurrent { 
+        background: green 25%;
+    }
+}
+
+LabelWithInputBox{
+    background: green 25%;
+}
+
+SwitchWithInputBox {
+ Input {
+ background: green 20%;
+ }
+}
+

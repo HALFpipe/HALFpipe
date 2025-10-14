@@ -240,7 +240,7 @@ class MyStatic(Static):
         self.post_message(self.Toggle())
 
 
-class SelectCurrentWithInput(Horizontal):
+class InputWithUpDownArrows(Horizontal):
     """
     A custom widget that combines Input field and toggle arrows.
 
@@ -362,7 +362,7 @@ class SelectOrInputPath(Select):
         The prompt to show when no value is selected.
     value : var[SelectType | NoSelection]
         The value of the selection.
-    input_class : type[SelectCurrentWithInput]
+    input_class : type[InputWithUpDownArrows]
         The class used for the input field.
 
     Methods
@@ -415,7 +415,7 @@ class SelectOrInputPath(Select):
     value: var[SelectType | NoSelection] = var[Union[SelectType, NoSelection]]("")
     """The value of the selection."""
 
-    input_class = SelectCurrentWithInput
+    input_class = InputWithUpDownArrows
 
     @dataclass
     class PromptChanged(Message):
@@ -423,7 +423,7 @@ class SelectOrInputPath(Select):
 
         value: str
 
-    def __init__(self, options, *, prompt_default: str = "", top_parent=None, id=None, classes=None):
+    def __init__(self, options, *, prompt_default: str = "", id=None, classes=None):
         """
         Initializes the SelectOrInputPath widget.
 
@@ -444,7 +444,6 @@ class SelectOrInputPath(Select):
         """
         # pass default as prompt to super since this will be used as an fixed option in the optionlist
         super().__init__(options, prompt=prompt_default, id=id, classes=classes)
-        self.top_parent = top_parent
         self._value: str = prompt_default
         self.prompt_default = prompt_default
         self._setup_variables_for_options(options)
@@ -553,35 +552,35 @@ class SelectOrInputPath(Select):
             select_overlay.focus()
 
     @on(input_class.PromptCloseOverlay)
-    def _select_current_with_input_prompt_close_overlay(self, event: SelectCurrentWithInput.PromptCloseOverlay):
+    def _select_current_with_input_prompt_close_overlay(self, event: InputWithUpDownArrows.PromptCloseOverlay):
         """
         Handles the event when the overlay is closed.
 
-        This method is called when the `PromptCloseOverlay` message is received from the `SelectCurrentWithInput` widget.
+        This method is called when the `PromptCloseOverlay` message is received from the `InputWithUpDownArrows` widget.
         It ensures that the overlay remains closed.
 
         Parameters
         ----------
-        event : SelectCurrentWithInput.PromptCloseOverlay
+        event : InputWithUpDownArrows.PromptCloseOverlay
             The message object.
         """
-        if self.input_class == SelectCurrentWithInput:
+        if self.input_class == InputWithUpDownArrows:
             self.expanded = False
 
     @on(input_class.PromptChanged)
-    def _select_current_with_input_prompt_changed(self, event: SelectCurrentWithInput.PromptChanged):
+    def _select_current_with_input_prompt_changed(self, event: InputWithUpDownArrows.PromptChanged):
         """
         Handles changes in the input prompt.
 
-        This method is called when the `PromptChanged` message is received from the `SelectCurrentWithInput` widget.
+        This method is called when the `PromptChanged` message is received from the `InputWithUpDownArrows` widget.
         It updates the widget's value and provides path suggestions based on the user's input.
 
         Parameters
         ----------
-        event : SelectCurrentWithInput.PromptChanged
+        event : InputWithUpDownArrows.PromptChanged
             The message object.
         """
-        if self.input_class == SelectCurrentWithInput:
+        if self.input_class == InputWithUpDownArrows:
             path = event.value
             self.value = path
             self.post_message(self.PromptChanged(path))

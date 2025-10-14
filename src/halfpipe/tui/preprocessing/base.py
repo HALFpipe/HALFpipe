@@ -7,7 +7,7 @@ from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Input, Static, Switch
+from textual.widgets import Button, Input, Static, Switch
 
 from ...model.file.base import File
 from ..data_analyzers.context import ctx
@@ -180,6 +180,19 @@ class Preprocessing(Widget):
         # yield workflowgroup_settings_panel
         # yield debuggroup_settings_panel
         # yield rungroup_settings_panel
+        yield Horizontal(
+            Button("🡄 Back", id="previous_button", classes="navigation_buttons"),
+            Button("Next 🡆", id="next_button", classes="navigation_buttons"),
+            classes="navigation_button_panel",
+        )
+
+    @on(Button.Pressed, "#previous_button")
+    def on_previous_button_pressed(self, event: Button) -> None:
+        self.app.previous_tab()
+
+    @on(Button.Pressed, "#next_button")
+    def on_next_button_pressed(self, event: Button) -> None:
+        self.app.next_tab()
 
     def build_advanced_settings_widgets(self):
         # Advanced setting widgets for halfpipe settings

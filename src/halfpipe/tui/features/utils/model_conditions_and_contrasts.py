@@ -425,7 +425,7 @@ feature_conditions_list:{feature_conditions_list}, all_possible_conditions:{all_
 
     def sort_by_group(self):
         condition_selection = self.get_widget_by_id("model_conditions_selection")
-        groups = list(condition_selection._option_ids.keys())
+        groups = [i.value for i in condition_selection._option_to_index.keys()]
         table = self.get_widget_by_id("contrast_table")
         # add this  column for sorting purpose, later it is removed
         table.add_column("condition", key="condition")
@@ -540,7 +540,7 @@ feature_conditions_list:{feature_conditions_list}, all_possible_conditions:{all_
         conditions = self.condition_values
 
         condition_selection = self.get_widget_by_id("model_conditions_selection")
-        available_conditions = list(condition_selection._option_ids.keys())
+        available_conditions = [i.value for i in condition_selection._option_to_index.keys()]
 
         logger.debug(
             f"UI->ContrastTableInputWindow.update_condition_selection-> conditions:{conditions} \

@@ -1,27 +1,22 @@
 Confirm {
-    height: auto;
-    width: auto;
+     #message {
+         min-height: 6;
+         width: auto;
+         content-align: center middle;
+                 text-style: bold;
+                         margin: 1 1 1 1;
+                         text-align: center;
+    }
     #draggable_modal_screen_container_wrapper {
         width: auto;
+        height: auto;
         min-width: 50;
-        min-height: 15;
-        align: center middle;
+        align: center bottom;
         WindowTitleBar {
             dock: top;
         }
-        .button_grid {
-            dock: bottom;
-        }
     }
-    Static {
-        height: auto;
-        content-align: center middle;
-        text-style: bold;
-        text-align: center;
-        width: auto;
-        margin: 1 1 1 1;
-    }
-    Horizontal {
+    .button_grid {
         height: auto;
         width: 100%;
         align: right top;
@@ -32,9 +27,12 @@ Confirm {
     }
     .window_title {
         height: auto;
-        width: 88%;
-        text-align: left;
+        width: 90%;
+
+        margin: 1 1 1 1;
+
     }
+
 }
 
 .confirm_success {
@@ -47,11 +45,15 @@ Confirm {
         background: $success;
     }
     WindowTitleBar Button {
+
+        background: $success;
+    }
+    WindowTitleBar Button:hover {
         background: $success;
     }
     .window_title {
         color: black;
-        height: auto;
+        width: 88%;
     }
 }
 
@@ -66,10 +68,17 @@ Confirm {
     }
     WindowTitleBar Button {
         background: $warning;
+        color: black;
     }
+    WindowTitleBar Button:hover {
+        background: $warning;
+    }
+            WindowTitleBar Button:focus {
+            background: $warning;
+        }
     .window_title {
         color: black;
-        height: auto;
+        width: 88%;
     }
 }
 
@@ -83,6 +92,10 @@ Confirm {
         background: $error;
     }
     WindowTitleBar Button {
+        background: $error;
+        color: black;
+    }
+    WindowTitleBar Button:hover {
         background: $error;
     }
     .window_title {

@@ -102,9 +102,9 @@ SetEchoTimeDifferenceModal {
         background: black;
     }
     Vertical {
-        border-left: thick $accent;
-        border-right: thick $accent;
-        border-bottom: thick $accent;
+        border-left: thick $primary;
+        border-right: thick $primary;
+        border-bottom: thick $primary;
     }
     Static {
         height: 3;
@@ -113,7 +113,7 @@ SetEchoTimeDifferenceModal {
     }
     Input {
         width: 10;
-        border: tall $accent;
+        border: tall $primary;
         offset-x: 15;
     }
     Horizontal {

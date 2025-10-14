@@ -1,0 +1,29 @@
+DraggableModalScreen {
+        WindowTitleBar Button {
+            max-width: 6;
+            height: 3;
+            padding-top: 0;
+            padding-left: 0;
+            background: $primary;
+            border: none;
+        }
+        WindowTitleBar Button:hover {
+            border: none;
+            border-top: none;
+            border-bottom: none;
+            background: $primary;
+            color: black;
+            border: thick black;
+        }
+        WindowTitleBar Button:focus {
+            background: $primary;
+        }
+}
+
+        #draggable_modal_screen_container_wrapper {
+            width: auto;
+            height: auto;
+            border-left: thick $primary;
+            border-right: thick $primary;
+            border-bottom: thick $primary;
+        }
