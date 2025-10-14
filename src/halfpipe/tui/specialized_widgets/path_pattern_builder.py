@@ -526,7 +526,7 @@ Your event file task tags are: \n{sorted(task_set)}.\
             and "{" + self.pattern_class.tag_entity + "}" not in self.pattern_match_results["file_pattern"]
         ):
             self.pattern_match_results["file_tag"] = await self.app.push_screen_wait(
-                NameInput(self.get_occupied_tags(), default_value=""),
+                NameInput(self.get_occupied_tags(), default_value="", title="File tag label"),
             )
 
         if compatible_task_tags:

@@ -27,7 +27,7 @@ from ...model.utils import get_schema_entities
 from ...utils.path import split_ext
 from ..data_analyzers.context import ctx
 from ..help_functions import find_bold_file_paths
-from ..standards import entity_colors
+from ..standards import atlas_based_connectivity_defaults, dual_reg_defaults, entity_colors, seed_based_defaults
 from .meta_data_steps import (
     CheckMetadataStep,
     CheckPhase1EchoTimeStep,
@@ -71,7 +71,7 @@ class FilePatternStep:
     """
 
     entity_display_aliases = entity_display_aliases
-    header_str = ""
+    header_str: str = ""
     ask_if_missing_entities: List[str] = list()
     required_in_path_entities: List[str] = list()
 
@@ -376,8 +376,8 @@ class EventsStep(FilePatternStep):
         self.taskset = taskset
         logger.info(f"UI->EventsStep->init taskset: {taskset}")
 
-        # if len(self.taskset) > 1:
-        #     self.required_in_path_entities = ["task"]
+        if len(self.taskset) > 1:
+            self.required_in_path_entities = ["task"]
         super().__init__(*args, **kwargs)
 
     def run_before_next_step(self):
@@ -735,6 +735,8 @@ class AddAtlasImageStep(FilePatternStep):
     allow_file_tagging = True
     tag_entity = "atlas"
 
+    header_str = str(atlas_based_connectivity_defaults["file_selection_widget_header"])
+
 
 class AddSpatialMapStep(FilePatternStep):
     """
@@ -771,6 +773,8 @@ class AddSpatialMapStep(FilePatternStep):
     allow_file_tagging = True
     tag_entity = "map"
 
+    header_str = str(dual_reg_defaults["file_selection_widget_header"])
+
 
 class AddBinarySeedMapStep(FilePatternStep):
     """
@@ -806,3 +810,5 @@ class AddBinarySeedMapStep(FilePatternStep):
     next_step_type = CheckSpaceStep
     allow_file_tagging = True
     tag_entity = "seed"
+
+    header_str = str(seed_based_defaults["file_selection_widget_header"])

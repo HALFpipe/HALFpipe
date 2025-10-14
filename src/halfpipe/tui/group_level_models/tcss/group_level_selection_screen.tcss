@@ -19,7 +19,7 @@ GroupLevelSelectionModal {
         color: white;
     }
     OptionList > .option-list--option-hover {
-        background: $accent;
+        background: $primary;
     }
 */
     Button {

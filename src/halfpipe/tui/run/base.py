@@ -82,8 +82,6 @@ class CSVTextArea(TextArea):
 
 
 class BatchOptionModal(DraggableModalScreen):
-    CSS_PATH = ["./batch_option_modal.tcss"]
-
     def __init__(self) -> None:
         """
         Initializes the ContrastTableInputWindow instance.

@@ -143,7 +143,7 @@ SetInitialVolumesRemovalModal {
     Input {
         width: 10;
         offset-x: 20;
-        border: tall $accent;
+        border: tall $primary;
     }
     Horizontal {
         height: 4;
@@ -162,14 +162,14 @@ SetInitialVolumesRemovalModal {
 
 SliceTimingModal {
     #draggable_modal_screen_container_wrapper {
-        width: 47;
+        width: auto;
         height: 14;
         background: black;
     }
     Vertical {
-        border-left: thick $accent;
-        border-right: thick $accent;
-        border-bottom: thick $accent;
+        border-left: thick $primary;
+        border-right: thick $primary;
+        border-bottom: thick $primary;
         align: center middle;
     }
     Static {
@@ -183,7 +183,7 @@ SliceTimingModal {
     }
     Input {
         width: 10;
-        border: tall $accent;
+        border: tall $primary;
         offset-x: 15;
     }
     Horizontal {

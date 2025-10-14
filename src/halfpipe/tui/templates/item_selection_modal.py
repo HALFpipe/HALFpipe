@@ -8,7 +8,7 @@ from textual.widgets import (
     Button,
     OptionList,
 )
-from textual.widgets.option_list import Option, Separator
+from textual.widgets.option_list import Option
 
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from .utils.name_input import NameInput
@@ -101,7 +101,7 @@ class ItemSelectionModal(DraggableModalScreen):
         options = []
         for key in self.ITEM_MAP:
             options.append(Option(self.ITEM_MAP[key], id=key))
-            options.append(Separator())
+            options.append(None)
 
         # Remove the last separator
         options.pop()

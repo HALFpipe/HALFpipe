@@ -62,7 +62,7 @@ InputWithColoredSuggestions > SelectOverlay {
 }
 
 Select:focus > SelectCurrent {
-    border: tall $accent;
+    border: tall $primary;
 }
 
 Select .up-arrow {
@@ -82,7 +82,7 @@ Select.-expanded > SelectOverlay {
 }
 
 Select.-expanded > SelectCurrent {
-    border: tall $accent;
+    border: tall $primary;
 }
 
 SelectCurrentWithInputAndSegmentHighlighting {
@@ -100,8 +100,8 @@ SelectCurrentWithInputAndSegmentHighlighting {
         height: 999;
         color: $text-disabled;
         background: transparent;
-        outline-top: $accent tall;
-        outline-bottom: $accent tall;
+        outline-top: $primary tall;
+        outline-bottom: $primary tall;
         padding: 1;
         border: none;
     }
@@ -182,7 +182,7 @@ PathPatternBuilder {
         grid-size: 5 1;
         grid-gutter: 0 0;
         padding: 1 0 0 0;
-        border-bottom: thick $accent;
+        border-bottom: thick $primary;
         height: 7;
         width: 100%;
         offset-x: 0;
@@ -192,7 +192,7 @@ PathPatternBuilder {
         grid-size: 5 1;
         grid-gutter: 1 1;
         padding: 0 0 0 0;
-        border: thick $accent;
+        border: thick $primary;
         height: 7;
         width: 100%;
         border: transparent;
@@ -217,15 +217,15 @@ PathPatternBuilder {
     #path_widget_container {
         height: 8;
         align: center middle;
-        border-top: thick $accent;
-        border-bottom: thick $accent;
+        border-top: thick $primary;
+        border-bottom: thick $primary;
         width: 100%;
         overflow: hidden;
     }
     ColorButton {
         height: 4;
         margin: 0 0;
-        /*    border: thick $accent;*/
+        /*    border: thick $primary;*/
         margin: 1 0;
         border-top: tall $panel-lighten-2;
         border-bottom: tall $panel-darken-3;

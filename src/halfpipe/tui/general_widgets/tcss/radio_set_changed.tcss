@@ -15,11 +15,11 @@ MultipleRadioSet {
     }
     .v_labels {
         border-right: solid white;
-        background: $accent-lighten-3;
+        background: $primary-lighten-3;
     }
     .h_labels {
         border-right: solid white;
-        background: $accent-lighten-3;
+        background: $primary-lighten-3;
     }
     .radio_table_rows {
         height: auto;

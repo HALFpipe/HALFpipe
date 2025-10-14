@@ -188,6 +188,20 @@ BIDS standard location in derivatives, you must specify the lesion masks also in
         yield self.bids_panel
         yield self.bids_summary_panel
         yield lesion_mask_panel
+        yield Horizontal(
+            Button("🡄 Back", id="previous_button", classes="navigation_buttons"),
+            Button("Next 🡆", id="next_button", classes="navigation_buttons"),
+            id="navigation_button_panel",
+            classes="navigation_button_panel",
+        )
+
+    @on(Button.Pressed, "#previous_button")
+    def on_previous_button_pressed(self, event: Button) -> None:
+        self.app.previous_tab()
+
+    @on(Button.Pressed, "#next_button")
+    def on_next_button_pressed(self, event: Button) -> None:
+        self.app.next_tab()
 
     # async def on_mount(self) -> None:
     #     await self._build_and_mount_bids_panels()
@@ -289,7 +303,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         self.t2_image_panel.border_title = "T2-weighted image file pattern"
         self.bold_image_panel.border_title = "BOLD image files patterns"
         self.field_map_panel.border_title = "Field maps"
-        await self.mount(self.non_bids_panel)
+        await self.mount(self.non_bids_panel, before="#navigation_button_panel")
 
     @on(Button.Pressed, "#add_t1_image_button")
     async def _on_button_add_t1_image_button_pressed(self, event) -> None:

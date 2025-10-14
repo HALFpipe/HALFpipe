@@ -122,10 +122,10 @@ class SelectionTemplate(Widget):
         """
         yield VerticalScroll(
             Grid(
-                Button("New", variant="primary", classes="add_button", id="new_item_button"),
-                Button("Rename", variant="primary", classes="rename_button", id="rename_item_button"),
-                Button("Duplicate", variant="primary", classes="duplicate_button", id="duplicate_item_button"),
-                Button("Delete", variant="primary", classes="delete_button", id="delete_item_button"),
+                Button("New", classes="add_button", id="new_item_button"),
+                Button("Rename", classes="rename_button", id="rename_item_button"),
+                Button("Duplicate", classes="duplicate_button", id="duplicate_item_button"),
+                Button("Delete", classes="delete_button", id="delete_item_button"),
                 classes="buttons",
             ),
             id="sidebar",

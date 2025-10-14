@@ -1,8 +1,9 @@
 TextSwitch {
     border: tall transparent;
-    height: 5;
-    width: 21;
+    height: 3;
+    width: 16;
     padding: 0 2;
+    background: green 25%;
 }
 
 TextSwitch > .switch--slider {
@@ -15,7 +16,7 @@ TextSwitch:hover {
 }
 
 TextSwitch:focus {
-    border: tall $accent;
+    border: tall $primary;
 }
 
 TextSwitch.-on {
@@ -25,9 +26,11 @@ TextSwitch.-on > .switch--slider {
     color: $success;
 }
 
+/*
 Switch {
     border: tall transparent;
-    height: 5;
+    height: 3;
     width: 21;
     padding: 0 2;
 }
+*/
