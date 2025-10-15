@@ -210,7 +210,7 @@ class FmriprepFactory(Factory):
     def __init__(self, ctx):
         super(FmriprepFactory, self).__init__(ctx)
 
-    def setup(self, workdir, bold_file_paths: set[str]) -> set[str]:
+    def setup(self, workdir: Path, bold_file_paths: set[str]) -> set[str]:
         """
         This needs to be documented.
         """
