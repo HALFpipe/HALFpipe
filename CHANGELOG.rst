@@ -1,12 +1,24 @@
 Changelog
 =========
 
+1.3.1 (October 15th 2025)
+---------------------------
+
+New features and enhancements
+-----------------------------
+- Improvements to terminal-based user interface (#852, #853, #854, #861)
+
+Bug fixes
+---------
+- Fix ICA-AROMA component calculation (#870)
+- Reduce memory usage for tSNR calculation (#863)
+- Add memory usage prediction for additional nodes (#865)
+
 1.3.0 (September 22nd 2025)
 ---------------------------
 
 New features and enhancements
 -----------------------------
-
 - Upgrade to fMRIPrep 25.1.1 (#746, #791, #792, #797, #806, #819)
 - Add new terminal-based user interface (#705, #795, #798, #802, #812, #814, #835, #838, #845, #848)
 - Standardize confounds to reduce numerical errors in confounds regression (#785)
@@ -26,7 +38,6 @@ Bug fixes
 
 Maintenance
 -----------
-
 - Move container build to conda packages (#746, #792, #815, #826)
 - Ensure compatibility with newer `nipype` (#801)
 
