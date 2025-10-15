@@ -274,7 +274,6 @@ class SegmentHighlighting(Input):
         classes : str or None, optional
             Space-separated list of classes for styling purposes.
         """
-        super().__init__(*args, value=path, highlighter=highlighting, id=id, classes=classes, **kwargs)
         # A dictionary mapping colors to their respective labels.
         self.colors_and_labels = colors_and_labels
         # The start position of the current highlight.
@@ -297,6 +296,7 @@ class SegmentHighlighting(Input):
         self.highlighting_with_mouse = False
         # The original value of the input. Copy it here, so that once we hit the reset button we get it back
         self.original_value = path
+        super().__init__(*args, value=path, highlighter=highlighting, id=id, classes=classes, **kwargs)
 
     def update_colors_and_labels(self, new_colors_and_labels: dict[str, str]) -> None:
         """
@@ -391,7 +391,8 @@ class SegmentHighlighting(Input):
         if offset is None:
             return
         event.stop()
-        click_x = offset.x + self.view_position
+        scroll_x, _ = self.scroll_offset
+        click_x = offset.x + scroll_x
 
         # mouse position
         self.mouse_at_drag_start = event.screen_offset
