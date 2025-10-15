@@ -10,6 +10,7 @@ from nipype.interfaces import utility as niu
 from nipype.pipeline import engine as pe
 from smriprep.interfaces.templateflow import fetch_template_files
 
+from ...interfaces.fixes.applytransforms import ApplyTransforms
 from ...resource import get as get_resource
 from ..constants import Constants
 from ..memory import MemoryCalculator
@@ -45,8 +46,8 @@ def init_alt_bold_std_trans_wf(
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
-                "mask_std",
                 "bold_minimal",
+                "bold_mask_native",
                 "coreg_boldref",  # comes from bold_fit_wf.outputnode.coreg_boldref',
                 "boldref2anat_xfm",
                 "anat2std_xfm",
@@ -56,9 +57,8 @@ def init_alt_bold_std_trans_wf(
         name="inputnode",
     )
 
-    bold_std_trans_wf_outputs = ["bold_file", "resampling_reference"]
     outputnode = pe.Node(
-        niu.IdentityInterface(fields=[f"alt_{a}" for a in bold_std_trans_wf_outputs]),
+        niu.IdentityInterface(fields=["alt_bold_file_std", "alt_bold_mask_std"]),
         name="outputnode",
     )
 
@@ -97,9 +97,14 @@ def init_alt_bold_std_trans_wf(
     workflow.connect(inputnode, "coreg_boldref", bold_std_trans_wf, "inputnode.bold_ref_file")  # moving_image
     workflow.connect(inputnode, "motion_xfm", bold_std_trans_wf, "inputnode.motion_xfm")  # its a text file instead of h5
     workflow.connect(inputnode, "boldref2anat_xfm", bold_std_trans_wf, "inputnode.boldref2anat_xfm")
-    workflow.connect(inputnode, "mask_std", bold_std_trans_wf, "inputnode.target_mask")
 
-    for a in bold_std_trans_wf_outputs:
-        workflow.connect(bold_std_trans_wf, f"outputnode.{a}", outputnode, f"alt_{a}")
+    workflow.connect(bold_std_trans_wf, "outputnode.bold_file", outputnode, "alt_bold_file_std")
+
+    resample_mask = pe.Node(ApplyTransforms(interpolation="MultiLabel"), name="resample_mask")
+    resample_mask.inputs.reference_image = template_files["t1w"]
+    workflow.connect(inputnode, "bold_mask_native", resample_mask, "input_image")
+    workflow.connect(bold_std_trans_wf, "boldref2target.out", resample_mask, "transforms")
+
+    workflow.connect(resample_mask, "output_image", outputnode, "alt_bold_mask_std")
 
     return workflow

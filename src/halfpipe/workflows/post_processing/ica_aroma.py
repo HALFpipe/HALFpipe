@@ -8,18 +8,15 @@ from pathlib import Path
 from fmripost_aroma import config
 from fmripost_aroma.workflows.aroma import init_ica_aroma_wf
 from nipype.interfaces import utility as niu
-from nipype.interfaces.fsl import ImageMaths
 from nipype.pipeline import engine as pe
 
 from ...interfaces.fslnumpy.regfilt import FilterRegressor
-from ...interfaces.image_maths.resample import Resample
 from ...interfaces.reports.vals import UpdateVals
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ...interfaces.utility.file_type import SplitByFileType
 from ...interfaces.utility.remove_volumes import RemoveVolumes
 from ...interfaces.utility.tsv import MergeColumns
-from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -82,9 +79,8 @@ def init_ica_aroma_components_wf(
         niu.IdentityInterface(
             fields=[
                 "confounds_file",
-                "alt_bold_file",
-                "bold_mask_native",
-                "alt_resampling_reference",
+                "alt_bold_file_std",
+                "alt_bold_mask_std",
                 "tags",
                 "dummy_scans",
                 "repetition_time",
@@ -107,28 +103,6 @@ def init_ica_aroma_components_wf(
     #
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
-
-    # We resample the bold mask as well.
-    # We used to have this from the get go but now the in the new init_volumetric_resample_wf
-    # fmriprep does not output the mask anymore.
-    resample_mask = pe.Node(
-        Resample(
-            interpolation="GenericLabel",
-            input_space=Constants.reference_space,
-            reference_space="MNI152NLin6Asym",
-            reference_res=2,
-        ),
-        mem_gb=2 * memcalc.volume_std_gb,
-        name="resample_mask_to_mni",
-    )
-    workflow.connect(inputnode, "bold_mask_native", resample_mask, "input_image")
-
-    # Squeeze out singleton dimension from mask
-    squeeze_mask = pe.Node(
-        ImageMaths(op_string="-thr 0", suffix="_3D"),  # No thresholding, just drop extra dimensions
-        name="squeeze_mask",
-    )
-    workflow.connect(resample_mask, "output_image", squeeze_mask, "in_file")
 
     # Set the dimensionality of the MELODIC ICA decomposition.
     # (default: -200, i.e., estimate <=200 components)
@@ -162,12 +136,12 @@ def init_ica_aroma_components_wf(
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "melodic.tr_sec")
     workflow.connect(inputnode, "repetition_time", ica_aroma_wf, "ica_aroma.TR")
     workflow.connect(inputnode, "dummy_scans", ica_aroma_wf, "inputnode.skip_vols")
-    workflow.connect(inputnode, "alt_bold_file", ica_aroma_wf, "inputnode.bold_std")
-    workflow.connect(squeeze_mask, "out_file", ica_aroma_wf, "inputnode.bold_mask_std")
+    workflow.connect(inputnode, "alt_bold_file_std", ica_aroma_wf, "inputnode.bold_std")
+    workflow.connect(inputnode, "alt_bold_mask_std", ica_aroma_wf, "inputnode.bold_mask_std")
 
     workflow.connect(inputnode, "confounds_file", ica_aroma_wf, "inputnode.confounds")
 
-    # Disconnect existing source_file inputs and connect alt_bold_file from inputnode
+    # Disconnect existing source_file inputs and connect alt_bold_file_std from inputnode
     ds_nodes = [
         "ds_report_ica_aroma",
         "ds_components",
@@ -179,8 +153,8 @@ def init_ica_aroma_components_wf(
         node = ica_aroma_wf.get_node(node_name)
         if node is not None:
             # Directly connect alt_bold_file, which we generate ourselves in  init_alt_bold_std_trans_wf
-            workflow.connect(inputnode, "alt_bold_file", node, "source_file")
-            workflow.connect(squeeze_mask, "out_file", node, "bold_mask_std")
+            workflow.connect(inputnode, "alt_bold_file_std", node, "source_file")
+            workflow.connect(inputnode, "alt_bold_mask_std", node, "bold_mask_std")
 
     # remove dummy scans from outputs
     remove_dummy_scans = pe.Node(
