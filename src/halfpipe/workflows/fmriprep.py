@@ -428,7 +428,7 @@ class FmriprepFactory(Factory):
         node: pe.Node,
         source_file: Path | str | None = None,
         subject_id: str | None = None,
-        ignore_attrs: frozenset[str] = frozenset({"alt_bold_file", "alt_resampling_reference"}),
+        ignore_attrs: frozenset[str] = frozenset({"alt_bold_file_std", "alt_bold_mask_std"}),
         **_: Any,
     ) -> set[str]:
         """
