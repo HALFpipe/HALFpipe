@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
-import logging
 import os
 import shutil
 from multiprocessing import cpu_count
@@ -12,6 +11,7 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 import pytest
+import scipy.spatial.distance
 from fmriprep import config
 from templateflow.api import get as get_template
 
@@ -49,9 +49,32 @@ def test_with_reconall(tmp_path, mock_spec):
     assert any("recon" in u.name for u in graph.nodes)
 
 
+def dice_similarity(
+    path_or_image: Path | nib.nifti1.Nifti1Image,
+    reference_mask_path_or_image: Path | nib.nifti1.Nifti1Image,
+    threshold: float = 0.0,
+) -> float:
+    image = nib.nifti1.load(path_or_image) if isinstance(path_or_image, Path) else path_or_image
+    data = image.get_fdata()
+    mask = np.logical_and(data > threshold, np.logical_not(np.isclose(data, threshold)))
+    if mask.ndim == 4:
+        mask = np.any(mask, axis=3)
+    reference_mask_image = (
+        nib.nifti1.load(reference_mask_path_or_image)
+        if isinstance(reference_mask_path_or_image, Path)
+        else reference_mask_path_or_image
+    )
+    reference_mask = np.asanyarray(reference_mask_image.dataobj, dtype=bool)
+    assert image.shape[:3] == reference_mask_image.shape, "Images have different shapes"
+    assert np.allclose(image.affine, reference_mask_image.affine, atol=1e-3), "Images have different affines"
+    np.testing.assert_allclose(image.header.get_zooms()[:3], reference_mask_image.header.get_zooms())
+    dissimilarity = scipy.spatial.distance.dice(mask.flatten(), reference_mask.flatten())
+    return 1.0 - dissimilarity
+
+
 @pytest.mark.slow
 @pytest.mark.timeout(3 * 3600)
-def test_feature_extraction(tmp_path, mock_spec):
+def test_feature_extraction(tmp_path: Path, mock_spec: Spec) -> None:
     """
     Test the feature extraction workflows.
 
@@ -60,13 +83,8 @@ def test_feature_extraction(tmp_path, mock_spec):
     - mock_spec: A fixture providing a mock json.spec file.
     """
 
-    # TODO why does this not print
-    logging.getLogger("nipype.workflow").setLevel(logging.DEBUG)
-
-    # Persist nipype cache across test runs
-    # TODO remove this
-    tmp_path = Path("/tmp/halfpipe")
-    tmp_path.mkdir(exist_ok=True)
+    template_mask_path = get_template("MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="mask")
+    template_mask_image = nib.nifti1.load(template_mask_path)
 
     dummy_scans = 3
     mock_spec.global_settings.update(dict(dummy_scans=dummy_scans))
@@ -91,47 +109,69 @@ def test_feature_extraction(tmp_path, mock_spec):
     opts.nipype_run_plugin = "Simple"
     opts.debug = True
 
-    (bold_path,) = tmp_path.glob("rawdata/sub-*/func/*_bold.nii.gz")
+    bold_path = tmp_path / "rawdata" / "sub-1012" / "func" / "sub-1012_task-rest_bold.nii.gz"
     bold_image = nib.nifti1.load(bold_path)
+    assert bold_image.shape[:3] != template_mask_image.shape, "Input image is already in standard space"
 
     run_stage_run(opts)
 
-    template_path = get_template("MNI152NLin2009cAsym", resolution=2, desc="brain", suffix="T1w")
-    template_image = nib.nifti1.load(template_path)
-    assert bold_image.shape[:3] != template_image.shape  # This should always pass
+    fmriprep_func_derivatives_path = tmp_path / "derivatives" / "fmriprep" / "sub-1012" / "func"
+    native_reference_mask_image_path = fmriprep_func_derivatives_path / "sub-1012_task-rest_space-T1w_desc-brain_mask.nii.gz"
+    native_reference_mask_image = nib.nifti1.load(native_reference_mask_image_path)
+    reference_mask_images = dict(standard=template_mask_image, native=native_reference_mask_image)
 
-    (native_reference_path,) = tmp_path.glob("derivatives/fmriprep/sub-*/func/*_space-T1w_boldref.nii.gz")
-    native_reference_image = nib.nifti1.load(native_reference_path)
-
-    reference_images = dict(standard=template_image, native=native_reference_image)
-
+    func_derivatives_path = tmp_path / "derivatives" / "halfpipe" / "sub-1012" / "func"
     for space in {"standard", "native"}:
-        (preproc_path,) = tmp_path.glob(f"derivatives/halfpipe/sub-*/func/*setting-{space}*_bold.nii.gz")
+        (preproc_path,) = func_derivatives_path.glob(f"sub-1012_task-rest_setting-{space}*_bold.nii.gz")
         preproc_image = nib.nifti1.load(preproc_path)
-        assert bold_image.shape[3] == preproc_image.shape[3] + dummy_scans
+        assert bold_image.shape[3] == preproc_image.shape[3] + dummy_scans, "Dummy scans were not removed"
 
-        assert preproc_image.shape[:3] == reference_images[space].shape
-        np.testing.assert_allclose(preproc_image.affine, reference_images[space].affine)
+        assert dice_similarity(preproc_image, reference_mask_images[space]) >= 0.9
 
         if space == "native":
             target_zooms = bold_image.header.get_zooms()
         elif space == "standard":
             target_zooms = (
-                *reference_images[space].header.get_zooms()[:3],
+                *reference_mask_images[space].header.get_zooms()[:3],
                 bold_image.header.get_zooms()[3],
             )
         else:
             raise ValueError(f"Unknown space: {space}")
         np.testing.assert_allclose(preproc_image.header.get_zooms(), target_zooms)
 
-        (confounds_path,) = tmp_path.glob(f"derivatives/halfpipe/sub-*/func/*setting-{space}*_desc-confounds_regressors.tsv")
+        (confounds_path,) = func_derivatives_path.glob(f"sub-1012_task-rest_setting-{space}*_desc-confounds_regressors.tsv")
         confounds_frame = read_spreadsheet(confounds_path)
         assert bold_image.shape[3] == confounds_frame.shape[0] + dummy_scans
 
-        for path in tmp_path.glob(f"derivatives/halfpipe/sub-*/func/task-*/*feature-{space}*.nii.gz"):
-            image = nib.nifti1.load(path)
-            assert image.shape[:3] == reference_images[space].shape
-            np.testing.assert_allclose(image.affine, reference_images[space].affine)
+        for path in func_derivatives_path.glob(f"task-rest/sub-1012_task-rest_feature-{space}*.nii.gz"):
+            tokens = path.name.removesuffix(".nii.gz").split("_")
+            if tokens[-1] == "mask":
+                suffix = "mask"
+            elif tokens[-1] == "statmap":
+                suffix = tokens[-2]
+            else:
+                suffix = None
+            if suffix in {"mask", "stat-variance", "stat-sigmasquareds"}:
+                threshold = 0.9
+            else:
+                threshold = 0.0
+            assert dice_similarity(path, reference_mask_images[space]) >= threshold, f"Low dice similarity for {path.name}"
+
+    fmripost_aroma_template_mask_path = get_template("MNI152NLin6Asym", resolution=2, desc="brain", suffix="mask")
+    fmripost_aroma_components_path = (
+        tmp_path
+        / "derivatives"
+        / "fmripost_aroma"
+        / "sub-1012"
+        / "func"
+        / "sub-1012_task-rest_thresh-0p5_desc-melodic_components.nii.gz"
+    )
+    assert dice_similarity(fmripost_aroma_components_path, fmripost_aroma_template_mask_path) >= 0.9
+
+    tsnr_image_path = (
+        tmp_path / "derivatives" / "halfpipe" / "sub-1012" / "func" / "sub-1012_task-rest_stat-tsnr_boldmap.nii.gz"
+    )
+    assert dice_similarity(tsnr_image_path, template_mask_path, threshold=20.0) >= 0.8
 
 
 @pytest.mark.parametrize("fieldmap_type", ["phasediff", "epi"])
