@@ -22,8 +22,14 @@ from ..memory import MemoryCalculator
 
 def init_atlas_based_connectivity_wf(
     workdir: str | Path,
+    # harveyaa - in general: why are these optional arguments?
+
+    # harveyaa - feature must contain atlas names, sets default min region coverage 0.8
+    # harveyaa - Feature constructor must have type (which is a string) as 2nd positional arg
     feature: Feature | None = None,
+    # harveyaa - list of same length as names in feature of paths
     atlas_files: Sequence[Path | str] | None = None,
+    # harveyaa - needs either "MNI152NLin6Asym"  "MNI152NLin2009cAsym" (ref: src/halfpipe/interfaces/image_maths/resample.py)
     atlas_spaces: Sequence[str] | None = None,
     space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
@@ -38,6 +44,7 @@ def init_atlas_based_connectivity_wf(
         name = "atlas_based_connectivity_wf"
     workflow = pe.Workflow(name=name)
 
+    # harveyaa - actual necessary inputs
     inputnode = pe.Node(
         niu.IdentityInterface(
             fields=[
@@ -47,6 +54,7 @@ def init_atlas_based_connectivity_wf(
                 "bold",
                 "mask",
                 "repetition_time",
+                
                 "atlas_names",
                 "atlas_files",
                 "atlas_spaces",
