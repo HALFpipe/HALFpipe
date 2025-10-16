@@ -10,8 +10,9 @@ from typing import Any
 from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal, ScrollableContainer
+from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import Button, Input, Label, Pretty, RadioButton, TextArea
+from textual.widgets import Button, Input, Label, Pretty, RadioButton, Select, Static, TextArea
 from textual.worker import Worker, WorkerState
 
 from ...cli.run import run_stage_workflow
@@ -334,15 +335,31 @@ class Run(Widget):
         ComposeResult
             The composed widgets.
         """
+        keep_panel = Horizontal(
+            Static("Choose which intermediate files to keep", id="keep_label"),
+            Select(
+                [("some (default)", "some"), ("all", "all"), ("none", "none")],
+                value="some",
+                allow_blank=False,
+                id="keep_selection",
+            ),
+            id="keep_selection_panel",
+        )
         with ScrollableContainer():
             yield Horizontal(
+                keep_panel,
                 # Button("Refresh spec file", id="refresh_button"),
                 # Button("Save spec file", id="save_button"),
                 Button("Generate HPC batch script", id="generate_batch_script_button"),
                 Button("Exit & Run locally", id="run_button"),
                 # Button("Exit UI", id="exit_button"),
+                id="run_button_panel",
             )
             yield Pretty("", id="this_output")
+
+    @on(Select.Changed, "#keep_selection")
+    def on_keep_selection_changed(self, message: Message):
+        opts["keep"] = message.value
 
     @on(Button.Pressed, "#run_button")
     def on_run_button_pressed(self):
@@ -352,30 +369,6 @@ class Run(Widget):
         This method is called when the user presses the "Run" button. It
         exits the application and returns the working directory.
         """
-        debug = opts["debug"]
-        from ...logging.base import LoggingContext
-
-        if debug:
-            import logging
-
-            from ...logging.base import setup as setup_logging
-
-            setup_logging(LoggingContext.queue(), levelno=logging.DEBUG)
-
-        if opts["watchdog"] is True:
-            from ...watchdog import init_watchdog
-
-            init_watchdog()
-
-        if debug:
-            from fmriprep import config
-
-            config.execution.debug = ["all"]  # type: ignore
-
-        verbose = opts["verbose"]
-        if verbose:
-            LoggingContext.enable_verbose()
-
         opts["workdir"] = ctx.workdir
         save_spec(ctx.spec, workdir=ctx.workdir)
         self.app.exit(result=opts)

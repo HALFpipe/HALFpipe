@@ -19,7 +19,6 @@ from textual.widgets._header import HeaderTitle
 from ..logging.base import LoggingContext
 from .data_analyzers.context import ctx
 from .data_input.base import DataInput
-from .diagnostics.base import Diagnostics
 from .features.base import FeatureSelection
 from .group_level_models.base import GroupLevelModelSelection
 from .preprocessing.base import Preprocessing
@@ -414,8 +413,8 @@ class MainApp(App):
                 yield VerticalScroll(GroupLevelModelSelection(id="models_content"))
             with TabPane("Check and run", id="run_tab", classes="tabs"):
                 yield VerticalScroll(Run(id="run"), id="run_content")
-            with TabPane("Diagnostics", id="diag_tab", classes="tabs"):
-                yield VerticalScroll(Diagnostics(), id="diag_content")
+            # with TabPane("Diagnostics", id="diag_tab", classes="tabs"):
+            #     yield VerticalScroll(Diagnostics(), id="diag_content")
         yield Footer()
 
     @on(TabbedContent.TabActivated, pane="#run_tab")

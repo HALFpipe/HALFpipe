@@ -3,11 +3,12 @@
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Container, Horizontal, ScrollableContainer, Vertical
+from textual.containers import Horizontal, ScrollableContainer, Vertical
 from textual.message import Message
-from textual.widgets import RadioButton, RadioSet, SelectionList, Static
+from textual.widgets import RadioButton, SelectionList, Static
 
 from ...logging import logger
+from ..general_widgets.custom_general_widgets import SwitchWithSelect
 from ..general_widgets.custom_switch import TextSwitch
 from ..help_functions import extract_conditions, widget_exists
 from ..specialized_widgets.confirm_screen import Confirm
@@ -97,6 +98,9 @@ class TaskBased(FeatureTemplate):
         self.feature_dict.setdefault("conditions", [])
         self.feature_dict.setdefault("model_serial_correlations", True)
         self.feature_dict.setdefault(self.featurefield, [])
+        self.feature_dict.setdefault("estimation", "multiple_trial")
+
+        self.trial_estimation_default_switch_value = False if self.feature_dict["estimation"] == "multiple_trial" else True
 
         self.estimation_types = {
             "single trial least squares single": "single_trial_least_squares_single",
@@ -108,28 +112,86 @@ class TaskBased(FeatureTemplate):
         self.feature_dict.setdefault("estimation", "multiple_trial")
 
         self.estimation_type_panel = Vertical(
-            RadioSet(
-                *[
-                    RadioButton(i, value=i == self.estimation_labels[self.feature_dict["estimation"]])
-                    for i in self.estimation_types.keys()
+            SwitchWithSelect(
+                "Single trial estimation",
+                options=[
+                    ("least-squares all", "single_trial_least_squares_all"),
+                    ("least-squares single", "single_trial_least_squares_single"),
                 ],
-                id="estimation_types_selection",
+                switch_value=self.trial_estimation_default_switch_value,
+                default_option=self.feature_dict["estimation"]
+                if self.feature_dict["estimation"] != "multiple_trial"
+                else "single_trial_least_squares_single",
+                id="estimation_type",
             ),
             id="estimation_types_selection_panel",
             classes="components",
         )
+
         self.estimation_type_panel.border_title = "Estimation Type"
 
-        self.model_serial_correlations_panel = Container(
-            Horizontal(
-                Static("Model serial correlation", classes="description_labels"),
-                TextSwitch(value=self.feature_dict["model_serial_correlations"], id="model_serial_correlations_switch"),
-                id="model_serial_correlations_sub_panel",
-            ),
+    def create_model_serial_correlations_panel(self):
+        model_serial_correlations_panel = Horizontal(
+            Static("Use auto-regressive model", classes="description_labels"),
+            TextSwitch(value=self.feature_dict["model_serial_correlations"], id="model_serial_correlations_switch"),
             id="model_serial_correlations_panel",
-            classes="components",
         )
-        self.model_serial_correlations_panel.border_title = "Model serial correlation"
+        return model_serial_correlations_panel
+
+    @on(SwitchWithSelect.SwitchChanged, "#estimation_type")
+    async def _on_estimation_type_switch_changed(self, message):
+        # When selection in the estimation_types_selection widget are toggled, all selected tasks in selection
+        # tasks_to_use_selection are deselected. This is to not make a mess when somebody would select first multiple_trial
+        # and select some conditions and then select a different estimation and then select different tasks and then go
+        # back to multiple_trial. The contrast table would then be confused, and it is safer to in such cases to start fresh.
+        # Also, the contrast table is valid only for multiple_trial, so for the other ones we need to remove the contrast table
+        # and also conditions key in the ctx.cache.
+        # feed the dictionary (ctx.cache)
+        self.get_widget_by_id("tasks_to_use_selection").deselect_all()
+        if message.switch_value:
+            self.feature_dict.pop("conditions", None)
+            if widget_exists(self, "model_conditions_and_constrasts"):
+                await self.get_widget_by_id("model_conditions_and_constrasts").remove()
+            if not widget_exists(self, "model_serial_correlations_panel"):
+                await self.get_widget_by_id("estimation_types_selection_panel").mount(
+                    self.create_model_serial_correlations_panel()
+                )
+            self.get_widget_by_id("estimation_types_selection_panel").styles.height = 8
+            self.feature_dict["estimation"] = self.get_widget_by_id("estimation_type").selected
+        else:
+            self.feature_dict["estimation"] = "multiple_trial"
+            self.feature_dict.setdefault("conditions", [])
+
+            if not widget_exists(self, "model_conditions_and_constrasts"):
+                await self.mount(
+                    self.create_model_conditions_and_contrast_table(),
+                    after=self.get_widget_by_id("tasks_to_use_selection_panel"),
+                )
+            if widget_exists(self, "model_serial_correlations_panel"):
+                await self.get_widget_by_id("model_serial_correlations_panel").remove()
+                self.feature_dict["model_serial_correlations"] = True
+            self.get_widget_by_id("estimation_types_selection_panel").styles.height = 5
+
+    @on(SwitchWithSelect.Changed, "#estimation_type")
+    def _on_estimation_type_changed(self, message) -> None:
+        """
+        Handles changes in the bandpass filter type.
+
+        This method is called when the value of the `SwitchWithSelect`
+        widget with the ID "bandpass_filter_type" changes. It updates the
+        bandpass filter settings in `setting_dict` based on the selected
+        filter type (Gaussian or frequency-based).
+
+        Parameters
+        ----------
+        message : SwitchWithSelect.Changed
+            The message object containing information about the change.
+        """
+        estimation_type = message.value
+        if message.control.switch_value is True:
+            self.feature_dict["estimation"] = estimation_type
+        else:
+            self.feature_dict["estimation"] = "multiple_trial"
 
     def create_model_conditions_and_contrast_table(self):
         # We need this to get correct condition selections in the widget, to achieve this, we do the same thing as when
@@ -157,31 +219,6 @@ class TaskBased(FeatureTemplate):
             classes="components",
         )
 
-    @on(RadioSet.Changed, "#estimation_types_selection")
-    async def on_radio_set_changed(self, message):
-        # When selection in the estimation_types_selection widget are toggled, all selected tasks in selection
-        # tasks_to_use_selection are deselected. This is to not make a mess when somebody would select first multiple_trial
-        # and select some conditions and then select a different estimation and then select different tasks and then go
-        # back to multiple_trial. The contrast table would then be confused, and it is safer to in such cases to start fresh.
-        # Also, the contrast table is valid only for multiple_trial, so for the other ones we need to remove the contrast table
-        # and also conditions key in the ctx.cache.
-        estimation_type = self.estimation_types[str(message.pressed.label)]
-        # feed the dictionary (ctx.cache)
-        self.feature_dict["estimation"] = estimation_type
-        self.get_widget_by_id("tasks_to_use_selection").deselect_all()
-        if estimation_type != "multiple_trial":
-            self.feature_dict.pop("conditions", None)
-            if widget_exists(self, "model_conditions_and_constrasts"):
-                await self.get_widget_by_id("model_conditions_and_constrasts").remove()
-        else:
-            self.feature_dict.setdefault("conditions", [])
-
-            if not widget_exists(self, "model_conditions_and_constrasts"):
-                await self.mount(
-                    self.create_model_conditions_and_contrast_table(),
-                    after=self.get_widget_by_id("tasks_to_use_selection_panel"),
-                )
-
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
             yield self.estimation_type_panel
@@ -191,11 +228,17 @@ class TaskBased(FeatureTemplate):
                 # is a safety
                 if self.images_to_use is not None and self.feature_dict["estimation"] == "multiple_trial":
                     yield self.create_model_conditions_and_contrast_table()
-            yield self.model_serial_correlations_panel
             yield self.preprocessing_panel
 
     async def on_mount(self) -> None:
         await self.mount_tasks()
+        if self.trial_estimation_default_switch_value:
+            self.estimation_type_panel.styles.height = 8
+            await self.get_widget_by_id("estimation_types_selection_panel").mount(
+                self.create_model_serial_correlations_panel()
+            )
+        else:
+            self.estimation_type_panel.styles.height = 5
 
     async def mount_tasks(self):
         if self.images_to_use is not None:

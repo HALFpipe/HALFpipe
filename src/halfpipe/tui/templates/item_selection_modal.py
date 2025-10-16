@@ -59,7 +59,7 @@ class ItemSelectionModal(DraggableModalScreen):
     DEFAULT_CSS = """
         ItemSelectionModal {
             #draggable_modal_screen_container_wrapper {
-                width: 50;
+                width: 51;
                 height: auto;
                 min-width: 50;
                 min-height: 15;
