@@ -630,7 +630,7 @@ async def run_before_for_reho_falff_preproc(
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    # await pilot.click("#only_one_button")
+    await pilot.click("#only_one_button")
 
     for task in tasks_by_stage[stage]:
         await task()

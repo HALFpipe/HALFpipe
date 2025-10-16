@@ -190,68 +190,7 @@ def generate_strings(base_string: str, schema_entities_and_colors_dict: dict[str
 
 
 class SegmentHighlighting(Input):
-    """
-    An input widget that allows highlighting segments of text.
 
-    This class extends the `Input` widget to provide functionalities for
-    highlighting segments of text using mouse and keyboard.
-
-    Attributes
-    ----------
-    colors_and_labels : dict[str, str]
-        A dictionary mapping colors to their respective labels.
-    highlight_start_position : int | None
-        The start position of the current highlight.
-    is_highlighting : bool
-        Indicates whether the widget is in highlighting mode.
-    previous_highlights : list[tuple[int, int, str]]
-        A list of previous highlights (start, end, color).
-    current_highlights : list[tuple[int, int, str]]
-        A list of current highlights (start, end, color).
-    highlight_start_direction : int | None
-        The direction in which highlighting started.
-    highlight_color : str
-        The default highlight color.
-    mouse_at_drag_start : Offset | None
-        The position of the mouse at the start of dragging.
-    old_drag : int
-        The old drag position to detect changes.
-    highlighting_with_mouse : bool
-        Indicates whether highlighting is done using the mouse.
-    original_value : str
-        The original value of the input.
-
-    Methods
-    -------
-    update_colors_and_labels(new_colors_and_labels)
-        Updates the colors and labels mapping.
-    action_cursor_left()
-        Moves the cursor one position to the left.
-    action_cursor_right()
-        Moves the cursor one position to the right.
-    action_cursor_left_highlight()
-        Moves the cursor one position to the left and starts highlighting.
-    action_cursor_right_highlight()
-        Moves the cursor one position to the right and starts highlighting.
-    on_mouse_down(event)
-        Prepares for highlighting when the mouse button is pressed down.
-    on_mouse_move(event)
-        Handles the highlighting logic when the mouse is moved.
-    on_mouse_up(event)
-        Resets the highlighting state when the mouse button is released.
-    _start_highlighting(direction)
-        Starts or continues the highlighting process.
-    _apend_highlight(start, end, color)
-        Appends a new highlight range and its color to the highlights list.
-    _stop_highlighting()
-        Stops the highlighting process and saves the current highlights.
-    reset_highlights()
-        Clears all existing highlights.
-    reset_all()
-        Clears all existing highlights and resets the input value.
-    submit_path()
-        Submits the highlighted text, replacing highlighted segments with their respective labels.
-    """
 
     # expand super class bindings, shift + left/right arrow, highlights
     Input.BINDINGS += [
@@ -352,7 +291,7 @@ class SegmentHighlighting(Input):
         one position to the right. If the widget is in highlighting mode,
         this method also stops the highlighting process.
         """
-        if self._cursor_at_end and self._suggestion:
+        if self.cursor_at_end and self._suggestion:
             self.value = self._suggestion
             self.cursor_position = len(self.value)
         else:
