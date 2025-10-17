@@ -75,7 +75,6 @@ WorkDirectory {
     }
     #draggable_modal_screen_container_wrapper {
         width: 45;
-        height: 13;
         background: black;
     }
 }
@@ -83,7 +82,8 @@ WorkDirectory {
 #confirm_override_spec_file_modal {
     #draggable_modal_screen_container_wrapper {
         width: 45;
-        height: 13;
+
         background: black;
     }
 }
+
