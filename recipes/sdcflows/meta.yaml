@@ -10,7 +10,8 @@ source:
   git_rev: "2.13.0"
 
 build:
-  number: 1
+  noarch: python
+  number: 2
   script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
 
 requirements:

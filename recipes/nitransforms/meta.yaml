@@ -10,7 +10,8 @@ source:
   sha256: 536956c580ee03e3e93043208da9eafc920b5934c7e7e0c4c7d759fca0963633
 
 build:
-  number: 0
+  noarch: python
+  number: 1
   script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -vv"
 
 requirements:
