@@ -91,9 +91,9 @@ def init_gig_ica_wf(
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
-    # Resample the maps to the standard space
+    # Resample the maps to standard or native space
     resample_maps = pe.MapNode(
-        Resample(interpolation="LanczosWindowedSinc"),
+        Resample(interpolation="LanczosWindowedSinc", lazy=True),
         name="resample_maps",
         iterfield=["input_image", "input_space"],
         n_procs=config.nipype.omp_nthreads,
