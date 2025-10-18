@@ -8,7 +8,7 @@ source:
 
 build:
   noarch: python
-  number: 0
+  number: 1
   script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
 
 requirements:
