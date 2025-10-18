@@ -3,16 +3,16 @@
 
 package:
   name: "mapca"
-  version: "0.0.5"
+  version: "0.0.6"
 
 source:
-  url: https://files.pythonhosted.org/packages/source/m/mapca/mapca-0.0.5.tar.gz
-  sha256: 948fd1f7a8ab2a41e4fe67694a36a626b7fc23f549bc0dcc0129bdc4535d2c8e
+  url: https://files.pythonhosted.org/packages/source/m/mapca/mapca-0.0.6.tar.gz
+  sha256: 38c727c779e1868c0b17a95777004a5a28076aab40e51e50d972db0a26decf25
 
 build:
   noarch: python
   number: 1
-  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
+  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -vv"
 
 requirements:
   host:
@@ -30,6 +30,8 @@ requirements:
     - scipy>=1.3.3
 
 test:
+  requires:
+    - python
   imports:
     - mapca
     - mapca.utils
