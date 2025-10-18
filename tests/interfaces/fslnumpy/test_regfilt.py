@@ -80,7 +80,7 @@ def test_filter_regressor_empty(tmp_path: Path) -> None:
     nib.loadsave.save(img, in_file)
 
     design_file = "design.txt"
-    pd.DataFrame().to_csv(design_file, sep="\t", index=False, na_rep="n/a")
+    pd.DataFrame().to_csv(design_file, sep="\t", index=False, header=False, na_rep="n/a")
 
     instance = FilterRegressor()
     instance.inputs.in_file = in_file
@@ -90,3 +90,30 @@ def test_filter_regressor_empty(tmp_path: Path) -> None:
 
     array2 = nib.nifti1.load(result.outputs.out_file).get_fdata()
     np.testing.assert_allclose(array, array2)
+
+
+def test_filter_regressor_zero_variance(tmp_path: Path) -> None:
+    os.chdir(str(tmp_path))
+    rng = np.random.default_rng()
+
+    array = rng.random(size=(10, 10, 10, 100)) * 1000 + 10000
+    img = nib.nifti1.Nifti1Image(array, np.eye(4))
+    assert isinstance(img.header, nib.nifti1.Nifti1Header)
+    img.header.set_data_dtype(np.float64)
+
+    in_file = "img.nii.gz"
+    nib.loadsave.save(img, in_file)
+
+    design_file = "design.txt"
+    design = rng.random(size=(100, 5))
+    design[:, 3] = 0.0
+    pd.DataFrame(design).to_csv(design_file, sep="\t", index=False, header=False, na_rep="n/a")
+
+    instance = FilterRegressor()
+    instance.inputs.in_file = in_file
+    instance.inputs.design_file = design_file
+    instance.inputs.filter_all = True
+    result = instance.run()
+
+    array2 = nib.nifti1.load(result.outputs.out_file).get_fdata()
+    assert (array2.std(axis=3) < array.std(axis=3)).all()
