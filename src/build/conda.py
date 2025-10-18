@@ -102,16 +102,6 @@ def download(keys: list[tuple[Path, str]]) -> bool:
     return success
 
 
-def exists(s3_key: str) -> bool:
-    try:
-        s3_client.head_object(Bucket=s3_bucket, Key=s3_key)
-        return True
-    except ClientError as error:
-        if hasattr(error, "response") and error.response["Error"]["Code"] == "404":
-            return False
-        raise error
-
-
 def upload(keys: list[tuple[Path, str]]) -> None:
     if not push:
         return
@@ -119,8 +109,6 @@ def upload(keys: list[tuple[Path, str]]) -> None:
         if not output_path.is_file():
             raise ValueError(f"Output path {output_path} is not a file")
         try:
-            if exists(s3_key):
-                return
             logger.info(f'Uploading {output_path} to registry at "{s3_key}"')
             s3_client.upload_file(output_path, s3_bucket, s3_key)
             logger.info(f'Upload complete for "{s3_key}"')
@@ -151,8 +139,8 @@ async def main() -> None:
             build(str(recipe_path), config=config)
             logger.info(f"Build successful for {name}")
 
-        upload(keys)
-        clean_build(config)
+            upload(keys)
+            clean_build(config)
 
         await index_fs(channel_directory=build_path, write_zst=False, write_shards=False)
 
