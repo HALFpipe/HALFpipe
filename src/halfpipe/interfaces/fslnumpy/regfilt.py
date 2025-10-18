@@ -43,7 +43,7 @@ def regfilt(
 
     zero_based_comps = [c - 1 for c in comps]
 
-    # setup
+    # Setup
     data = array.copy()
 
     mask_vec: npt.NDArray | None = None
@@ -60,8 +60,10 @@ def regfilt(
 
     mean_r = data.mean(axis=0)
     data -= mean_r[None, :]
-    # standardize design for numerical stability
+    # Standardize design for numerical stability
     design = scipy.stats.zscore(design, axis=0)
+    # Zscore sets zero variance columns to nan, convert these to zero
+    design = np.nan_to_num(design)
 
     # dofilter
     noisedes = design[:, zero_based_comps]
