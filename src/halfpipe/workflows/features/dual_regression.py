@@ -153,7 +153,7 @@ def init_dualregression_wf(
 
     #
     resample = pe.MapNode(
-        Resample(interpolation="LanczosWindowedSinc"),
+        Resample(interpolation="LanczosWindowedSinc", lazy=True),
         name="resample",
         iterfield=["input_image", "input_space"],
         n_procs=config.nipype.omp_nthreads,

@@ -102,7 +102,7 @@ def init_atlas_based_connectivity_wf(
 
     #
     resample = pe.MapNode(
-        Resample(interpolation="MultiLabel"),
+        Resample(interpolation="MultiLabel", lazy=True),
         name="resample",
         iterfield=["input_image", "input_space"],
         mem_gb=memcalc.series_std_gb,

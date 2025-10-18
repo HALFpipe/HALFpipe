@@ -131,7 +131,7 @@ def init_seed_based_connectivity_wf(
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     resample = pe.MapNode(
-        Resample(interpolation="GenericLabel"),
+        Resample(interpolation="GenericLabel", lazy=True),
         name="resample",
         iterfield=["input_image", "input_space"],
         n_procs=config.nipype.omp_nthreads,
