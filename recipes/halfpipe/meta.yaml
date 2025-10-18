@@ -6,6 +6,7 @@ source:
   git_url: ../..
 
 build:
+  noarch: python
   number: 0
   script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
 
