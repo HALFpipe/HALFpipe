@@ -1,9 +1,9 @@
         SelectionModal {
-        
+
             #draggable_modal_screen_container_wrapper {
                 width: auto;
                 background: black;
-                
+
             }
             RadioSet {
                 height: auto;
@@ -17,7 +17,7 @@
                 height: 4;
                 width: 100%;
                 align: right bottom;
-                
+
                 offset-x: 0;
                 Button {
                     margin: 0 1;

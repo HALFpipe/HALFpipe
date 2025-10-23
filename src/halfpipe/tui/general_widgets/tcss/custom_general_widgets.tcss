@@ -1,6 +1,6 @@
 
 SwitchWithSelect {
-    SelectCurrent { 
+    SelectCurrent {
         background: green 25%;
     }
 }
@@ -14,4 +14,3 @@ SwitchWithInputBox {
  background: green 20%;
  }
 }
-
