@@ -65,7 +65,6 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         await task()
 
 
-
 def test_dual_reg_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
