@@ -15,7 +15,7 @@ RUN --mount=type=cache,target=/opt/conda/pkgs \
     --name "fmriprep" \
     --channel file:///conda-bld \
     --channel https://fsl.fmrib.ox.ac.uk/fsldownloads/fslconda/public \
-    python=3.11 nodejs sqlite halfpipe
+    python=3.12 nodejs sqlite halfpipe
 
 RUN conda clean --yes --all --force-pkgs-dirs && \
     find /opt/conda -follow -type f -name "*.a" -delete
