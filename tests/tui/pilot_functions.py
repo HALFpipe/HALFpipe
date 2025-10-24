@@ -102,6 +102,7 @@ async def _select_group_level_models_cutoffs_values(pilot):
     # delete prompt
     for _i in range(4):
         await pilot.press("backspace")
+        await pilot.press("delete")
     # type new value
     for i in "0.25":
         await pilot.press(i)
@@ -112,6 +113,7 @@ async def _select_group_level_models_cutoffs_values(pilot):
     # delete prompt
     for _i in range(4):
         await pilot.press("backspace")
+        await pilot.press("delete")
     # type new value
     for i in "15":
         await pilot.press(i)
@@ -251,8 +253,9 @@ async def delete_column(pilot) -> None:
 
 async def set_grand_mean_scaling(pilot, value="12345"):
     await pilot.click(pilot.app.get_widget_by_id("grand_mean_scaling").get_widget_by_id("input_switch_input_box"))
-    for _i in range(7):
+    for _i in range(10):
         await pilot.press("backspace")
+        await pilot.press("delete")
     for i in value:
         await pilot.press(i)
 
@@ -275,6 +278,7 @@ async def set_bandpass_filter_lp_width(pilot, value="8"):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_lp_width").get_widget_by_id("input_switch_input_box"))
     for _i in range(5):
         await pilot.press("backspace")
+        await pilot.press("delete")
     for v in value:
         await pilot.press(v)
 
@@ -283,13 +287,16 @@ async def set_bandpass_filter_hp_width(pilot, value="9"):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id("input_switch_input_box"))
     for _i in range(5):
         await pilot.press("backspace")
+        await pilot.press("delete")
     for v in value:
         await pilot.press(v)
 
 
 async def set_smoothing(pilot, value="9"):
     await pilot.click(pilot.app.get_widget_by_id("smoothing").get_widget_by_id("input_switch_input_box"))
-    await pilot.press("backspace")
+    for _i in range(5):
+        await pilot.press("backspace")
+        await pilot.press("delete")
     for v in value:
         await pilot.press(v)
 
