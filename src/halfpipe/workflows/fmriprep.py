@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -222,6 +223,7 @@ class FmriprepFactory(Factory):
 
         subjects = set()
         bids_subjects: set[str] = set()
+        bids_subject_sessions: dict[str, set[str]] = defaultdict(set)
         for bold_file_path in bold_file_paths:
             subject = database.tagval(bold_file_path, "sub")
 
@@ -238,10 +240,19 @@ class FmriprepFactory(Factory):
             subjects.add(subject)
             bids_subjects.add(bids_subject)
 
+            bids_session = bids_database.get_tag_value(bids_path, "session")
+            if bids_session is not None:
+                bids_subject_sessions[bids_subject].add(bids_session)
+
+        processing_groups = [
+            (bids_subject, list(bids_subject_sessions[bids_subject]) if bids_subject_sessions[bids_subject] else None)
+            for bids_subject in bids_subjects
+        ]
+
         spec = self.ctx.spec
         global_settings = spec.global_settings
 
-        config_file = self.get_config(workdir, bids_subjects)
+        config_file = self.get_config(workdir, bids_subjects, processing_groups)
 
         retval: dict[str, pe.Workflow] = dict()
         # We call build_workflow to set up all nodes
@@ -326,7 +337,9 @@ class FmriprepFactory(Factory):
 
         return bold_file_paths
 
-    def get_config(self, workdir: Path, bids_subjects: set[str]) -> Path:
+    def get_config(
+        self, workdir: Path, bids_subjects: set[str], processing_groups: list[tuple[str, list[str] | None]]
+    ) -> Path:
         spec = self.ctx.spec
         global_settings = spec.global_settings
         workflow = self.ctx.workflow
@@ -413,6 +426,8 @@ class FmriprepFactory(Factory):
                 "level": "full",
             }
         )
+        config.execution.processing_groups = processing_groups
+
         nipype_dir = Path(workdir) / Constants.workflow_directory
         nipype_dir.mkdir(parents=True, exist_ok=True)
         config_file = nipype_dir / f"fmriprep.config.{uuidstr}.toml"
