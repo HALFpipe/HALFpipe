@@ -1,5 +1,5 @@
 # Dependencies derived from:
-# https://github.com/nipreps/fmripost-aroma/blob/0.0.10/pyproject.toml
+# https://github.com/nipreps/fmripost-aroma/blob/0.0.12/pyproject.toml
 
 package:
   name: "fmripost_aroma"
@@ -13,7 +13,8 @@ source:
     - 002-add-mem-gb.patch
 
 build:
-  number: 1
+  noarch: python
+  number: 6
   script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
 
 requirements:
@@ -35,24 +36,24 @@ requirements:
     # git-annex for templateflow users with DataLad superdatasets
     - git-annex=*=alldep*
     # Base scientific python stack; required by FSL, so pinned here
-    - numpy=1.26
-    - scipy=1.11
-    - matplotlib=3.8
-    - pandas=2.2
-    - h5py=3.10
+    - numpy
+    - scipy
+    - matplotlib
+    - pandas
+    - h5py
     # Dependencies compiled against numpy, best to stick with conda
-    - scikit-learn=1.4
+    - scikit-learn
     # Utilities
-    - graphviz=9.0
-    - pandoc=3.1
+    - graphviz
+    - pandoc
     # Workflow dependencies: FSL (versions pinned in 6.0.7.7)
     # We need SUSAN and MELODIC for ICA-AROMA
-    - fsl-bet2=2111.4
-    - fsl-melodic=2111.3
-    - fsl-miscmaths=2203.2
+    - fsl-bet2=2111.8.*
+    - fsl-melodic=2111.*
+    - fsl-miscmaths=2412.4.*
     - fsl-susan=2111.0
     # Workflow dependencies: ANTs
-    - ants=2.5
+    - ants
 
 test:
   imports:
