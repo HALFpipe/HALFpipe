@@ -1,13 +1,13 @@
 # Dependencies derived from:
-# https://github.com/nipy/nitransforms/blob/24.1.1/pyproject.toml
+# https://github.com/nipy/nitransforms/blob/25.0.1/pyproject.toml
 
 package:
   name: nitransforms
-  version: "24.1.1"
+  version: "25.0.1"
 
 source:
-  url: https://files.pythonhosted.org/packages/source/n/nitransforms/nitransforms-24.1.1.tar.gz
-  sha256: 536956c580ee03e3e93043208da9eafc920b5934c7e7e0c4c7d759fca0963633
+  url: https://files.pythonhosted.org/packages/source/n/nitransforms/nitransforms-25.0.1.tar.gz
+  sha256: eae9e6afd8960a65f4b9be95af47798301f87dd8cecac50a94a05b3b4052583c
 
 build:
   noarch: python
@@ -20,10 +20,10 @@ requirements:
     - python
   run:
     - python
-    - numpy>=1.21
+    - numpy>=2.1
     - scipy>=1.8
-    - h5py>=3.9
-    - nibabel>=4.0
+    - h5py>=3.11
+    - nibabel>=5.2
 
 test:
   imports:

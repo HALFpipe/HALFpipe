@@ -20,7 +20,7 @@ from tqdm.auto import tqdm
 base_path = Path("recipes").absolute()
 build_path = Path("conda-bld").absolute()
 
-config = Config(exclusive_config_files=[base_path / "conda_build_config.yaml"], croot=build_path, numpy="1.26")
+config = Config(exclusive_config_files=[base_path / "conda_build_config.yaml"], croot=build_path, numpy="2.2")
 
 s3_bucket = "conda-packages"
 endpoint_url = os.environ.get("AWS_ENDPOINT_URL", None)
