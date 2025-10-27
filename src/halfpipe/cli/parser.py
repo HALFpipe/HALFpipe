@@ -42,6 +42,8 @@ def build_parser() -> ArgumentParser:
         steponlygroup.add_argument(f"--skip-{step}", action="store_true", default=False)
 
     workflowgroup = parser.add_argument_group("workflow", "")
+    workflowgroup.add_argument("--bids-database-dir", type=Path)
+    workflowgroup.add_argument("--spec-path", type=Path)
     workflowgroup.add_argument("--nipype-omp-nthreads", type=int)
     workflowgroup.add_argument("--fs-license-file")
     workflowgroup.add_argument(
