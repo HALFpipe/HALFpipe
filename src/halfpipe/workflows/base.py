@@ -25,7 +25,9 @@ from .post_processing import PostProcessingFactory
 from .stats import StatsFactory
 
 
-def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWorkflow:
+def init_workflow(
+    workdir: Path, spec: Optional[Spec] = None, spec_path: Path | None = None, bids_database_dir: Path | None = None
+) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
     :param workdir
@@ -34,11 +36,11 @@ def init_workflow(workdir: Path, spec: Optional[Spec] = None) -> IdentifiableWor
     from ..collect.bold import collect_bold_files
 
     if not spec:
-        spec = load_spec(workdir=workdir)
+        spec = load_spec(workdir=workdir, path=spec_path)
 
     assert spec is not None, "A spec file could not be loaded"
     logger.info("Initializing file database")
-    database = Database(spec)
+    database = Database(spec, bids_database_dir=bids_database_dir)
     # uuid depends on the spec file, the files found and the version of the program
     uuid = uuid5(spec.uuid, database.sha1 + __version__)
 

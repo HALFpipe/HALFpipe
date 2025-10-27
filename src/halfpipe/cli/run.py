@@ -66,7 +66,7 @@ def run_stage_workflow(opts):
     from ..workflows.base import init_workflow
     from ..workflows.execgraph import init_execgraph
 
-    workflow = init_workflow(opts.workdir)
+    workflow = init_workflow(opts.workdir, spec_path=opts.spec_file, bids_database_dir=opts.bids_database_dir)
 
     if workflow is None:
         return None
