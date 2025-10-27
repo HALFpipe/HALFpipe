@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from hashlib import sha1
+from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 from ..logging import logger
@@ -13,12 +14,12 @@ from .resolve import ResolvedSpec
 
 
 class Database:
-    def __init__(self, spec: Spec | ResolvedSpec) -> None:
+    def __init__(self, spec: Spec | ResolvedSpec, bids_database_dir: Path | None = None) -> None:
         resolved_spec = None
         if isinstance(spec, ResolvedSpec):
             resolved_spec = spec
         elif isinstance(spec, Spec):
-            resolved_spec = ResolvedSpec(spec)
+            resolved_spec = ResolvedSpec(spec, bids_database_dir=bids_database_dir)
         else:
             raise ValueError("Need to initialize Database with a Spec or ResolvedSpec")
         self.resolved_spec = resolved_spec
