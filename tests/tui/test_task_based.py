@@ -82,7 +82,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     if stage == "at_spec_preview":
         how_much_down = 60
     elif stage == "duplicate_at_spec_preview":
-        how_much_down = 36
+        how_much_down = 39
 
     # Execute tasks based on the specified stage
     # set work dir

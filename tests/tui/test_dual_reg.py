@@ -13,6 +13,7 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    select_file_tags,
     select_images,
     settable_scroll_screen_down,
 )
@@ -21,9 +22,9 @@ from .pilot_functions import (
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file_pattern=None) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
-    how_much_down = 35
+    how_much_down = 19
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -42,6 +43,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         await select_images(pilot)
         # Add map file pattern
         await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern)
+        await select_file_tags(pilot, [1])
 
     async def final_stage_tasks():
         await check_and_run_tab_refresh(pilot)

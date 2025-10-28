@@ -75,3 +75,18 @@ FeatureSelection {
         color: white;
     }
 }
+
+FeatureSelectionModal {
+
+    #draggable_modal_screen_container_wrapper {
+    min-width: 44;
+    height: 28;
+    }
+    #options {
+margin: 1;
+    content-align: center middle;
+
+
+    }
+
+}

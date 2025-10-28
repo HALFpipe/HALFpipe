@@ -2,7 +2,6 @@
 
 import os
 import shutil
-from asyncio import sleep
 from functools import partial
 from pathlib import Path
 
@@ -13,6 +12,7 @@ from .pilot_functions import (
     _set_work_dir,
     add_fmap,
     associate_fmaps,
+    clear_entry,
     set_non_bids_data,
     settable_scroll_screen_down,
 )
@@ -110,40 +110,41 @@ async def run_before(
                 await pilot.press("p")
                 # Toggle run recon all
                 # await pilot.click(offset=(109, 11))
-                pilot.app.get_widget_by_id("run_reconall").value = True
-                # Turn on slice timing
-                # await pilot.click(offset=(113, 19))
+                await pilot.click(pilot.app.get_widget_by_id("run_reconall"))
 
-                pilot.app.get_widget_by_id("time_slicing_switch").value = True
-                await sleep(10)
+                # Turn on slice timing
+                await pilot.click(pilot.app.get_widget_by_id("time_slicing_switch"))
 
                 # Check meta data modal. Click No to 'Proceed with these values?'
                 await pilot.click("#only_one_button")
-
+                #
                 # Specify slice acquisition direction, choose second choice
-                # await pilot.click(offset=(65, 26))
-                await pilot.click("#set_value_modal")
+                # await pilot.click("#set_value_modal")
                 await pilot.press("down")
                 await pilot.press("enter")
-
+                await pilot.click("#ok")
+                #
                 # Click ok on the warning modal: Missing images
-                # # await pilot.click(offset=(132, 30))
                 await pilot.click("#only_one_button")
+                #
+                # # # Specify Slice timing modal: Choose third options
+                # # await pilot.click("#set_value_modal")
 
-                # # Specify Slice timing modal: Choose third options
-                # await pilot.click("#set_value_modal")
-
-                # # await pilot.click(offset=(65, 25))
                 await pilot.click("#radio_set")
                 for _i in range(2):
                     await pilot.press("down")
                 await pilot.press("enter")
                 await pilot.click("#ok")
+            except Exception as e:
+                pilot.app.save_screenshot()
+                logger.info(e)
 
+            try:
                 # click in the input box to set initial volumes to remove
                 # await pilot.click(offset=(121, 31))
                 await pilot.click("#number_of_remove_initial_volumes")
                 # Type '9'
+                await clear_entry(pilot)
                 await pilot.press("9")
                 # random click to unfocus the input
                 await pilot.click(offset=(50, 10))
@@ -152,7 +153,7 @@ async def run_before(
                 await pilot.press("r")
                 # Click 'Refresh'
                 # await pilot.click(offset=(85, 9))
-                await settable_scroll_screen_down(pilot, 10)
+                await settable_scroll_screen_down(pilot, 5)
             except Exception as e:
                 pilot.app.save_screenshot()
                 logger.info(e)

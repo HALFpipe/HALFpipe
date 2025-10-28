@@ -139,6 +139,7 @@ QuitModal {
 }
 
 #check_meta_data_modal {
+
     #message {
         height: auto;
         content-align: center middle;

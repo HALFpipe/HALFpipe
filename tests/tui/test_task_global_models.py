@@ -24,7 +24,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     # how_much_down = 0
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):

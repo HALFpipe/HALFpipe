@@ -395,6 +395,7 @@ async def add_bold(pilot, bold_pattern_path, set_repetition_time) -> None:
         # Specify repetition time in seconds: Click into prompt
         # await pilot.click(offset=(96, 27))
         await pilot.click("#input_prompt")
+        await clear_entry(pilot)
         # Set time to '9'
         await pilot.press("9")
         # Click Ok to dismiss
@@ -433,6 +434,7 @@ async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> No
             # now there should be a modal informing that first echo times are missing, we dismiss it
             await pilot.click("#only_one_button")
             await pilot.click("#input_prompt")
+            await clear_entry(pilot)
             # Set echo time to '1'
             await pilot.press(str(i))
             # Click Ok to dismiss
@@ -446,6 +448,12 @@ async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> No
     # await settable_scroll_screen_down(pilot, 10)
 
 
+async def clear_entry(pilot) -> None:
+    for _i in range(10):
+        await pilot.press("backspace")
+        await pilot.press("delete")
+
+
 async def associate_fmaps(pilot) -> None:
     try:
         await pilot.click("#associate_button")
@@ -454,7 +462,9 @@ async def associate_fmaps(pilot) -> None:
         await pilot.click("#only_one_button")
         # enter some value
         await pilot.click("#input_prompt")
+        await clear_entry(pilot)
         await pilot.press(str(9))
+
         await pilot.click("#only_one_button")
         # missing phase encoding direction modal
         # dismiss it
@@ -708,3 +718,21 @@ async def set_minimum_coverage(pilot, value="0.85"):
         await pilot.press("backspace")
     for v in value:
         await pilot.press(v)
+
+
+async def select_file_tags(pilot, which_ones: list[int]):
+    await pilot.click("#file_tag_selection")
+
+    current_pos = 0  # start before first option
+
+    for target in which_ones:
+        # Move down until we reach the desired option
+        moves = target - current_pos
+        for _ in range(moves):
+            await pilot.press("down")
+
+        # Select it
+        await pilot.press("enter")
+
+        # Update current cursor position
+        current_pos = target

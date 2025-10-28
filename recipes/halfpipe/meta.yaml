@@ -69,6 +69,7 @@ requirements:
     - pytest-github-actions-annotate-failures
     - pytest-timeout
     - pytest-xdist
+    - pytest-forked
     - python
     - fsl-feat5
     - fsl-film

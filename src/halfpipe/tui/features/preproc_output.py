@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 
+from textual.app import ComposeResult
+from textual.containers import ScrollableContainer
+
 from ..standards import preproc_output_defaults
 from .task_based import TaskBased
 
@@ -37,6 +40,13 @@ class PreprocessedOutputOptions(TaskBased):
         this_user_selection_dict["features"] = {}
 
     async def mount_tasks(self):
-        self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
-        if self.images_to_use is not None:
-            self.get_widget_by_id("tasks_to_use_selection").border_title = "Select tasks"
+        pass
+        # self.get_widget_by_id("model_conditions_and_constrasts").remove()  # .styles.visibility = "hidden"
+        # if self.images_to_use is not None:
+        #     self.get_widget_by_id("tasks_to_use_selection").border_title = "Select tasks"
+
+    def compose(self) -> ComposeResult:
+        with ScrollableContainer(id="top_container_task_based"):
+            if self.images_to_use is not None:
+                yield self.tasks_to_use_selection_panel
+            yield self.preprocessing_panel
