@@ -13,6 +13,8 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    clear_entry,
+    select_file_tags,
     select_images,
     settable_scroll_screen_down,
 )
@@ -23,7 +25,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     how_much_down = 35
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -44,22 +46,18 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         await add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern)
         #
         # deselect second seed file
-        # await pilot.click(offset=(71, 33))
-        await pilot.click("#file_tag_selection")
-        await pilot.press("down")
-        await pilot.press("down")
-        await pilot.press("enter")
+        await select_file_tags(pilot, [1, 3])
         #
         # # change minimum coverage from 0.8 to 0.85
-        # await pilot.click(offset=(131, 40))
         await pilot.click(pilot.app.get_widget_by_id("minimum_coverage").get_widget_by_id("input_label_input_box"))
-        await pilot.press("5")
+        await clear_entry(pilot)
+        for i in "0.05":
+            await pilot.press(i)
         # press tab to unfocus the input box
         await pilot.press("tab")
 
     async def final_stage_tasks():
         # click somewhere outside of the form area
-        # await pilot.click(offset=(50, 10))
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, how_much_down)
         # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")

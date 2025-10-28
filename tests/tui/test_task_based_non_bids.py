@@ -25,7 +25,7 @@ async def run_before(
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     how_much_down = 0
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -74,7 +74,7 @@ async def run_before(
     if stage == "at_spec_preview":
         how_much_down = 60
     elif stage == "duplicate_at_spec_preview":
-        how_much_down = 36
+        how_much_down = 38
 
     # Execute tasks based on the specified stage
     # set work dir

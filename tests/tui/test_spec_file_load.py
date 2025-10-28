@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from asyncio import sleep
 from functools import partial
 from pathlib import Path
 
@@ -62,8 +61,11 @@ async def run_before(
     if feature_label is None:
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, 50)
+        # save
+        await pilot.click("#save_button")
+        await pilot.click("#only_one_button")
     else:
-        await sleep(10)
+        # await sleep(10)
         await pilot.press("f")
         if scroll_to_remaining_part:
             # await pilot.click(offset=(15, feature_number))
@@ -93,7 +95,7 @@ async def run_before(
         # click on the form area
         await pilot.click(offset=(55, 10))
         # scroll
-        await settable_scroll_screen_down(pilot, 15)
+        await settable_scroll_screen_down(pilot, 20)
 
 
 def test_load_from_spec_file_f0(
