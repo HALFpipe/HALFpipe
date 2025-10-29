@@ -4,7 +4,7 @@ import shutil
 from pathlib import Path
 
 from halfpipe.logging import logger
-
+from asyncio import sleep
 
 async def _load_data(pilot, data_path) -> None:
     try:
@@ -524,6 +524,7 @@ async def set_non_bids_data(
             await pilot.click("#only_one_button")
             # Click Ok on Modal saying that data and workdir is set and user can proceed further
             await pilot.click("#only_one_button")
+            await sleep(5)
         except Exception as e:
             pilot.app.save_screenshot()
             logger.info(e)
