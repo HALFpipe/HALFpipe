@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
 import shutil
+from asyncio import sleep
 from pathlib import Path
 
 from halfpipe.logging import logger
-from asyncio import sleep
+
 
 async def _load_data(pilot, data_path) -> None:
     try:
