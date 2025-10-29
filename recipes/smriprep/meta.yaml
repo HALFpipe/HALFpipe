@@ -1,13 +1,13 @@
 # Requirements derived from
-# https://github.com/nipreps/smriprep/blob/maint/0.17.x/pyproject.toml
+# https://github.com/nipreps/smriprep/blob/0.19.2/pyproject.toml
 
 package:
   name: "smriprep"
-  version: "0.18.0"
+  version: "0.19.2"
 
 source:
-  git_url: https://github.com/nipreps/smriprep.git
-  git_rev: "0.18.0"
+  url: https://files.pythonhosted.org/packages/source/s/smriprep/smriprep-0.19.2.tar.gz
+  sha256: 843c2646764f92ebb824fe6da9ce809dcbac801c8d5f4fd19784450a1c31f963
 
 build:
   noarch: python
@@ -29,12 +29,13 @@ requirements:
     - matplotlib>=3.5
     - nibabel>=4.0.1
     - nipype>=1.8.5
-    - niworkflows>=1.13.1
+    - nireports>=25.3.0
+    - niworkflows>=1.14.0
     - numpy>=1.24
     - packaging>=24
     - pybids>=0.16
     - pyyaml>=6.0
-    - templateflow>=24.2
+    - templateflow>=25.0
 test:
   imports:
     - smriprep

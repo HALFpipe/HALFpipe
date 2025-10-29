@@ -190,3 +190,10 @@ def display_str(x):
 
 
 aggregate_order = ["dir", "run", "ses", "task"]
+
+entity_display_aliases = {
+    "ses": "session",
+    "sub": "subject",
+    "dir": "direction",
+    "acq": "acquisition",
+}

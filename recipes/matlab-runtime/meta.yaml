@@ -7,7 +7,7 @@ source:
   sha256: 5bcee3f2be7a4ccb6ed0b7d8938eca7b33e4a0d81ec5351d6eb06150a89245eb
 
 build:
-  number: 20
+  number: 26
   rpaths:
     - lib/mcr/bin/glnxa64/
     - lib/mcr/cefclient/sys/os/glnxa64/
@@ -39,7 +39,6 @@ requirements:
     - gdk-pixbuf
     - gst-plugins-base
     - gstreamer
-    - gtk3
     - hdf4
     - libcups
     - libdrm

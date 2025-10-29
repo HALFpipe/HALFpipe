@@ -21,7 +21,7 @@ requirements:
     - ants
     - rmath
     - nipype>=1.8.1
-    - fmriprep
+    - fmriprep==25.2.3
     - smriprep
     - niworkflows
     - sdcflows

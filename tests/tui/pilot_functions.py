@@ -102,6 +102,7 @@ async def _select_group_level_models_cutoffs_values(pilot):
     # delete prompt
     for _i in range(4):
         await pilot.press("backspace")
+        await pilot.press("delete")
     # type new value
     for i in "0.25":
         await pilot.press(i)
@@ -112,6 +113,7 @@ async def _select_group_level_models_cutoffs_values(pilot):
     # delete prompt
     for _i in range(4):
         await pilot.press("backspace")
+        await pilot.press("delete")
     # type new value
     for i in "15":
         await pilot.press(i)

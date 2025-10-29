@@ -3,20 +3,18 @@
 
 package:
   name: "afni"
-  version: "24.2.05"
+  version: "25.2.09"
 
 source:
-  url: "https://github.com/afni/afni/archive/refs/tags/AFNI_24.2.05.tar.gz"
-  sha256: "ed19e9fb0e243319de9ff6a502c9da33442e862f0e6a3979c1cf9dc04bb6d8e4"
+  url: "https://github.com/afni/afni/archive/refs/tags/AFNI_25.2.09.tar.gz"
+  sha256: "ff6aacf8a4f2b0b60ea584ece08e23db665488bfb1978957f05f30df6c394e05"
   patches:
     - 001-pip-install.patch
     - 002-git-describe.patch
-    - 003-rwc-boolean-char.patch
-    - 004-suma-comm-struct.patch
     - 005-suma-check-binary-linking-objdump.patch
 
 build:
-  number: 2
+  number: 1
 
 requirements:
   build:
@@ -46,7 +44,6 @@ requirements:
     - xorg-libxft
     - xorg-libxt
     - xorg-xorgproto
-    - libxml2
     - icu
 
 outputs:

@@ -1,13 +1,13 @@
 # Dependencies derived from:
-# https://github.com/nipreps/sdcflows/blob/2.13.0/pyproject.toml
+# https://github.com/nipreps/sdcflows/blob/2.15.0/pyproject.toml
 
 package:
   name: "sdcflows"
-  version: "2.13.0"
+  version: "2.15.0"
 
 source:
-  git_url: https://github.com/nipreps/sdcflows.git
-  git_rev: "2.13.0"
+  url: https://files.pythonhosted.org/packages/source/s/sdcflows/sdcflows-2.15.0.tar.gz
+  sha256: f1fa31be1f3208c2f616c3f5c0cbbede43a9a0c676ae561932f284294fe4c0ab
 
 build:
   noarch: python
@@ -23,17 +23,18 @@ requirements:
     - nipreps-versions
   run:
     - python
-    - acres>=0.2
+    - acres>=0.5
     - attrs>=20.1.0
-    - nibabel>=3.0
-    - nipype>=1.8.5
+    - nibabel>=5.1.1
+    - nipype>=1.9.0
     - migas>=0.4.0
-    - niworkflows>=1.7.0
-    - nitransforms>=24.1.0
-    - numpy>=1.23
+    - nireports>=25.0.1
+    - niworkflows>=1.14.2
+    - nitransforms>=25.0.1
+    - numpy>=2.0
     - pybids>=0.16.4
-    - scikit-image>=0.18
-    - scipy>=1.8.1
+    - scikit-image>=0.23
+    - scipy>=1.10
     - templateflow>=23.1
     - toml>=0.10
 
