@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
 import shutil
-from asyncio import sleep
 from pathlib import Path
 
 from halfpipe.logging import logger
