@@ -24,7 +24,8 @@ from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..save import dump_dict_to_contex
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.quit_modal import quit_modal
-from ..standards import opts
+
+# from ..standards import opts
 
 # !!!This must be before importing the RadioSet to override the RadioButton imported by the RadioSet!!!
 RadioButton.BUTTON_INNER = "X"
@@ -377,7 +378,7 @@ class Run(Widget):
 
     @on(Select.Changed, "#keep_selection")
     def on_keep_selection_changed(self, message: Message):
-        opts["keep"] = message.value
+        self.app.opts.keep = message.value
 
     @on(Button.Pressed, "#run_button")
     def on_run_button_pressed(self):
@@ -387,9 +388,9 @@ class Run(Widget):
         This method is called when the user presses the "Run" button. It
         exits the application and returns the working directory.
         """
-        opts["workdir"] = ctx.workdir
+        self.app.opts.workdir = ctx.workdir
         save_spec(ctx.spec, workdir=ctx.workdir)
-        self.app.exit(result=opts)
+        self.app.exit()
 
     # @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):
