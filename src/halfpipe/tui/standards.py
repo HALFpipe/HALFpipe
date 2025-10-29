@@ -1,5 +1,4 @@
 from copy import deepcopy
-from pathlib import Path
 from typing import Dict, List, Union
 
 from inflection import humanize
@@ -10,13 +9,13 @@ global_settings_defaults: dict[str, str] = {
     "slice_timing": "False",
     "skull_strip_algorithm": "ants",
 }
-opts: dict[str, str | bool | Path | None] = {
-    "debug": False,
-    "verbose": False,
-    "watchdog": False,
-    "keep": "some",
-    "workdir": None,
-}
+# opts: dict[str, str | bool | Path | None] = {
+#     "debug": False,
+#     "verbose": False,
+#     "watchdog": False,
+#     "keep": "some",
+#     "workdir": None,
+# }
 
 
 bandpass_filter_defaults: dict[str, dict] = {
