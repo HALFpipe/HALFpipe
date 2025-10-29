@@ -523,7 +523,7 @@ async def set_non_bids_data(
             await pilot.click("#only_one_button")
             # Click Ok on Modal saying that data and workdir is set and user can proceed further
             await pilot.click("#only_one_button")
-            await sleep(5)
+            await pilot.press("i")
         except Exception as e:
             pilot.app.save_screenshot()
             logger.info(e)
