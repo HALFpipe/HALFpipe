@@ -27,7 +27,7 @@ def copy_jinja2_file(resolved_test_dir_path):
     """Copy a file before tests start. This is just a hot fix because somehow the resources directory
     is delete during the docker build."""
     source_file = resolved_test_dir_path / "snapshot_report_template.jinja2"
-    destination = Path("/opt/conda/envs/fmriprep/lib/python3.11/site-packages/resources/")
+    destination = Path("/opt/conda/envs/fmriprep/lib/python3.12/site-packages/resources/")
 
     try:
         destination.mkdir(parents=True, exist_ok=True)
