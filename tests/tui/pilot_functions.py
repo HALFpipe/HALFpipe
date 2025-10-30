@@ -520,9 +520,9 @@ async def set_non_bids_data(
             await pilot.click("#confirm_non_bids_button")
             # click Ok on Modal informing us that the data input is success
             await pilot.click("#only_one_button")
-            # Click Ok on Modal saying that data and workdir is set and user can proceed further
+            # # Click Ok on Modal saying that data and workdir is set and user can proceed further
             await pilot.click("#only_one_button")
-            await pilot.press("i")
+
         except Exception as e:
             pilot.app.save_screenshot()
             logger.info(e)
