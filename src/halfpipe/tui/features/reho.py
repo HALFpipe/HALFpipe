@@ -54,7 +54,7 @@ class ReHo(FeatureTemplate):
     def set_smoothing_value(self, value):
         self.feature_dict["smoothing"]["fwhm"] = value if value != "" else None
 
-    def set_smoothing_switch_value(self, switch_value):
+    def set_smoothing_switch_value(self, message):
         """
         Sets the smoothing value in the feature dictionary overriding the template class
         function where it goes to the settings dictionary.
@@ -69,7 +69,8 @@ class ReHo(FeatureTemplate):
             The new smoothing value (Full Width at Half Maximum - FWHM).
         """
         # in ReHo the smoothing is in features
+        switch_value = message.switch_value
         if switch_value is True:
-            self.feature_dict["smoothing"] = reho_defaults["smoothing"]
+            self.feature_dict["smoothing"] = {"fwhm": message.control.value}
         elif switch_value is False:
             self.feature_dict["smoothing"]["fwhm"] = None
