@@ -22,5 +22,5 @@ find "${install_path}" -type f -name "*.dbg" -delete
 MCRROOT=$(dirname "$(find "${install_path}" -type d -name "mcr" -print -quit)")
 target_path="${PREFIX}/lib/mcr"
 
-cp --no-dereference --preserve=links --recursive --preserve=all \
+cp --no-dereference --preserve=links --no-preserve=mode,ownership --recursive \
     "${MCRROOT}/." "${target_path}"

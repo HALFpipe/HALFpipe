@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from marshmallow import Schema
+
 from .anat import schemas as anat_tags_schemas
 from .base import schemas as base_tags_schemas
 from .fmap import schemas as fmap_tags_schemas
@@ -9,7 +11,7 @@ from .func import schemas as func_tags_schemas
 from .ref import schemas as ref_tags_schemas
 from .resultdict import ResultdictTagsSchema, resultdict_entities
 
-schemas = [
+schemas: list[type[Schema]] = [
     *base_tags_schemas,
     *anat_tags_schemas,
     *func_tags_schemas,

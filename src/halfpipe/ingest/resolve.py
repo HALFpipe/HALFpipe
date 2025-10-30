@@ -5,6 +5,7 @@
 from collections import defaultdict
 from itertools import product
 from os.path import basename
+from pathlib import Path
 from pprint import pformat
 from typing import Any, Generator
 
@@ -93,8 +94,9 @@ def to_fileobj(obj: BIDSFile, basemetadata: dict) -> File | None:
 
 
 class ResolvedSpec:
-    def __init__(self, spec: Spec) -> None:
+    def __init__(self, spec: Spec, bids_database_dir: Path | None = None) -> None:
         self.spec = spec
+        self.bids_database_dir = bids_database_dir
 
         self.fileobj_by_filepaths: dict[str, File] = dict()
 
@@ -161,6 +163,7 @@ class ResolvedSpec:
         layout = BIDSLayout(
             root=fileobj.path,
             reset_database=True,  # force reindex in case files have changed
+            database_path=self.bids_database_dir,
             validate=validate,
             indexer=BIDSLayoutIndexer(
                 validate=validate,

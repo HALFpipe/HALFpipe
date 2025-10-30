@@ -1,13 +1,13 @@
 # Dependencies derived from:
-# https://github.com/nipreps/niworkflows/blob/maint/1.13.4/pyproject.toml
+# https://github.com/nipreps/niworkflows/blob/1.14.2/pyproject.toml
 
 package:
   name: "niworkflows"
-  version: "1.13.4"
+  version: "1.14.2"
 
 source:
-  url: https://pypi.io/packages/source/n/niworkflows/niworkflows-1.13.4.tar.gz
-  sha256: 2bec7ab4e68a4761e4abb83cccb578388cfc253be55976832e4e7b299e485dfd
+  url: https://pypi.io/packages/source/n/niworkflows/niworkflows-1.14.2.tar.gz
+  sha256: 9f72aae8610e2517078c2b937d80381410ac3d876db9a141c0c9a17416a08a60
 
 build:
   noarch: python
