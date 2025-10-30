@@ -464,7 +464,7 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_lp_width").update_value(lowest_value if lowest_value is not None else "")
             self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(lowest_value is not None)
             self.get_widget_by_id("bandpass_filter_hp_width").update_value(highest_value if highest_value is not None else "")
-            self.get_widget_by_id("bandpass_filter_hp_width").update_switch_value(highest_value is not None)
+            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(highest_value is not None)
             self.setting_dict["bandpass_filter"]["low"] = lowest_value
             self.setting_dict["bandpass_filter"]["high"] = highest_value
             self.setting_dict["bandpass_filter"].pop("lp_width", None)
@@ -537,51 +537,43 @@ class FeatureTemplate(Widget):
         message : SwitchWithInputBox.SwitchChanged
             The message object containing information about the change.
         """
-        switch_value = message.switch_value
-        last_value = message.control.value
-
-        if switch_value is True:
-            self.setting_dict["grand_mean_scaling"]["mean"] = last_value
-        elif switch_value is False:
+        if message.switch_value is False:
             self.setting_dict["grand_mean_scaling"]["mean"] = None
+        else:
+            self.setting_dict["grand_mean_scaling"]["mean"] = message.control.value
+
+    def _update_bandpass_filter_setting(self, control, switch_value, value=None):
+        """
+        Shared logic for updating bandpass filter settings.
+        """
+        the_id = control.id.replace("bandpass_filter_", "")
+        if self.setting_dict["bandpass_filter"]["type"] == "frequency_based":
+            mapping = {"lp_width": "low", "hp_width": "high"}
+            the_id = mapping.get(the_id)
+
+        # Update based on switch state
+        if switch_value:
+            self.setting_dict["bandpass_filter"][the_id] = value if value != "" else None
+        else:
+            self.setting_dict["bandpass_filter"][the_id] = None
 
     @on(SwitchWithInputBox.Changed, ".bandpass_filter_values")
     def _on_bandpass_filter_xp_width_changed(self, message: Message) -> None:
         """
-        Handles changes in the bandpass filter width.
-
-        This method is called when the value of a `SwitchWithInputBox`
-        widget with the class "bandpass_filter_values" changes. It
-        updates the corresponding bandpass filter setting in
-        `setting_dict` based on the widget's ID.
-
-        Parameters
-        ----------
-        message : SwitchWithInputBox.Changed
-            The message object containing information about the change.
+        Handles value changes in bandpass filter input box.
         """
-        the_id = message.control.id.replace("bandpass_filter_", "")
-        if self.setting_dict["bandpass_filter"]["type"] == "frequency_based":
-            mapping = {"lp_width": "low", "hp_width": "high"}
-            the_id = mapping.get(the_id)
-        if message.control.switch_value is True and message.value != "":
-            self.setting_dict["bandpass_filter"][the_id] = message.value
-        else:
-            self.setting_dict["bandpass_filter"][the_id] = None
+        self._update_bandpass_filter_setting(
+            control=message.control, switch_value=message.control.switch_value, value=message.value
+        )
 
     @on(SwitchWithInputBox.SwitchChanged, ".bandpass_filter_values")
-    def _on_bandpass_filter_xp_switch_changed(self, message: Message) -> None:
-        switch_value = message.switch_value
-        the_id = message.control.id.replace("bandpass_filter_", "")
-        bandpass_filter_type = self.setting_dict["bandpass_filter"]["type"]
-        if bandpass_filter_type == "frequency_based":
-            mapping = {"lp_width": "low", "hp_width": "high"}
-            the_id = mapping.get(the_id)
-        if switch_value is True:
-            # value is the last entered value before switching off
-            self.setting_dict["bandpass_filter"][the_id] = message.control.value
-        elif switch_value is False:
-            self.setting_dict["bandpass_filter"][the_id] = None
+    def _on_bandpass_filter_xp_width_switch_changed(self, message: Message) -> None:
+        """
+        Handles switch state changes in bandpass filter input box.
+        """
+        self._update_bandpass_filter_setting(
+            control=message.control, switch_value=message.switch_value, value=message.control.value
+        )
 
     @on(SwitchWithInputBox.Changed, "#smoothing")
     def _on_smoothing_changed(self, message: Message) -> None:
@@ -629,10 +621,9 @@ class FeatureTemplate(Widget):
             The message object containing information about the change.
         """
         # the function needs to be separated so that we can override it in reho and falff subclasses
-        last_value = message.control.value
-        self.set_smoothing_switch_value(message.switch_value, last_value)
+        self.set_smoothing_switch_value(message)
 
-    def set_smoothing_switch_value(self, switch_value, last_value) -> None:
+    def set_smoothing_switch_value(self, message) -> None:
         """
         Sets the smoothing switch value.
 
@@ -644,8 +635,9 @@ class FeatureTemplate(Widget):
             The new smoothing switch value.
         """
         # in ReHo the smoothing is in features
+        switch_value = message.switch_value
         if switch_value is True:
-            self.setting_dict["smoothing"]["fwhm"] = last_value
+            self.setting_dict["smoothing"] = {"fwhm": message.control.value}
         elif switch_value is False:
             self.setting_dict["smoothing"]["fwhm"] = None
 
