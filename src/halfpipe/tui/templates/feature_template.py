@@ -464,7 +464,7 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_lp_width").update_value(lowest_value if lowest_value is not None else "")
             self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(lowest_value is not None)
             self.get_widget_by_id("bandpass_filter_hp_width").update_value(highest_value if highest_value is not None else "")
-            self.get_widget_by_id("bandpass_filter_lp_width").update_switch_value(highest_value is not None)
+            self.get_widget_by_id("bandpass_filter_hp_width").update_switch_value(highest_value is not None)
             self.setting_dict["bandpass_filter"]["low"] = lowest_value
             self.setting_dict["bandpass_filter"]["high"] = highest_value
             self.setting_dict["bandpass_filter"].pop("lp_width", None)
@@ -537,10 +537,12 @@ class FeatureTemplate(Widget):
         message : SwitchWithInputBox.SwitchChanged
             The message object containing information about the change.
         """
-        if message.switch_value is False:
+        switch_value = message.switch_value
+        last_value = message.control.value
+        if switch_value is False:
             self.setting_dict["grand_mean_scaling"]["mean"] = None
         else:
-            self.setting_dict["grand_mean_scaling"]["mean"] = message.control.value
+            self.setting_dict["grand_mean_scaling"]["mean"] = last_value
 
     def _update_bandpass_filter_setting(self, control, switch_value, value=None):
         """
@@ -575,71 +577,37 @@ class FeatureTemplate(Widget):
             control=message.control, switch_value=message.switch_value, value=message.control.value
         )
 
-    @on(SwitchWithInputBox.Changed, "#smoothing")
-    def _on_smoothing_changed(self, message: Message) -> None:
+    def _update_smoothing_setting(self, switch_value: bool, value: str | None) -> None:
         """
-        Handles changes in the smoothing value.
-
-        This method is called when the value of the `SwitchWithInputBox`
-        widget with the ID "smoothing" changes. It updates the smoothing
-        value in `setting_dict`.
-
-        Parameters
-        ----------
-        message : SwitchWithInputBox.Changed
-            The message object containing information about the change.
-        """
-        # the function needs to be separated so that we can override it in reho and falff subclasses
-        self.set_smoothing_value(message.value)
-
-    def set_smoothing_value(self, value):
-        """
-        Sets the smoothing value.
-
-        This method sets the smoothing value in the `setting_dict`.
-
-        Parameters
-        ----------
-        value : str | None
-            The new smoothing value.
-        """
-        self.setting_dict["smoothing"]["fwhm"] = value if value != "" else None
-
-    @on(SwitchWithInputBox.SwitchChanged, "#smoothing")
-    def _on_smoothing_switch_changed(self, message: Message) -> None:
-        """
-        Handles changes in the smoothing switch.
-
-        This method is called when the switch state of the
-        `SwitchWithInputBox` widget with the ID "smoothing" changes. It
-        updates the smoothing settings in `setting_dict` based on the
-        switch state.
-
-        Parameters
-        ----------
-        message : SwitchWithInputBox.SwitchChanged
-            The message object containing information about the change.
-        """
-        # the function needs to be separated so that we can override it in reho and falff subclasses
-        self.set_smoothing_switch_value(message)
-
-    def set_smoothing_switch_value(self, message) -> None:
-        """
-        Sets the smoothing switch value.
-
-        This method sets the smoothing switch value in the `setting_dict`.
+        Shared logic for updating smoothing settings.
 
         Parameters
         ----------
         switch_value : bool
-            The new smoothing switch value.
+            The state of the smoothing switch (True = enabled, False = disabled).
+        value : str | None
+            The current smoothing value from the input box.
         """
-        # in ReHo the smoothing is in features
-        switch_value = message.switch_value
-        if switch_value is True:
-            self.setting_dict["smoothing"] = {"fwhm": message.control.value}
-        elif switch_value is False:
+        if switch_value:
+            # Switch is ON → set value
+            self.setting_dict["smoothing"]["fwhm"] = value if value != "" else None
+        else:
+            # Switch is OFF → clear value
             self.setting_dict["smoothing"]["fwhm"] = None
+
+    @on(SwitchWithInputBox.Changed, "#smoothing")
+    def _on_smoothing_changed(self, message: Message) -> None:
+        """
+        Handles input value changes in the smoothing control.
+        """
+        self._update_smoothing_setting(switch_value=message.control.switch_value, value=message.value)
+
+    @on(SwitchWithInputBox.SwitchChanged, "#smoothing")
+    def _on_smoothing_switch_changed(self, message: Message) -> None:
+        """
+        Handles switch state changes in the smoothing control.
+        """
+        self._update_smoothing_setting(switch_value=message.switch_value, value=message.control.value)
 
     @on(SelectionList.SelectedChanged, "#confounds_selection")
     def feed_feature_dict_confounds(self) -> None:

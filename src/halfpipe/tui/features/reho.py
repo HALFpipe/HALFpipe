@@ -51,26 +51,20 @@ class ReHo(FeatureTemplate):
             yield self.tasks_to_use_selection_panel
             yield self.preprocessing_panel
 
-    def set_smoothing_value(self, value):
-        self.feature_dict["smoothing"]["fwhm"] = value if value != "" else None
-
-    def set_smoothing_switch_value(self, message):
+    def _update_smoothing_setting(self, switch_value: bool, value: str | None) -> None:
         """
-        Sets the smoothing value in the feature dictionary overriding the template class
-        function where it goes to the settings dictionary.
-
-        This method updates the "fwhm" value in the "smoothing" dictionary
-        within the `feature_dict`. If the provided value is empty, it sets
-        the smoothing value to None.
+        Shared logic for updating smoothing settings.
 
         Parameters
         ----------
-        value : str
-            The new smoothing value (Full Width at Half Maximum - FWHM).
+        switch_value : bool
+            The state of the smoothing switch (True = enabled, False = disabled).
+        value : str | None
+            The current smoothing value from the input box.
         """
-        # in ReHo the smoothing is in features
-        switch_value = message.switch_value
-        if switch_value is True:
-            self.feature_dict["smoothing"] = {"fwhm": message.control.value}
-        elif switch_value is False:
+        if switch_value:
+            # Switch is ON → set value
+            self.feature_dict["smoothing"]["fwhm"] = value if value != "" else None
+        else:
+            # Switch is OFF → clear value
             self.feature_dict["smoothing"]["fwhm"] = None
