@@ -2,11 +2,9 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-#from os import path as op
+from os import path as op
 
-#import nibabel as nib
-#import numpy as np
-#import pandas as pd
+
 from nipype.interfaces.base import (
     BaseInterface,
     BaseInterfaceInputSpec,
@@ -14,49 +12,46 @@ from nipype.interfaces.base import (
     TraitedSpec,
     traits,
 )
-#from nipype.interfaces.base.traits.api import Union
 
-from brainspace.gradient.gradient import GradientMaps
 
-#from nipype.interfaces.base import BaseInterface, BaseInterfaceInputSpec, TraitedSpec
-from traits.api import HasTraits
 from nipype.interfaces.base.support import Bunch
-#from traits.api import Union, List, Str, Int, Array, Float
 
+import numpy as np
+from brainspace.gradient.gradient import GradientMaps
 
 ##############
 # DRAFT CODE #
 ##############
 # This code is a draft to implement brainspace gradients in HALFpipe
+# TODO pass inputs as files to integrate w/ HALFpipe
+# TODO write corresponding workflow
 
 class GradientsInputSpec(BaseInterfaceInputSpec):
     """ Inputs for gradients, see https://brainspace.readthedocs.io/en/latest/generated/brainspace.gradient.gradient.GradientMaps.html#brainspace.gradient.gradient.GradientMaps """
     # GradientMaps params
-    n_components = traits.Int(10, 
+    n_components = traits.Int(10, usedefault=True,
         desc="Number of gradients. Default is 10.")
-    approach = traits.Str('dm', 
+    approach = traits.Str('dm', usedefault=True,
         desc="Embedding approach. Default is ‘dm’. Possible options: {'dm','le','pca'} for diffusion maps, Laplacian eigenmaps, and PCA respectively.")
-
-    # traits.Union will use None as default bc it is first
-    kernel = traits.Union(None, traits.Str, 
+    kernel = traits.Union(None, traits.Str, usedefault=True,
         desc="Possible options: {‘pearson’, ‘spearman’, ‘cosine’, ‘normalized_angle’, ‘gaussian’}. If None, use input matrix. Default is None.")
-    random_state = traits.Union(None, traits.Int, 
+    random_state = traits.Union(None, traits.Int, usedefault=True,
         desc="Random state. Default is None.")
-    alignment = traits.Union(None, traits.Str,
+    alignment = traits.Union(None, traits.Str, usedefault=True,
         desc="Alignment approach. Only used when two or more datasets are provided. If None, no alignment is performed. Default is None. "
         "If ‘procrustes’, datasets are aligned using generalized procrustes analysis. "
         "If ‘joint’, datasets are embedded simultaneously based on a joint affinity matrix built from the individual datasets. This option is only available for ‘dm’ and ‘le’ approaches.")
 
     # .fit params
-    x = traits.Union(traits.Array, traits.List(trait=traits.Array),
+    x = traits.Union(traits.Array, traits.List(trait=traits.Array), usedefault=True,
         desc="Input matrix or list of matrices, shape = (n_samples, n_feat).")
-    gamma = traits.Union(None, traits.Float,
+    gamma = traits.Union(None, traits.Float, usedefault=True,
         desc="Inverse kernel width. Only used if kernel == 'gaussian'. If None, gamma=1/n_feat . Default is None.")
-    sparsity = traits.Float(0.9,
+    sparsity = traits.Float(0.9, usedefault=True,
         desc="Proportion of the smallest elements to zero-out for each row. Default is 0.9.")
-    n_iter = traits.Int(10,
+    n_iter = traits.Int(10, usedefault=True,
         desc="Number of iterations for procrustes alignment. Default is 10.")
-    reference = traits.Union(None, traits.Array,
+    reference = traits.Union(None, traits.Array, usedefault=True,
         desc="Initial reference for procrustes alignments, shape = (n_samples, n_feat). Only used when alignment == 'procrustes'. Default is None.")
     # skipping kwargs
 
@@ -73,8 +68,7 @@ class GradientsOutputSpec(TraitedSpec):
 
 
 class Gradients(BaseInterface):
-    """ Nipype interfaces to calculate gradients using brainspace. """
-
+    """ Nipype interface to calculate gradients using brainspace. """
     input_spec = GradientsInputSpec
     output_spec = GradientsOutputSpec
 
@@ -111,10 +105,14 @@ class Gradients(BaseInterface):
         np.savetxt(lambdas_file, self._lambdas, **savetxt_argdict)
 
         gradients_file = op.abspath("gradients.tsv")
-        np.savetxt(covariance_file, self._gradients, **savetxt_argdict)
+        np.savetxt(gradients_file, self._gradients, **savetxt_argdict)
+
+        outputs["lambdas"] = lambdas_file
+        outputs["gradients"] = gradients_file
 
         if self._aligned is not None:
-            aligned_file = op.abspath("correlation.tsv")
+            aligned_file = op.abspath("aligned.tsv")
             np.savetxt(aligned_file, self._aligned, **savetxt_argdict)
+            outputs["aligned"] = aligned_file
 
         return outputs
