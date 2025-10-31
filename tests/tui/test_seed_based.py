@@ -18,7 +18,7 @@ from .pilot_functions import (
     select_images,
     settable_scroll_screen_down,
 )
-
+import pytest
 
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file_pattern=None) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
@@ -79,7 +79,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
     for task in tasks_by_stage[stage]:
         await task()
 
-
+@pytest.mark.forked
 def test_seed_based_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -97,7 +97,7 @@ def test_seed_based_at_features_tab(
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
-
+@pytest.mark.forked
 def test_seed_based_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:

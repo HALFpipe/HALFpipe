@@ -21,7 +21,7 @@ from .pilot_functions import (
     select_images,
     settable_scroll_screen_down,
 )
-
+import pytest
 
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
@@ -95,7 +95,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     for task in tasks_by_stage[stage]:
         await task()
 
-
+@pytest.mark.forked
 def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, unselect a condition, make a column in the table, delete it, make it again"""
     run_before_with_extra_args = partial(
@@ -103,7 +103,7 @@ def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: P
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
-
+@pytest.mark.forked
 def test_task_based_at_features_tab_p2(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -114,7 +114,7 @@ def test_task_based_at_features_tab_p2(
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
-
+@pytest.mark.forked
 def test_task_based_features_at_spec_preview(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -127,7 +127,7 @@ def test_task_based_features_at_spec_preview(
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
-
+@pytest.mark.forked
 def test_task_based_features_at_features_duplicate(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -139,7 +139,7 @@ def test_task_based_features_at_features_duplicate(
 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
-
+@pytest.mark.forked
 def test_task_based_features_duplicate_at_spec_preview(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
