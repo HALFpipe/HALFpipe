@@ -143,7 +143,7 @@ jobs:
           failure=0
           # Run the integration tests
           echo "***Running TUI tests***"
-          py.test --forked /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
+          py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
           echo "***Running backend tests***"
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \

@@ -17,7 +17,7 @@ from .pilot_functions import (
     select_images,
     settable_scroll_screen_down,
 )
-
+import pytest
 
 async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spreadsheet_path=None, stage=None) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
@@ -141,7 +141,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
         await task()
 
 
-# 1
+@pytest.mark.forked
 def test_intercept_only_at_global_models_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, add intercept only group level model, make cutoff choices"""
     run_before_with_extra_args = partial(
@@ -153,7 +153,7 @@ def test_intercept_only_at_global_models_tab(snap_compare, start_app, work_dir_p
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 2
+@pytest.mark.forked
 def test_intercept_only_at_group_level_models_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -167,7 +167,7 @@ def test_intercept_only_at_group_level_models_tab_duplicate(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 3
+@pytest.mark.forked
 def test_intercept_only_at_spec_preview(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, add intercept only group level model, make cutoff choices, check spec file preview"""
     run_before_with_extra_args = partial(
@@ -176,7 +176,7 @@ def test_intercept_only_at_spec_preview(snap_compare, start_app, work_dir_path: 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 4
+@pytest.mark.forked
 def test_linear_model_at_group_level_models_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
@@ -191,7 +191,7 @@ def test_linear_model_at_group_level_models_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 5
+@pytest.mark.forked
 def test_linear_model_at_group_level_models_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
@@ -206,7 +206,7 @@ def test_linear_model_at_group_level_models_tab_duplicate(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 6
+@pytest.mark.forked
 def test_linear_model_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
