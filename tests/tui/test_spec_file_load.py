@@ -98,7 +98,7 @@ async def run_before(
         await pilot.click(offset=(55, 10))
         # scroll
         await settable_scroll_screen_down(pilot, 20)
-        
+
     await wait_for_idle()
 
 

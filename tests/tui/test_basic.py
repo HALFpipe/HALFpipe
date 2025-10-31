@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path
 
 import pytest
+from textual._wait import wait_for_idle
 
 from halfpipe.logging import logger
 
@@ -18,7 +19,6 @@ from .pilot_functions import (
     set_non_bids_data,
     settable_scroll_screen_down,
 )
-from textual._wait import wait_for_idle
 
 
 async def run_before(
