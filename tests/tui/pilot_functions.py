@@ -654,6 +654,8 @@ async def run_before_for_reho_falff_preproc(
     for task in tasks_by_stage[stage]:
         await task()
 
+    await wait_for_idle()
+
 
 async def remove_confounds_select_all(pilot) -> None:
     # make few 'Remove confounds" options

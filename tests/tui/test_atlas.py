@@ -22,6 +22,7 @@ from .pilot_functions import (
     toggle_bandpass_filter,
     toggle_grand_mean_scaling,
 )
+from textual._wait import wait_for_idle
 
 
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atlas_file_pattern=None) -> None:
@@ -104,6 +105,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     for task in tasks_by_stage[stage]:
         await task()
 
+    await wait_for_idle()
 
 @pytest.mark.forked
 def test_atlas_at_features_tab(

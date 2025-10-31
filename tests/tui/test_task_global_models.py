@@ -19,6 +19,7 @@ from .pilot_functions import (
     select_images,
     settable_scroll_screen_down,
 )
+from textual._wait import wait_for_idle
 
 
 async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spreadsheet_path=None, stage=None) -> None:
@@ -141,6 +142,8 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
     await pilot.click("#only_one_button")
     for task in tasks_by_stage[stage]:
         await task()
+
+    await wait_for_idle()
 
 
 @pytest.mark.forked
