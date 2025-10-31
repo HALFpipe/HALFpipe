@@ -6,6 +6,7 @@ from pathlib import Path
 import pytest
 
 from .pilot_functions import run_before_for_reho_falff_preproc
+from textual._wait import wait_for_idle
 
 
 @pytest.mark.forked

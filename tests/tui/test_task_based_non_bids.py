@@ -18,6 +18,7 @@ from .pilot_functions import (
     set_non_bids_data,
     settable_scroll_screen_down,
 )
+from textual._wait import wait_for_idle
 
 
 async def run_before(
@@ -97,6 +98,7 @@ async def run_before(
     for task in tasks_by_stage[stage]:
         await task()
 
+    await wait_for_idle()
 
 @pytest.mark.forked
 def test_task_based_non_bids_at_features_tab(

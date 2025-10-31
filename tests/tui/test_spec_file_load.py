@@ -24,6 +24,7 @@ widget_label_map = {
     "preproc_1": "#feature_item_8_flabel",
 }
 import pytest
+from textual._wait import wait_for_idle
 
 
 async def run_before(
@@ -97,6 +98,8 @@ async def run_before(
         await pilot.click(offset=(55, 10))
         # scroll
         await settable_scroll_screen_down(pilot, 20)
+        
+    await wait_for_idle()
 
 
 @pytest.mark.forked

@@ -18,6 +18,7 @@ from .pilot_functions import (
     set_non_bids_data,
     settable_scroll_screen_down,
 )
+from textual._wait import wait_for_idle
 
 
 async def run_before(
@@ -160,6 +161,7 @@ async def run_before(
                 pilot.app.save_screenshot()
                 logger.info(e)
     # pilot.app.call_later(pilot.app.exit)  # 👈 schedule clean exit
+    await wait_for_idle()
 
 
 @pytest.mark.forked
