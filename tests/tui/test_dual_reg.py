@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path
 
 import pytest
+from textual._wait import wait_for_idle
 
 from halfpipe.logging import logger
 
@@ -19,7 +20,6 @@ from .pilot_functions import (
     select_images,
     settable_scroll_screen_down,
 )
-from textual._wait import wait_for_idle
 
 
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file_pattern=None) -> None:
@@ -70,6 +70,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         await task()
 
     await wait_for_idle()
+
 
 @pytest.mark.forked
 def test_dual_reg_at_features_tab(

@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path
 
 import pytest
+from textual._wait import wait_for_idle
 
 from halfpipe.logging import logger
 
@@ -19,7 +20,6 @@ from .pilot_functions import (
     select_images,
     settable_scroll_screen_down,
 )
-from textual._wait import wait_for_idle
 
 
 async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spreadsheet_path=None, stage=None) -> None:
