@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from halfpipe.logging import logger
 
 from .pilot_functions import (
@@ -16,7 +18,7 @@ from .pilot_functions import (
     set_non_bids_data,
     settable_scroll_screen_down,
 )
-import pytest
+
 
 async def run_before(
     pilot,
@@ -159,6 +161,7 @@ async def run_before(
                 logger.info(e)
     # pilot.app.call_later(pilot.app.exit)  # 👈 schedule clean exit
 
+
 @pytest.mark.forked
 def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether one can set the working directory."""
@@ -167,6 +170,7 @@ def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_d
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
+
 @pytest.mark.forked
 def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether a bids data can be loaded. This should yield some non-zero found files at the file summary panel."""
@@ -174,6 +178,7 @@ def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downl
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="bids_data_tab"
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
 
 @pytest.mark.forked
 def test_non_bids_data_input_tab(
@@ -188,6 +193,7 @@ def test_non_bids_data_input_tab(
         stage="non_bids_data_tab",
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
 
 @pytest.mark.forked
 def test_non_bids_data_input_tab_with_fmaps(
@@ -210,6 +216,7 @@ def test_non_bids_data_input_tab_with_fmaps(
         stage="non_bids_data_tab_with_fmaps",
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
 
 @pytest.mark.forked
 def test_preproc_settings_tab(

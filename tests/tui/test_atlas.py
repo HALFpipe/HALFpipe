@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from halfpipe.logging import logger
 
 from .pilot_functions import (
@@ -20,7 +22,7 @@ from .pilot_functions import (
     toggle_bandpass_filter,
     toggle_grand_mean_scaling,
 )
-import pytest
+
 
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atlas_file_pattern=None) -> None:
     # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
@@ -102,6 +104,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     for task in tasks_by_stage[stage]:
         await task()
 
+
 @pytest.mark.forked
 def test_atlas_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
@@ -120,6 +123,7 @@ def test_atlas_at_features_tab(
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
+
 @pytest.mark.forked
 def test_atlas_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
@@ -137,6 +141,7 @@ def test_atlas_at_spec_preview(
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
+
 @pytest.mark.forked
 def test_atlas_at_features_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
@@ -153,6 +158,7 @@ def test_atlas_at_features_duplicate(
         stage="at_features_duplicate",
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
 
 @pytest.mark.forked
 def test_duplicate_at_spec_preview(
