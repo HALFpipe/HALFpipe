@@ -253,9 +253,8 @@ async def delete_column(pilot) -> None:
 
 async def set_grand_mean_scaling(pilot, value="12345"):
     await pilot.click(pilot.app.get_widget_by_id("grand_mean_scaling").get_widget_by_id("input_switch_input_box"))
-    for _i in range(10):
-        await pilot.press("backspace")
-        await pilot.press("delete")
+    await clear_entry(pilot)
+
     for i in value:
         await pilot.press(i)
 
@@ -276,27 +275,21 @@ async def toggle_bandpass_filter(pilot):
 
 async def set_bandpass_filter_lp_width(pilot, value="8"):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_lp_width").get_widget_by_id("input_switch_input_box"))
-    for _i in range(5):
-        await pilot.press("backspace")
-        await pilot.press("delete")
+    await clear_entry(pilot)
     for v in value:
         await pilot.press(v)
 
 
 async def set_bandpass_filter_hp_width(pilot, value="9"):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id("input_switch_input_box"))
-    for _i in range(5):
-        await pilot.press("backspace")
-        await pilot.press("delete")
+    await clear_entry(pilot)
     for v in value:
         await pilot.press(v)
 
 
 async def set_smoothing(pilot, value="9"):
     await pilot.click(pilot.app.get_widget_by_id("smoothing").get_widget_by_id("input_switch_input_box"))
-    for _i in range(5):
-        await pilot.press("backspace")
-        await pilot.press("delete")
+    await clear_entry(pilot)
     for v in value:
         await pilot.press(v)
 
@@ -402,6 +395,7 @@ async def add_bold(pilot, bold_pattern_path, set_repetition_time) -> None:
         # Specify repetition time in seconds: Click into prompt
         # await pilot.click(offset=(96, 27))
         await pilot.click("#input_prompt")
+        await clear_entry(pilot)
         # Set time to '9'
         await pilot.press("9")
         # Click Ok to dismiss
@@ -440,6 +434,7 @@ async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> No
             # now there should be a modal informing that first echo times are missing, we dismiss it
             await pilot.click("#only_one_button")
             await pilot.click("#input_prompt")
+            await clear_entry(pilot)
             # Set echo time to '1'
             await pilot.press(str(i))
             # Click Ok to dismiss
@@ -453,6 +448,12 @@ async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> No
     # await settable_scroll_screen_down(pilot, 10)
 
 
+async def clear_entry(pilot) -> None:
+    for _i in range(20):
+        await pilot.press("backspace")
+        await pilot.press("delete")
+
+
 async def associate_fmaps(pilot) -> None:
     try:
         await pilot.click("#associate_button")
@@ -461,7 +462,9 @@ async def associate_fmaps(pilot) -> None:
         await pilot.click("#only_one_button")
         # enter some value
         await pilot.click("#input_prompt")
+        await clear_entry(pilot)
         await pilot.press(str(9))
+
         await pilot.click("#only_one_button")
         # missing phase encoding direction modal
         # dismiss it
@@ -519,8 +522,10 @@ async def set_non_bids_data(
             await pilot.click("#confirm_non_bids_button")
             # click Ok on Modal informing us that the data input is success
             await pilot.click("#only_one_button")
-            # Click Ok on Modal saying that data and workdir is set and user can proceed further
+            # # Click Ok on Modal saying that data and workdir is set and user can proceed further
             await pilot.click("#only_one_button")
+            await pilot.click("#only_one_button")
+
         except Exception as e:
             pilot.app.save_screenshot()
             logger.info(e)
@@ -651,6 +656,8 @@ async def run_before_for_reho_falff_preproc(
     for task in tasks_by_stage[stage]:
         await task()
 
+    await wait_for_idle()
+
 
 async def remove_confounds_select_all(pilot) -> None:
     # make few 'Remove confounds" options
@@ -715,3 +722,21 @@ async def set_minimum_coverage(pilot, value="0.85"):
         await pilot.press("backspace")
     for v in value:
         await pilot.press(v)
+
+
+async def select_file_tags(pilot, which_ones: list[int]):
+    await pilot.click("#file_tag_selection")
+
+    current_pos = 0  # start before first option
+
+    for target in which_ones:
+        # Move down until we reach the desired option
+        moves = target - current_pos
+        for _ in range(moves):
+            await pilot.press("down")
+
+        # Select it
+        await pilot.press("enter")
+
+        # Update current cursor position
+        current_pos = target

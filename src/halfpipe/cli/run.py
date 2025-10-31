@@ -24,13 +24,13 @@ def run_stage_ui(opts: Namespace):
         if opts.tui_dev:
             os.environ["TEXTUAL"] = "devtools,debug"
 
-        app = MainApp()
-        opts_tui = app.run()
-        # update opts based on selection in tui
-        if opts_tui:
-            for k in vars(opts).keys() & opts_tui.keys():
-                setattr(opts, k, opts_tui[k])
-            logger.info(f"The options selected in TUI are: {opts}")
+        app = MainApp(opts)
+        app.run()
+        # # update opts based on selection in tui
+        # if opts_tui:
+        # for k in vars(opts).keys() & opts_tui.keys():
+        # setattr(opts, k, opts_tui[k])
+        logger.info(f"The options after running TUI are: {opts}")
 
         if opts.workdir is False:
             import os
@@ -66,7 +66,7 @@ def run_stage_workflow(opts):
     from ..workflows.base import init_workflow
     from ..workflows.execgraph import init_execgraph
 
-    workflow = init_workflow(opts.workdir, spec_path=opts.spec_file, bids_database_dir=opts.bids_database_dir)
+    workflow = init_workflow(opts.workdir, spec_path=opts.spec_path, bids_database_dir=opts.bids_database_dir)
 
     if workflow is None:
         return None

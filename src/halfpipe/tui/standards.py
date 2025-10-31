@@ -1,5 +1,4 @@
 from copy import deepcopy
-from pathlib import Path
 from typing import Dict, List, Union
 
 from inflection import humanize
@@ -10,13 +9,13 @@ global_settings_defaults: dict[str, str] = {
     "slice_timing": "False",
     "skull_strip_algorithm": "ants",
 }
-opts: dict[str, str | bool | Path | None] = {
-    "debug": False,
-    "verbose": False,
-    "watchdog": False,
-    "keep": "some",
-    "workdir": None,
-}
+# opts: dict[str, str | bool | Path | None] = {
+#     "debug": False,
+#     "verbose": False,
+#     "watchdog": False,
+#     "keep": "some",
+#     "workdir": None,
+# }
 
 
 bandpass_filter_defaults: dict[str, dict] = {
@@ -111,8 +110,8 @@ group_level_modesl_defaults: dict[str, list[dict[str, str]]] = {
 feature_label_map: dict[str, str] = {
     "task_based": "Task-based",
     "seed_based_connectivity": "Seed-based connectivity",
-    "dual_regression": "Network Template Regression (dual regression)",
-    "gig_ica": "Network Template Regression (Neuromark)",
+    "dual_regression": "Network Template Regression\n'Dual regression'",
+    "gig_ica": "Network Template Regression\n'Neuromark'",
     "atlas_based_connectivity": "Atlas-based Connectivity",
     "reho": "ReHo",
     "falff": "fALFF",

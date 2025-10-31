@@ -2,6 +2,7 @@
 # conftest.py
 import os
 import shutil
+import sys
 from pathlib import Path
 
 import pytest
@@ -28,13 +29,16 @@ def copy_jinja2_file(resolved_test_dir_path):
     """Copy a file before tests start. This is just a hot fix because somehow the resources directory
     is delete during the docker build."""
     source_file = resolved_test_dir_path / "snapshot_report_template.jinja2"
-    destination = Path("/opt/conda/envs/fmriprep/lib/python3.11/site-packages/resources/")
+
+    # Dynamically get Python version
+    python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
+    destination = Path(f"/opt/conda/envs/fmriprep/lib/python{python_version}/site-packages/resources/")
 
     try:
         destination.mkdir(parents=True, exist_ok=True)
         shutil.copy(source_file, destination / "snapshot_report_template.jinja2")
     except Exception as e:
-        logger.info(f"[WARN] snapshot_report_template.jinja2 cannot be coppie. Exception: {e}")
+        logger.info(f"[WARN] snapshot_report_template.jinja2 cannot be copied. Exception: {e}")
 
 
 # Custom fixture that returns a specific path, this is needed so that the path in the snapshot is always the same
@@ -133,5 +137,9 @@ def phase_diff_fmap_pattern(downloaded_data_path) -> Path:
 
 @pytest.fixture(scope="function")
 def start_app():
-    app = MainApp()
+    from types import SimpleNamespace
+
+    opts = SimpleNamespace()
+    opts.fs_root = "/"
+    app = MainApp(opts)
     return app

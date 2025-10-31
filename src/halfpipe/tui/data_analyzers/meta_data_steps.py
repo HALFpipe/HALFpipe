@@ -372,7 +372,7 @@ class SetMetadataStep:
                     id="set_value_modal",
                 )
             )
-            await self.next(choice)
+            return await self.next(choice)
 
         elif isinstance(field, fields.Float):
             self.input_view.append("this requires a number input from the user")
@@ -387,7 +387,7 @@ class SetMetadataStep:
                     id="select_value_modal",
                 )
             )
-            await self.next(choice)
+            return await self.next(choice)
 
         else:
             raise ValueError(f'Unsupported metadata field "{field}"')
@@ -467,7 +467,7 @@ class SetMetadataStep:
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
             )
-            await self.next_step_instance.run()
+            return await self.next_step_instance.run()
         else:
             if self.callback is not None:
                 return self.callback(self.callback_message)
@@ -536,6 +536,8 @@ class CheckMetadataStep:
     next_step_type: Type[CheckMetadataStep] | None = None
 
     show_summary: ClassVar[bool] = True
+
+    allow_cancel = False
 
     def _should_skip(self, _):
         return False
@@ -662,8 +664,6 @@ class CheckMetadataStep:
         if self.is_missing is False:
             self._append_view.append("Proceed with these values?")
             self.input_view.append("users yes/no choice")
-            # here i need to rise modal with yes/no
-            # self._append_view(self.input_view)
 
         if self.show_summary is True or self.is_missing is False:
             pass
@@ -697,16 +697,20 @@ class CheckMetadataStep:
             choice = await self.app.push_screen_wait(
                 Confirm(
                     " ".join(self._append_view),
-                    left_button_text="YES",
-                    right_button_text="NO",
-                    left_button_variant="error",
-                    right_button_variant="success",
+                    left_button_text="Yes",
+                    right_button_text="No",
+                    extra_button_text="Cancel" if self.allow_cancel else None,
+                    # left_button_variant="error",
+                    # right_button_variant="success",
                     title="Check meta data",
                     id="check_meta_data_modal",
                     classes="confirm_warning",
                 )
             )
-            await self.next(choice)
+            if choice is None:
+                return "cancel"
+            else:
+                return await self.next(choice)
 
     async def next(self, choice):
         """
@@ -725,7 +729,7 @@ class CheckMetadataStep:
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
             )
-            await next_step_instance.run()
+            return await next_step_instance.run()
 
         elif choice is True and self.next_step_type is None:
             return self.callback(self.callback_message)
@@ -743,9 +747,9 @@ class CheckMetadataStep:
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
             )
-            await set_instance_step.run()
+            return await set_instance_step.run()
         else:
-            pass
+            return "cancel"
 
 
 class CheckPhaseDiffEchoTime2Step(CheckMetadataStep):
@@ -1171,6 +1175,8 @@ class CheckBoldSliceTimingStep(CheckMetadataStep):
     key = "slice_timing"
     filters = {"datatype": "func", "suffix": "bold"}
 
+    allow_cancel = True
+
     def _should_skip(self, ctx):
         if self.key in ctx.already_checked:
             return True
@@ -1205,6 +1211,7 @@ class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
     filters = {"datatype": "func", "suffix": "bold"}
 
     next_step_type = CheckBoldSliceTimingStep
+    allow_cancel = True
 
 
 class CheckSpaceStep(CheckMetadataStep):
