@@ -24,7 +24,6 @@ widget_label_map = {
     "preproc_1": "#feature_item_8_flabel",
 }
 import pytest
-from textual._wait import wait_for_idle
 
 
 async def run_before(

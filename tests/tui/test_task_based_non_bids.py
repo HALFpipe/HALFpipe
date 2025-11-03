@@ -6,7 +6,6 @@ from functools import partial
 from pathlib import Path
 
 import pytest
-from textual._wait import wait_for_idle
 
 from halfpipe.logging import logger
 
@@ -97,7 +96,6 @@ async def run_before(
 
     for task in tasks_by_stage[stage]:
         await task()
-
 
 
 @pytest.mark.forked

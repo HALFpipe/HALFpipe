@@ -6,7 +6,6 @@ from functools import partial
 from pathlib import Path
 
 import pytest
-from textual._wait import wait_for_idle
 
 from halfpipe.logging import logger
 
