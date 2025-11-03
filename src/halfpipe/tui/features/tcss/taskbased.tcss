@@ -145,11 +145,11 @@ offset-x: 1;
         #space_label {
             width: 39;
             padding: 1;
-            
+
 
         }
         #space_selection {
-                    width: 60;  
+                    width: 60;
                         SelectCurrent {
         background: green 25%;
     }
