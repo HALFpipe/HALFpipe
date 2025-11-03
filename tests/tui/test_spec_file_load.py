@@ -99,8 +99,6 @@ async def run_before(
         # scroll
         await settable_scroll_screen_down(pilot, 20)
 
-    await wait_for_idle()
-
 
 @pytest.mark.forked
 def test_load_from_spec_file_f0(

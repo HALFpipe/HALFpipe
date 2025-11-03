@@ -69,7 +69,6 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
     for task in tasks_by_stage[stage]:
         await task()
 
-    await wait_for_idle()
 
 
 @pytest.mark.forked
