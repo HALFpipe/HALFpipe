@@ -21,6 +21,7 @@ async def _load_data(pilot, data_path) -> None:
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
+    await pilot.wait_for_scheduled_animations()
 
 
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
@@ -50,6 +51,7 @@ async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
+    await pilot.wait_for_scheduled_animations()
 
 
 async def enter_browse_path(pilot, path):
