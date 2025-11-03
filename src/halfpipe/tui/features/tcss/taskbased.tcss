@@ -142,7 +142,24 @@ offset-x: 1;
             height: 3;
             color: white;
         }
+        #space_label {
+            width: 39;
+            padding: 1;
+            
+
+        }
+        #space_selection {
+                    width: 60;  
+                        SelectCurrent {
+        background: green 25%;
     }
+        }
+        #space_selection_panel {
+offset-x:1;
+            height: 3;
+
+        }
+}
     #notes {
         margin: 1 0 0 0;
         width: 100%;
