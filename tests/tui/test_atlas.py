@@ -6,7 +6,6 @@ from functools import partial
 from pathlib import Path
 
 import pytest
-from textual._wait import wait_for_idle
 
 from halfpipe.logging import logger
 
@@ -104,7 +103,6 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     await pilot.click("#only_one_button")
     for task in tasks_by_stage[stage]:
         await task()
-
 
 
 @pytest.mark.forked
