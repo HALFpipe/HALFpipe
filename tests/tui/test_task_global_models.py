@@ -143,8 +143,6 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
     for task in tasks_by_stage[stage]:
         await task()
 
-    await wait_for_idle()
-
 
 @pytest.mark.forked
 def test_intercept_only_at_global_models_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
