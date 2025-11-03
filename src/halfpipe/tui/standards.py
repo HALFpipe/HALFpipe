@@ -9,14 +9,6 @@ global_settings_defaults: dict[str, str] = {
     "slice_timing": "False",
     "skull_strip_algorithm": "ants",
 }
-# opts: dict[str, str | bool | Path | None] = {
-#     "debug": False,
-#     "verbose": False,
-#     "watchdog": False,
-#     "keep": "some",
-#     "workdir": None,
-# }
-
 
 bandpass_filter_defaults: dict[str, dict] = {
     "gaussian": {"type": "gaussian", "hp_width": "125", "lp_width": None},
