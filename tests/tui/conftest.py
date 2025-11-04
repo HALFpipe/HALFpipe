@@ -34,7 +34,7 @@ def copy_jinja2_file(resolved_test_dir_path):
         destination.mkdir(parents=True, exist_ok=True)
         shutil.copy(source_file, destination / "snapshot_report_template.jinja2")
     except Exception as e:
-        logger.info(f"[WARN] snapshot_report_template.jinja2 cannot be coppie. Exception: {e}")
+        logger.info(f"[WARN] snapshot_report_template.jinja2 cannot be copied. Exception: {e}")
 
 
 # Custom fixture that returns a specific path, this is needed so that the path in the snapshot is always the same
@@ -133,5 +133,9 @@ def phase_diff_fmap_pattern(downloaded_data_path) -> Path:
 
 @pytest.fixture(scope="function")
 def start_app():
-    app = MainApp()
+    from types import SimpleNamespace
+
+    opts = SimpleNamespace()
+    opts.fs_root = "/"
+    app = MainApp(opts)
     return app

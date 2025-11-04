@@ -392,7 +392,7 @@ class MainApp(App):
     # flag for bids/non bids data input
     is_bids = True
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, opts, **kwargs) -> None:
         """
         Initializes the MainApp.
 
@@ -406,6 +406,7 @@ class MainApp(App):
         """
         LoggingContext.disable_print()
         super().__init__(**kwargs)
+        self.opts = opts
         self._global_settings_defaults = deepcopy(global_settings_defaults)
         self.tab_manager = TabbedContent2(id="tab_manager")
         self.tabs_are_visible = False

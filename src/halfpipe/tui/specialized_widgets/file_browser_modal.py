@@ -231,7 +231,7 @@ class FileBrowserModal(DraggableModalScreen):
         """
         base = "/"
         self.content.mount(
-            FilteredDirectoryTree("/", classes="browse_tree", id="dir_tree"),
+            FilteredDirectoryTree(self.app.opts.fs_root, classes="browse_tree", id="dir_tree"),
             #     Input(placeholder="Set path to the " + self.path_to, id="path_input_box2"),
             SelectOrInputPath(
                 [(f, f) for f in create_path_option_list(base=base, include_base=True)],

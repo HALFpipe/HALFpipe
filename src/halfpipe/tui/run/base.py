@@ -24,7 +24,8 @@ from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..save import dump_dict_to_contex
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.quit_modal import quit_modal
-from ..standards import opts
+
+# from ..standards import opts
 
 # !!!This must be before importing the RadioSet to override the RadioButton imported by the RadioSet!!!
 RadioButton.BUTTON_INNER = "X"
@@ -162,16 +163,6 @@ class BatchOptionModal(DraggableModalScreen):
             ),
             classes="option_lists options",
         )
-        # widgets_option_choices = []
-        # for key, value in self.batch_options_choices.items():
-        #     label = Label(humanize_option_labels[key])
-        #     default = value
-        #     radio_set = RadioSet(RadioButton("all", value=default=='all'),
-        #                                  RadioButton("some", value=default=='some'),
-        #                                  RadioButton("none", value=default=='none'),
-        #                          id="focus_me"
-        #                         )
-        #     widgets_option_choices.append(Horizontal(label, radio_set, classes="option_choices"))
 
         self.widgets_to_mount = [*widgets_option_values, *widgets_option_bools, *widgets_option_lists, singularity_path_widget]
 
@@ -366,8 +357,6 @@ class Run(Widget):
         with ScrollableContainer():
             yield Horizontal(
                 keep_panel,
-                # Button("Refresh spec file", id="refresh_button"),
-                # Button("Save spec file", id="save_button"),
                 Button("Generate HPC batch script", id="generate_batch_script_button"),
                 Button("Exit & Run locally", id="run_button"),
                 # Button("Exit UI", id="exit_button"),
@@ -377,7 +366,7 @@ class Run(Widget):
 
     @on(Select.Changed, "#keep_selection")
     def on_keep_selection_changed(self, message: Message):
-        opts["keep"] = message.value
+        self.app.opts.keep = message.value
 
     @on(Button.Pressed, "#run_button")
     def on_run_button_pressed(self):
@@ -387,9 +376,9 @@ class Run(Widget):
         This method is called when the user presses the "Run" button. It
         exits the application and returns the working directory.
         """
-        opts["workdir"] = ctx.workdir
+        self.app.opts.workdir = ctx.workdir
         save_spec(ctx.spec, workdir=ctx.workdir)
-        self.app.exit(result=opts)
+        self.app.exit()
 
     # @on(Button.Pressed, "#save_button")
     def on_save_button_pressed(self):
