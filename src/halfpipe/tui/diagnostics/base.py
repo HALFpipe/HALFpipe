@@ -8,7 +8,7 @@ from textual.widget import Widget
 from textual.widgets import Select, Static
 
 from ..general_widgets.custom_general_widgets import LabelledSwitch
-from ..standards import global_settings_defaults, opts
+from ..standards import global_settings_defaults
 
 
 class Diagnostics(Widget):
