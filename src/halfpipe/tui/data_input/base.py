@@ -35,7 +35,12 @@ from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
 from ..standards import field_map_group_labels, field_map_labels
 from .utils.extra_widgets import DataSummaryLine, FieldMapFilesPanel
-
+import functools
+import asyncio
+import traceback
+from textual.screen import ModalScreen
+from textual.containers import Center
+from textual.widgets import Static
 
 class DataInput(Widget):
     """
@@ -797,6 +802,36 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             await self.get_widget_by_id("bids_panel").remove()
             await self.get_widget_by_id("bids_summary_panel").remove()
             await self._build_and_mount_non_bids_panel()
+
+    class LoadingModal(ModalScreen):
+        """A modal screen that shows while something loads."""
+
+        def compose(self):
+            yield Center(Static("⏳ Loading, please wait..."))
+
+    def with_loading_modal(func):
+        """
+        Decorator to show a loading modal while an async method runs.
+        Automatically handles cleanup and error display.
+        """
+
+        @functools.wraps(func)
+        async def wrapper(self, *args, **kwargs):
+            await self.app.push_screen(LoadingModal())
+            try:
+                # Run the decorated async method
+                return await func(self, *args, **kwargs)
+
+            except Exception as e:
+                # Notify the user gracefully
+                self.app.notify(f"⚠️ Error: {e}", severity="error", timeout=8)
+                self.app.log(traceback.format_exc())
+
+            finally:
+                # Always close the modal
+                await self.app.pop_screen()
+
+        return wrapper
 
     @on(FileBrowser.Changed)
     async def _on_file_browser_changed(self, message: Message):
