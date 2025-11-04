@@ -157,6 +157,7 @@ spec.json file it is possible to load the therein configuration.",
             self.get_widget_by_id("work_dir_file_browser").update_input(None, send_message=False)
             self.get_widget_by_id("work_dir_file_browser").styles.border = ("solid", "red")
             ctx.workdir = None
+            self.app.opts.workdir = None
 
     @on(FileBrowser.Changed, "#fs_license_file_browser")
     async def _on_fs_license_file_browser_changed(self, message: Message) -> None:
@@ -234,6 +235,7 @@ spec.json file it is possible to load the therein configuration.",
             else:
                 self.get_widget_by_id("work_dir_file_browser").update_input(None)
                 ctx.workdir = None
+                self.app.opts.workdir = ctx.workdir
 
         async def existing_spec_file_decision(load):
             """
@@ -270,6 +272,7 @@ spec.json file it is possible to load the therein configuration.",
 
         # add path to context object
         ctx.workdir = Path(selected_path)
+        self.app.opts.workdir = ctx.workdir
         # Load the spec and by this we see whether there is existing spec file or not
         self.existing_spec = load_spec(workdir=ctx.workdir)
         if self.existing_spec is not None:
