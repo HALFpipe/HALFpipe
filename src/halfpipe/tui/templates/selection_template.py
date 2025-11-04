@@ -320,6 +320,9 @@ content_switcher_item_new_id:{content_switcher_item_new_id}, collapsible_item_ne
                 # Update copied dictionary with new name
                 ctx.cache[item_name_copy][self.ITEM_KEY]["name"] = item_name_copy
 
+                # Initialize new_item_type
+                new_item_type = None
+
                 # Optional setting key update (only applies if SETTING_KEY is set)
                 if self.SETTING_KEY:
                     ctx.cache[item_name_copy][self.ITEM_KEY]["setting"] = item_name_copy + "Setting"
@@ -328,11 +331,13 @@ content_switcher_item_new_id:{content_switcher_item_new_id}, collapsible_item_ne
                     # Add new item, first case is when it is preproccesed image output, otherwise we check which feature type
                     if ctx.cache[item_name_copy][self.SETTING_KEY].get("output_image") is True:
                         new_item_type = "preprocessed_image"
-                    else:
-                        new_item_type = ctx.cache[item_name_copy][self.ITEM_KEY]["type"]
 
-                    new_item = (new_item_type, item_name_copy)
-                    await self.add_new_item(new_item)
+                # If new_item_type wasn't set above, use the type from ITEM_KEY
+                if new_item_type is None:
+                    new_item_type = ctx.cache[item_name_copy][self.ITEM_KEY]["type"]
+
+                new_item = (new_item_type, item_name_copy)
+                await self.add_new_item(new_item)
 
         if self.ITEM_KEY is None:
             raise NotImplementedError("Child class must define ITEM_KEY.")
