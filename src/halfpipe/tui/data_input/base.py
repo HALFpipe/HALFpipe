@@ -42,6 +42,13 @@ from textual.screen import ModalScreen
 from textual.containers import Center
 from textual.widgets import Static
 
+
+class LoadingModal(ModalScreen):
+    """A modal screen that shows while something loads."""
+
+    def compose(self):
+        yield Center(Static("⏳ Loading, please wait..."))
+
 class DataInput(Widget):
     """
     A widget for handling data input, supporting both BIDS and non-BIDS data formats.
@@ -803,11 +810,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             await self.get_widget_by_id("bids_summary_panel").remove()
             await self._build_and_mount_non_bids_panel()
 
-    class LoadingModal(ModalScreen):
-        """A modal screen that shows while something loads."""
 
-        def compose(self):
-            yield Center(Static("⏳ Loading, please wait..."))
 
     def with_loading_modal(func):
         """
@@ -833,6 +836,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
         return wrapper
 
+    @with_loading_modal
     @on(FileBrowser.Changed)
     async def _on_file_browser_changed(self, message: Message):
         """
