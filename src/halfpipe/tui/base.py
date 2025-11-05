@@ -367,7 +367,6 @@ class MainApp(App):
         BASE_DIR / "general_widgets/tcss/custom_general_widgets.tcss",
         BASE_DIR / "general_widgets/tcss/custom_switch.tcss",
         BASE_DIR / "general_widgets/tcss/radio_set_changed.tcss",
-        BASE_DIR / "diagnostics/tcss/diagnostics.tcss",
     ]
 
     # TODO: The non active tabs should not show the bindings.
