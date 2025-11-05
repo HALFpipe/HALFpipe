@@ -16,6 +16,7 @@ from textual.widgets._tree import Tree, TreeNode
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.select_or_input_path import SelectOrInputPath, create_path_option_list
 from .confirm_screen import Confirm
+from ..help_functions import with_loading_modal
 
 
 def path_test(path: str, isfile: bool = False) -> str:
@@ -353,6 +354,7 @@ class FileBrowserModal(DraggableModalScreen):
         else:
             self._cancel_window()
 
+    @with_loading_modal
     def _confirm_window(self):
         """
         Validates the selected path and dismisses the modal.
