@@ -367,7 +367,6 @@ class MainApp(App):
         BASE_DIR / "general_widgets/tcss/custom_general_widgets.tcss",
         BASE_DIR / "general_widgets/tcss/custom_switch.tcss",
         BASE_DIR / "general_widgets/tcss/radio_set_changed.tcss",
-        BASE_DIR / "diagnostics/tcss/diagnostics.tcss",
     ]
 
     # TODO: The non active tabs should not show the bindings.
@@ -392,7 +391,7 @@ class MainApp(App):
     # flag for bids/non bids data input
     is_bids = True
 
-    def __init__(self, **kwargs) -> None:
+    def __init__(self, opts, **kwargs) -> None:
         """
         Initializes the MainApp.
 
@@ -406,6 +405,7 @@ class MainApp(App):
         """
         LoggingContext.disable_print()
         super().__init__(**kwargs)
+        self.opts = opts
         self._global_settings_defaults = deepcopy(global_settings_defaults)
         self.tab_manager = TabbedContent2(id="tab_manager")
         self.tabs_are_visible = False
