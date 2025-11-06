@@ -1,6 +1,7 @@
 Confirm {
      #message {
          min-height: 6;
+         max-width: 100;
          width: auto;
          content-align: center middle;
                  text-style: bold;
@@ -10,7 +11,7 @@ Confirm {
     #draggable_modal_screen_container_wrapper {
         width: auto;
         height: auto;
-        min-width: 50;
+        min-width: 58;
         align: center bottom;
         WindowTitleBar {
             dock: top;
@@ -78,7 +79,7 @@ Confirm {
         }
     .window_title {
         color: black;
-        width: 88%;
+        width: 90%;
     }
 }
 
