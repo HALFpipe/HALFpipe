@@ -8,7 +8,7 @@ from os import path as op
 from nipype.interfaces.base import (
     BaseInterface,
     BaseInterfaceInputSpec,
-#    File,
+    File,
     TraitedSpec,
     traits,
 )
@@ -23,7 +23,7 @@ from brainspace.gradient.gradient import GradientMaps
 # DRAFT CODE #
 ##############
 # This code is a draft to implement brainspace gradients in HALFpipe
-# TODO pass inputs as files to integrate w/ HALFpipe
+# TODO integrate file format load w/ HALFpipe
 # TODO write corresponding workflow
 
 class GradientsInputSpec(BaseInterfaceInputSpec):
@@ -43,17 +43,16 @@ class GradientsInputSpec(BaseInterfaceInputSpec):
         "If ‘joint’, datasets are embedded simultaneously based on a joint affinity matrix built from the individual datasets. This option is only available for ‘dm’ and ‘le’ approaches.")
 
     # .fit params
-    x = traits.Union(traits.Array, traits.List(trait=traits.Array), usedefault=True,
-        desc="Input matrix or list of matrices, shape = (n_samples, n_feat).")
+    x = traits.Union(traits.File, traits.List(trait=traits.File), mandatory=True,
+        desc="Input matrix or list of matrices, shape = (n_samples, n_feat).") # shape of output from atlas_based_connectivity_wf?
     gamma = traits.Union(None, traits.Float, usedefault=True,
         desc="Inverse kernel width. Only used if kernel == 'gaussian'. If None, gamma=1/n_feat . Default is None.")
     sparsity = traits.Float(0.9, usedefault=True,
         desc="Proportion of the smallest elements to zero-out for each row. Default is 0.9.")
     n_iter = traits.Int(10, usedefault=True,
         desc="Number of iterations for procrustes alignment. Default is 10.")
-    reference = traits.Union(None, traits.Array, usedefault=True,
-        desc="Initial reference for procrustes alignments, shape = (n_samples, n_feat). Only used when alignment == 'procrustes'. Default is None.")
-    # skipping kwargs
+    reference = traits.Union(None, traits.File, usedefault=True,
+        desc="Initial reference for procrustes alignments, shape = (n_samples, n_feat). Only used when alignment == 'procrustes'. Default is None.") # update desc
 
 
 class GradientsOutputSpec(TraitedSpec):
@@ -73,6 +72,11 @@ class Gradients(BaseInterface):
     output_spec = GradientsOutputSpec
 
     def _run_interface(self, runtime: Bunch) -> Bunch:
+        # TODO update load based on file format output of atlas_based_connectivity_wf
+        if isinstance(self.inputs.x,list):
+            x = [np.loadtxt(f) for f in self.inputs.x]
+        else:
+            x = np.loadtxt(self.inputs.x)
 
         gm = GradientMaps(
             n_components = self.inputs.n_components,
@@ -83,7 +87,7 @@ class Gradients(BaseInterface):
             )
 
         gm.fit(
-            self.inputs.x,
+            x,
             sparsity = self.inputs.sparsity,
             gamma = self.inputs.gamma,
             n_iter = self.inputs.n_iter,
