@@ -16,7 +16,14 @@ from textual.widgets._tree import Tree, TreeNode
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.select_or_input_path import SelectOrInputPath, create_path_option_list
 from .confirm_screen import Confirm
-from ..help_functions import with_loading_modal
+from ..help_functions import with_loading_modal, LoadingModal
+import functools
+import asyncio
+import traceback
+from textual.screen import ModalScreen
+from textual.containers import Center
+from textual.widgets import Static
+import inspect
 
 
 def path_test(path: str, isfile: bool = False) -> str:
@@ -320,7 +327,7 @@ class FileBrowserModal(DraggableModalScreen):
         self.selected_directory = self.get_widget_by_id("path_input_box2").value
 
     @on(Button.Pressed, ".ok")
-    def ok(self):
+    async def ok(self):
         """
         Confirms the selected path.
 
@@ -328,7 +335,7 @@ class FileBrowserModal(DraggableModalScreen):
         calls `_confirm_window` to validate the selected path and dismiss
         the modal.
         """
-        self._confirm_window()
+        await self._confirm_window()
 
     @on(Button.Pressed, ".cancel")
     def cancel(self):
@@ -354,8 +361,8 @@ class FileBrowserModal(DraggableModalScreen):
         else:
             self._cancel_window()
 
-    @with_loading_modal
-    def _confirm_window(self):
+    # @with_loading_modal
+    async def _confirm_window(self):
         """
         Validates the selected path and dismisses the modal.
 
@@ -365,8 +372,18 @@ class FileBrowserModal(DraggableModalScreen):
         prompts the user to create a new directory. If the path is
         invalid for other reasons, it displays an error message.
         """
-        self.update_from_input()
-        path_test_result = self.path_test_function(self.selected_directory)
+        await self.app.push_screen(LoadingModal())
+        try:
+            self.update_from_input()
+            path_test_result = self.path_test_function(self.selected_directory)
+        except Exception as e:
+            # Notify the user gracefully
+            self.app.notify(f"⚠️ Error: {e}", severity="error", timeout=8)
+            self.app.log(traceback.format_exc())
+
+        finally:
+            # Always close the modal
+            await self.app.pop_screen()
 
         def ask_for_new_directory(value):
             def create_new_directory(value):
@@ -415,6 +432,8 @@ class FileBrowserModal(DraggableModalScreen):
                     classes="confirm_error",
                 )
             )
+
+
 
     def _cancel_window(self):
         """
