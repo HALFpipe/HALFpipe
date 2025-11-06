@@ -13,23 +13,32 @@ def test_brainspace_install():
     except ImportError:
         raise ImportError(f'Install "brainspace".')
 
+def test_help(capfd):
+    """ Test if help output distinguishes mandatory and optional inputs. """
+    Gradients.help()
+    out, err = capfd.readouterr()
+
+    assert 'Mandatory' in out
+
 def test_inputs_string():
     """ Test if traits are checking input correctly. """
     g = Gradients()
     with pytest.raises(TraitError):
         g.inputs.n_components = 'fails'
 
-def test_inputs_array():
+def test_inputs_file():
     """ Test if traits are checking input correctly. """
     g = Gradients()
 
-    g.inputs.x = np.random.randn(5,5)
+    g.inputs.x = '/halfpipe_dev/test_data/derivatives/sub-10171/func/task-rest/sub-10171_task-rest_feature-motionParametersGSR_atlas-Schaefer2018Combined_desc-correlation_matrix.tsv'
 
 def test_inputs_union():
     """ Test if traits are checking input correctly. """
     g = Gradients()
 
-    g.inputs.x = [np.random.randn(5,5),np.random.randn(5,5)]
+    np.savetxt('rand1.txt', np.random.randn(100,100))
+    np.savetxt('rand2.txt', np.random.randn(100,100))
+    g.inputs.x = ['rand1.txt','rand2.txt']
 
 def test_gradient_single_random_array(tmp_path):
     """ Test brainspace functions on random array & that traits are filling in default values. """
@@ -37,7 +46,8 @@ def test_gradient_single_random_array(tmp_path):
 
     g = Gradients()
 
-    g.inputs.x = np.random.randn(100,100)
+    np.savetxt('rand.txt', np.random.randn(100,100))
+    g.inputs.x = 'rand.txt'
 
     g._run_interface('fake runtime')
 
@@ -50,7 +60,8 @@ def test_outputs(tmp_path):
 
     g = Gradients()
 
-    g.inputs.x = np.random.randn(100,100)
+    np.savetxt('rand.txt',np.random.randn(100,100))
+    g.inputs.x = 'rand.txt'
 
     g._run_interface('fake runtime')
 
