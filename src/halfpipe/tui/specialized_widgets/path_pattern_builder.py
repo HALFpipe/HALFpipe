@@ -5,7 +5,7 @@ from typing import Any
 
 from rich.text import Text
 from textual import events, on, work
-from textual.containers import Container, Grid, Horizontal, HorizontalScroll
+from textual.containers import Container, Grid, Horizontal
 from textual.widgets import Button, Static
 
 from ...ingest.glob import resolve_path_wildcards, tag_glob
@@ -333,7 +333,7 @@ class PathPatternBuilder(DraggableModalScreen):
                 colors_and_labels=colors_and_labels,
                 id="path_widget",
             ),
-                # id="path_widget_container",
+            # id="path_widget_container",
             # ),
             Grid(
                 *color_buttons,

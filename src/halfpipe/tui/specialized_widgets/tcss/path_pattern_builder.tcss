@@ -16,7 +16,7 @@ FileItem {
     }
     #static_file_pattern_panel {
         width: 79;
-        
+
     }
     #icon_buttons_container {
         width: auto;
