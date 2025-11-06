@@ -27,7 +27,9 @@ class LoadingModal(ModalScreen):
     """A modal screen that shows while something loads."""
 
     def compose(self):
-        yield Center(Static("⏳ Loading, please wait..."))
+        yield Center(Static("⏳ Loading, please wait..."), id='load_modal')
+
+
 
 def with_loading_modal(func):
     """
