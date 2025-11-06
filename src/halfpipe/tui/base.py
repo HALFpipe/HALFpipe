@@ -230,7 +230,7 @@ class HeaderSaveIcon(Widget):
             The click event object.
         """
         event.stop()
-        self.app.get_widget_by_id("run").on_save_button_pressed()
+        await self.app.get_widget_by_id("run").on_save_button_pressed()
 
 
 class MyHeader(Header):
@@ -447,8 +447,8 @@ class MainApp(App):
         self.tab_manager.query_one(Tabs).action_previous_tab()
 
     @on(TabbedContent.TabActivated, pane="#run_tab")
-    def on_run_tab_activated(self) -> None:
-        self.get_widget_by_id("run").refresh_context()
+    async def on_run_tab_activated(self) -> None:
+        await self.get_widget_by_id("run").refresh_context()
 
     def on_mount(self) -> None:
         """

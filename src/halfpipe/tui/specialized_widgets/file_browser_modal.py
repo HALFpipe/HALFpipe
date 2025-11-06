@@ -15,15 +15,8 @@ from textual.widgets._tree import Tree, TreeNode
 
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.select_or_input_path import SelectOrInputPath, create_path_option_list
+from ..help_functions import with_loading_modal
 from .confirm_screen import Confirm
-from ..help_functions import with_loading_modal, LoadingModal
-import functools
-import asyncio
-import traceback
-from textual.screen import ModalScreen
-from textual.containers import Center
-from textual.widgets import Static
-import inspect
 
 
 def path_test(path: str, isfile: bool = False) -> str:
@@ -361,7 +354,10 @@ class FileBrowserModal(DraggableModalScreen):
         else:
             self._cancel_window()
 
-    # @with_loading_modal
+    @with_loading_modal
+    async def run_path_test(self, path):
+        return self.path_test_function(path)
+
     async def _confirm_window(self):
         """
         Validates the selected path and dismisses the modal.
@@ -372,18 +368,7 @@ class FileBrowserModal(DraggableModalScreen):
         prompts the user to create a new directory. If the path is
         invalid for other reasons, it displays an error message.
         """
-        await self.app.push_screen(LoadingModal())
-        try:
-            self.update_from_input()
-            path_test_result = self.path_test_function(self.selected_directory)
-        except Exception as e:
-            # Notify the user gracefully
-            self.app.notify(f"⚠️ Error: {e}", severity="error", timeout=8)
-            self.app.log(traceback.format_exc())
-
-        finally:
-            # Always close the modal
-            await self.app.pop_screen()
+        path_test_result = await self.run_path_test(self.selected_directory)
 
         def ask_for_new_directory(value):
             def create_new_directory(value):
@@ -432,8 +417,6 @@ class FileBrowserModal(DraggableModalScreen):
                     classes="confirm_error",
                 )
             )
-
-
 
     def _cancel_window(self):
         """
