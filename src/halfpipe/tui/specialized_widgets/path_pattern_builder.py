@@ -326,15 +326,15 @@ class PathPatternBuilder(DraggableModalScreen):
                 # Button("Submit", id="submit_button"),
                 id="button_panel",
             ),
-            HorizontalScroll(
-                InputWithColoredSuggestions(
-                    [(Text(self.path), self.path)],
-                    prompt_default=self.path,
-                    colors_and_labels=colors_and_labels,
-                    id="path_widget",
-                ),
-                id="path_widget_container",
+            # HorizontalScroll(
+            InputWithColoredSuggestions(
+                [(Text(self.path), self.path)],
+                prompt_default=self.path,
+                colors_and_labels=colors_and_labels,
+                id="path_widget",
             ),
+                # id="path_widget_container",
+            # ),
             Grid(
                 *color_buttons,
                 id="color_button_panel",
