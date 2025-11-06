@@ -9,8 +9,6 @@ from halfpipe.utils.nipype import run_workflow
 from halfpipe.model.feature import Feature
 from halfpipe.workflows.features.atlas_based_connectivity import init_atlas_based_connectivity_wf
 
-# TODO harveyaa - WIP CURRENTLY FAILING
-
 # nice when there's internet
 #@pytest.fixture(scope="module")
 #def test_data(tmp_path_factory):
@@ -34,7 +32,7 @@ def test_atlas_based_connectivity_wf(tmp_dir):
 
     # Hard coding paths (within container) - no internet on interactive node 
     mask_filename = '/halfpipe_dev/test_data/conn_test/mask.nii.gz'
-    atlas_filename = '/halfpipe_dev/test_data/conn_test/resampled_func.nii.gz'
+    atlas_filename = '/halfpipe_dev/test_data/conn_test/resampled_atlas.nii.gz'
     bold_filename = '/halfpipe_dev/test_data/conn_test/resampled_func.nii.gz'
 
     os.chdir(tmp_dir)
@@ -80,6 +78,10 @@ def test_atlas_based_connectivity_wf(tmp_dir):
         # whoop that was more confusing
     # V4 I'm passing an atlas and a func file that I resampled already to the same template 
     #   (seems like it should be same as what is in halfpipe MNI152NLin2009cAsym resolution 2 but output dimensions are different e.g. atlas (99, 117, 95, 39) )
+    #   passes!
+    # V5 found a bug in previous test (was passing the same file as atlas and func yikes) & lea suggested slow test time was due to prob. atlas so changed to destrieux
+    # fails!  ValueError: Atlas image and data image must have the same shape
+    # very confused, i had thought func data would always be 4d and a non-prob atlas should be 3d 
 
 
     #  "tags"
