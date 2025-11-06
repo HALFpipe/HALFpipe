@@ -277,7 +277,7 @@ content_switcher_item_new_id:{content_switcher_item_new_id}, collapsible_item_ne
             await self.get_widget_by_id("content_switcher").mount(new_content_item)
             self.get_widget_by_id("content_switcher").current = content_switcher_item_new_id
             self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
-                self.ITEM_MAP[item_key],
+                self.ITEM_MAP[item_key].replace("\n", " "),
                 self.feature_items[content_switcher_item_new_id].name,
             )
             self._id_counter += 1
@@ -389,7 +389,7 @@ old_item_name:{old_item_name}, new_item_name:{new_item_name}"
 
                 # Update the border title
                 self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
-                    self.ITEM_MAP[self.feature_items[content_switcher_item_current_id].type],
+                    self.ITEM_MAP[self.feature_items[content_switcher_item_current_id].type].replace("\n", " "),
                     new_item_name,
                 )
 
@@ -433,7 +433,7 @@ old_item_name:{old_item_name}, new_item_name:{new_item_name}"
 
         self.get_widget_by_id("content_switcher").current = content_switcher_item_new_id
         self.get_widget_by_id("content_switcher").border_title = "{}: {}".format(
-            self.ITEM_MAP[current_feature.type], current_feature.name
+            self.ITEM_MAP[current_feature.type].replace("\n", " "), current_feature.name
         )
         self.get_widget_by_id("content_switcher").styles.border_title_color = "white"
 
