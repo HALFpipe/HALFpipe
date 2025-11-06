@@ -32,8 +32,10 @@ def test_inputs_file():
 
     g.inputs.x = '/halfpipe_dev/test_data/derivatives/sub-10171/func/task-rest/sub-10171_task-rest_feature-motionParametersGSR_atlas-Schaefer2018Combined_desc-correlation_matrix.tsv'
 
-def test_inputs_union():
+def test_inputs_union(tmp_path):
     """ Test if traits are checking input correctly. """
+    os.chdir(str(tmp_path))
+
     g = Gradients()
 
     np.savetxt('rand1.txt', np.random.randn(100,100))
