@@ -309,7 +309,9 @@ class FileItem(Widget):
         including a static label for the file pattern, and buttons for
         info, edit, show, and delete (optional).
         """
-        yield HorizontalScroll(Static("Edit to enter the file pattern", id="static_file_pattern"))
+        yield HorizontalScroll(
+            Static("Edit to enter the file pattern", id="static_file_pattern"), id="static_file_pattern_panel"
+        )
         with Horizontal(id="icon_buttons_container"):
             yield Button(" ℹ", id="info_button", classes="icon_buttons")
             if self.edit_button:

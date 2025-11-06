@@ -5,7 +5,7 @@ from typing import Any
 
 from rich.text import Text
 from textual import events, on, work
-from textual.containers import Container, Grid, Horizontal, HorizontalScroll
+from textual.containers import Container, Grid, Horizontal
 from textual.widgets import Button, Static
 
 from ...ingest.glob import resolve_path_wildcards, tag_glob
@@ -326,14 +326,11 @@ class PathPatternBuilder(DraggableModalScreen):
                 # Button("Submit", id="submit_button"),
                 id="button_panel",
             ),
-            HorizontalScroll(
-                InputWithColoredSuggestions(
-                    [(Text(self.path), self.path)],
-                    prompt_default=self.path,
-                    colors_and_labels=colors_and_labels,
-                    id="path_widget",
-                ),
-                id="path_widget_container",
+            InputWithColoredSuggestions(
+                [(Text(self.path), self.path)],
+                prompt_default=self.path,
+                colors_and_labels=colors_and_labels,
+                id="path_widget",
             ),
             Grid(
                 *color_buttons,
