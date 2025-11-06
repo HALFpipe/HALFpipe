@@ -14,6 +14,10 @@ FileItem {
         width: auto;
         padding: 1;
     }
+    #static_file_pattern_panel {
+        width: 79;
+
+    }
     #icon_buttons_container {
         width: auto;
         height: 4;
@@ -205,22 +209,17 @@ offset-x: -1;
         outline: none;
     }
     /* inner */
-    #input_prompt_horizontal_scroll {
-        height: 6;
-        /*  border: red;*/
-    }
     #path_widget {
-        height: 15;
-    }
-
-    /* most upper container, needs to have the border */
-    #path_widget_container {
         height: 6;
-        align: center middle;
-  /*      border-top: thick $primary;*/
-
-        width: 100%;
-        overflow: hidden;
+        width: auto;
+        #input_prompt_horizontal_scroll {
+            width: 94;
+            overflow-x: scroll;
+            height: 4;
+        #input_prompt {
+            width: auto;
+        }
+        }
     }
     ColorButton {
         height: 3;
