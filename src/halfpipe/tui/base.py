@@ -6,7 +6,7 @@ from pathlib import Path
 from rich.console import RenderResult
 
 # from rich_pixels import Pixels
-from textual import events, on
+from textual import events, on, work
 from textual.app import App, ComposeResult
 from textual.containers import Container, VerticalScroll
 from textual.events import Click
@@ -466,7 +466,8 @@ class MainApp(App):
         self.sub_title = "development version"
         # self.push_screen(Welcome(id="welcome_screen"))
 
-    def show_hidden_tabs(self) -> None:
+    @work(exclusive=True, name="show_hidden_tabs_worker")
+    async def show_hidden_tabs(self) -> None:
         """
         Shows hidden tabs based on flags.
 
@@ -488,7 +489,7 @@ class MainApp(App):
             tab_manager.get_widget_by_id("input_data_tab").styles.opacity = 0.7
             tab_manager.get_widget_by_id("work_dir_tab").query_one(FileBrowser).read_only_mode(True)
             tab_manager.get_widget_by_id("input_data_content").read_only_mode(True)
-            self.app.push_screen(
+            await self.app.push_screen_wait(
                 Confirm(
                     "All set successfully! Proceed to the next tabs:\n\n\
 ➡️  General preprocessing settings ⬅️\n\
