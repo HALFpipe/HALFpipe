@@ -15,6 +15,7 @@ from textual.widgets._tree import Tree, TreeNode
 
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
 from ..general_widgets.select_or_input_path import SelectOrInputPath, create_path_option_list
+from ..help_functions import with_loading_modal
 from .confirm_screen import Confirm
 
 
@@ -319,7 +320,7 @@ class FileBrowserModal(DraggableModalScreen):
         self.selected_directory = self.get_widget_by_id("path_input_box2").value
 
     @on(Button.Pressed, ".ok")
-    def ok(self):
+    async def ok(self):
         """
         Confirms the selected path.
 
@@ -327,7 +328,7 @@ class FileBrowserModal(DraggableModalScreen):
         calls `_confirm_window` to validate the selected path and dismiss
         the modal.
         """
-        self._confirm_window()
+        await self._confirm_window()
 
     @on(Button.Pressed, ".cancel")
     def cancel(self):
@@ -353,7 +354,11 @@ class FileBrowserModal(DraggableModalScreen):
         else:
             self._cancel_window()
 
-    def _confirm_window(self):
+    @with_loading_modal
+    async def run_path_test(self, path):
+        return self.path_test_function(path)
+
+    async def _confirm_window(self):
         """
         Validates the selected path and dismisses the modal.
 
@@ -363,8 +368,7 @@ class FileBrowserModal(DraggableModalScreen):
         prompts the user to create a new directory. If the path is
         invalid for other reasons, it displays an error message.
         """
-        self.update_from_input()
-        path_test_result = self.path_test_function(self.selected_directory)
+        path_test_result = await self.run_path_test(self.selected_directory)
 
         def ask_for_new_directory(value):
             def create_new_directory(value):

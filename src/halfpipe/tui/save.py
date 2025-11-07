@@ -1,6 +1,8 @@
 import copy
 from typing import Any
 
+from textual import work
+
 from ..logging import logger
 from ..model.feature import Feature
 from ..model.file.bids import BidsFileSchema
@@ -27,7 +29,8 @@ def fill_metadata(key, filters):
     logger.debug(f"UI->save->vals:{vals}")
 
 
-def dump_dict_to_contex(self, save=False):
+@work(exclusive=True, name="dump_dict_to_contex_worker")
+async def dump_dict_to_contex(self, save=False):
     """
     Converts the cached data to the spec json format.
 
@@ -65,7 +68,7 @@ def dump_dict_to_contex(self, save=False):
             and name != "bids"
             and ctx.cache[name]["settings"]["filters"][0].get("values", []) == []
         ):
-            self.app.push_screen(
+            await self.app.push_screen_wait(
                 Confirm(
                     f"Feature {name} is missing a task! Select at least one task!",
                     left_button_text=False,

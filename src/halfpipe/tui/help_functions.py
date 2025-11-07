@@ -1,19 +1,55 @@
 # -*- coding: utf-8 -*-
 
 
+import functools
 import os
 import re
 import shutil
+import traceback
 from datetime import datetime
 from typing import Any, Callable, List, Optional, Set
 
+from textual.containers import Center
 from textual.css.query import NoMatches  # Import the NoMatches exception
+from textual.screen import ModalScreen
+from textual.widgets import Static
 
 from ..collect.events import collect_events
 from ..ingest.events import ConditionFile
 from ..logging import logger
 from ..model.filter import FilterSchema
 from .data_analyzers.context import ctx
+
+
+class LoadingModal(ModalScreen):
+    """A modal screen that shows while something loads."""
+
+    def compose(self):
+        yield Center(Static("⏳ Loading, please wait..."), id="load_modal")
+
+
+def with_loading_modal(func):
+    """
+    Decorator to show a loading modal while an async method runs.
+    Automatically handles cleanup and error display.
+    """
+
+    @functools.wraps(func)
+    async def wrapper(self, *args, **kwargs):
+        await self.app.push_screen(LoadingModal())
+        try:
+            # Run the decorated async method
+            return await func(self, *args, **kwargs)
+        except Exception as e:
+            # Notify the user gracefully
+            self.app.notify(f"⚠️ Error: {e}", severity="error", timeout=8)
+            self.app.log(traceback.format_exc())
+
+        finally:
+            # Always close the modal
+            await self.app.pop_screen()
+
+    return wrapper
 
 
 def extract_name_part(template_path: str, file_path: str, tag: str = "desc") -> Optional[str]:

@@ -30,6 +30,7 @@ from ..data_analyzers.meta_data_steps import AcqToTaskMappingStep
 from ..data_analyzers.summary_steps import AnatSummaryStep, AnatT2wSummaryStep, BoldSummaryStep, FmapSummaryStep
 from ..general_widgets.custom_switch import TextSwitch
 from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
+from ..help_functions import with_loading_modal
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
@@ -798,6 +799,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             await self.get_widget_by_id("bids_summary_panel").remove()
             await self._build_and_mount_non_bids_panel()
 
+    @with_loading_modal
     @on(FileBrowser.Changed)
     async def _on_file_browser_changed(self, message: Message):
         """

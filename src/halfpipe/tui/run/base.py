@@ -21,6 +21,7 @@ from ...model.spec import SpecSchema, save_spec
 from ..data_analyzers.context import ctx
 from ..general_widgets.custom_switch import TextSwitch
 from ..general_widgets.draggable_modal_screen import DraggableModalScreen
+from ..help_functions import with_loading_modal
 from ..save import dump_dict_to_contex
 from ..specialized_widgets.confirm_screen import Confirm
 from ..specialized_widgets.quit_modal import quit_modal
@@ -381,7 +382,7 @@ class Run(Widget):
         self.app.exit()
 
     # @on(Button.Pressed, "#save_button")
-    def on_save_button_pressed(self):
+    async def on_save_button_pressed(self):
         """
         Handles the event when the "Save" button is pressed.
 
@@ -405,7 +406,7 @@ class Run(Widget):
             """
             save_spec(ctx.spec, workdir=ctx.workdir)
 
-        self.refresh_context()
+        await self.refresh_context()
         if ctx.workdir is None:
             self.no_workdir_error()
         else:
@@ -524,16 +525,20 @@ class Run(Widget):
         await quit_modal(self)
 
     @on(Button.Pressed, "#refresh_button")
-    def on_refresh_button_pressed(self):
+    async def on_refresh_button_pressed(self):
         """
         Handles the event when the "Refresh" button is pressed..
 
         This method is called when the user presses the "Refresh" button.
         It refreshes the context and updates the UI spec preview with the new data.
         """
-        self.refresh_context()
+        await self.refresh_context()
 
-    def refresh_context(self):
+    @with_loading_modal
+    async def _dump_dict_to_contex_with_load_screen(self):
+        dump_dict_to_contex(self)
+
+    async def refresh_context(self):
         """
         Refreshes the context by dumping the cached data and updating the spec preview.
 
@@ -541,7 +546,7 @@ class Run(Widget):
         JSON string, and updates the output widget with the JSON data.
         """
         try:
-            dump_dict_to_contex(self)
+            await self._dump_dict_to_contex_with_load_screen()
         except Exception as e:
             self.app.push_screen(
                 Confirm(
