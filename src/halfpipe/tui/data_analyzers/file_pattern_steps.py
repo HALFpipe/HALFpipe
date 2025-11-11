@@ -229,7 +229,6 @@ class FilePatternStep:
 
         # create file obj
         tags = {} if tags is None else {("task" if self.tag_entity == "task" else "desc"): tags}
-        print("wwwwwwwwwwwwwwwwwwwwwwww", tags)
 
         filedict = {**self.filedict, "path": path, "tags": tags}
         _, ext = split_ext(path)
@@ -251,8 +250,8 @@ class FilePatternStep:
         logger.info(f"UI->FilePatternStep.run_before_next_step-> found tasks:{task_set}")
 
         # next
-        ctx.spec.files.append(self.fileobj)
-        ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
+        # ctx.spec.files.append(self.fileobj)
+        ctx.database.put(self.fileobj)  # we've got all tags, so we can add the fileobj to the index
         ctx.cache[self.id_key]["files"] = self.fileobj  # type: ignore[assignment]
 
         self.run_before_next_step()
@@ -264,6 +263,7 @@ class FilePatternStep:
                 callback_message=self.callback_message,
                 id_key=self.id_key,
                 sub_id_key=self.filetype_str,
+                current_specfileobj=self.fileobj,
             )
             await self.next_step_instance.run()
         else:
