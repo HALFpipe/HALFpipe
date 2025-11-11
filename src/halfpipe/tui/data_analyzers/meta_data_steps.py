@@ -469,6 +469,7 @@ class SetMetadataStep:
                 callback_message=self.callback_message,
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
+                current_specfileobj=self.current_specfileobj,
             )
             await self.next_step_instance.run()
         else:

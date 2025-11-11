@@ -200,3 +200,7 @@ SwitchWithInputBox {
         text-style: bold;
     }
 }
+
+#file_tag_selection {
+    width: 106;
+}
