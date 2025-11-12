@@ -128,16 +128,18 @@ class Context:
         db_entities, db_tags_set = self.database.multitagvalset(entities, filepaths=filepaths, min_set_size=0)
         logger.debug(f"UI->context->refresh_available_images:db_entities {db_entities}")
         logger.debug(f"UI->context->refresh_available_images:db_tags_set {db_tags_set}")
+
         extracted_entities = []
         options = []
         tagval_by_str = {}
         values = []
-        for entity, tagvals_list in zip(db_entities, zip(*db_tags_set, strict=False), strict=False):
+
+        for entity, tagvals_list in zip(db_entities, zip(*db_tags_set, strict=True), strict=True):
             if entity == "sub":
                 continue
 
             tagvals_set = set(tagvals_list)
-            if 1 < len(tagvals_set) < 16:
+            if 0 < len(tagvals_set) < 16:
                 extracted_entities.append(entity)
 
                 entity_str = entity
@@ -150,7 +152,6 @@ class Context:
                     tagvals_set.remove(None)
 
                 tagvals = sorted(list(tagvals_set))
-
                 row = [f'"{tagval}"' for tagval in tagvals]
                 values.append(row)
 
@@ -159,7 +160,6 @@ class Context:
         self.available_images = {
             opt[0].lower(): [v.strip('"') for v in vals] for opt, vals in zip(options, values, strict=True)
         }
-
         logger.debug(f"UI->context->refresh_available_images:extracted_entities {extracted_entities}")
         logger.debug(f"UI->context->refresh_available_images:options {options}")
         logger.debug(f"UI->context->refresh_available_images:tagval_by_str {tagval_by_str}")

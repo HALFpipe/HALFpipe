@@ -273,6 +273,7 @@ class PathPatternBuilder(DraggableModalScreen):
         # to pass colors and labels separately, thus this needs to be cleaned through the whole code
         self.pattern_class = pattern_class
         self.mandatory_tags = [f"{{{label}}}" for label in pattern_class.required_entities]  # f"{{{self.labels[0]}}}"
+        self.manual_tag_entity = pattern_class.tag_entity
 
         self.active_button_id = None
 
@@ -563,6 +564,7 @@ Your event file task tags are: \n{sorted(task_set)}.\
                     classes="confirm_error",
                 )
             )
+            return
         logger.debug(
             f"UI->PathPatternBuilder._ok_part_two-> allow_file_tagging:{self.pattern_class.allow_file_tagging},\
              tag_entity:{self.pattern_class.tag_entity}, file_pattern:{self.pattern_match_results['file_pattern']}"
@@ -572,8 +574,19 @@ Your event file task tags are: \n{sorted(task_set)}.\
             and "{" + self.pattern_class.tag_entity + "}" not in self.pattern_match_results["file_pattern"]
         ):
             self.pattern_match_results["file_tag"] = await self.app.push_screen_wait(
-                NameInput(self.get_occupied_tags(), default_value="", title="File tag label"),
+                NameInput(
+                    self.get_occupied_tags(),
+                    default_value="",
+                    message=f"Enter a label for '{self.manual_tag_entity}' or "
+                    f"return and use the '{self.manual_tag_entity}' wildcard",
+                    title="Tag label",
+                    id="file_tag_modal",
+                    classes="confirm_warning",
+                )
             )
+            # when user hits cancel on the modal
+            if self.pattern_match_results["file_tag"] is None:
+                return
 
         if compatible_task_tags:
             self.dismiss(self.pattern_match_results)

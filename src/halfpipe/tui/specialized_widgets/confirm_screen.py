@@ -94,11 +94,11 @@ class Confirm(DraggableModalScreen):
         """
         super().__init__(id=id, classes=classes)
         # The message to be displayed in the modal.
-        self.text = text
+        # self.text = text
         # The title of the modal window.
         self.title_bar.title = title
         # The widget class to use for displaying the message.
-        self.message_widget = message_widget
+        self.message_widget = message_widget(text, id="message")
         # this here allows to use the modal just with one button, either outputting True or False (left/right)
         # use button_text = False to disable the button
         active_incides = [i for i, val in enumerate([left_button_text, right_button_text]) if val is not False]
@@ -128,7 +128,7 @@ class Confirm(DraggableModalScreen):
         This method is called when the modal is resized. It adjusts the
         width of the message widget to fit within the modal's container.
         """
-        self.get_widget_by_id("message").styles.width = (
+        self.message_widget.styles.width = (
             self.get_widget_by_id("draggable_modal_screen_container_wrapper").container_size.width - 2
         )
 
@@ -140,7 +140,7 @@ class Confirm(DraggableModalScreen):
         layout by adding the message widget and action buttons.
         """
         self.content.mount(
-            self.message_widget(self.text, id="message"),
+            self.message_widget,
             Horizontal(
                 *self.buttons,
                 classes="button_grid",
