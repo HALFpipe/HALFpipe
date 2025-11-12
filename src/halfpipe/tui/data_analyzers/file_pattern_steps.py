@@ -81,6 +81,7 @@ class FilePatternStep:
     next_step_type: None | type[CheckMetadataStep] = None
     allow_file_tagging: bool = False
     file_tag: None | str = None
+    tag_entity: None | str = None
 
     def __init__(self, path="", app=None, callback=None, callback_message=None, id_key=""):
         """
@@ -227,7 +228,8 @@ class FilePatternStep:
         path = _path
 
         # create file obj
-        tags = {} if tags is None else {"desc": tags}
+        tags = {} if tags is None else {("task" if self.tag_entity == "task" else "desc"): tags}
+
         filedict = {**self.filedict, "path": path, "tags": tags}
         _, ext = split_ext(path)
         filedict["extension"] = self._transform_extension(ext)
@@ -248,8 +250,8 @@ class FilePatternStep:
         logger.info(f"UI->FilePatternStep.run_before_next_step-> found tasks:{task_set}")
 
         # next
-        ctx.spec.files.append(self.fileobj)
-        ctx.database.put(ctx.spec.files[-1])  # we've got all tags, so we can add the fileobj to the index
+        # ctx.spec.files.append(self.fileobj)
+        ctx.database.put(self.fileobj)  # we've got all tags, so we can add the fileobj to the index
         ctx.cache[self.id_key]["files"] = self.fileobj  # type: ignore[assignment]
 
         self.run_before_next_step()
@@ -261,6 +263,7 @@ class FilePatternStep:
                 callback_message=self.callback_message,
                 id_key=self.id_key,
                 sub_id_key=self.filetype_str,
+                current_specfileobj=self.fileobj,
             )
             await self.next_step_instance.run()
         else:
@@ -687,7 +690,7 @@ class BoldStep(FilePatternStep):
         The type of the next step in the pipeline.
     """
 
-    ask_if_missing_entities = ["task"]
+    # ask_if_missing_entities = ["task"]
     required_in_path_entities = ["subject"]
     header_str = "BOLD image file pattern"
 
@@ -697,7 +700,8 @@ class BoldStep(FilePatternStep):
 
     next_step_type = CheckRepetitionTimeStep
 
-    tag_entity = None
+    tag_entity = "task"
+    allow_file_tagging = True
 
 
 class AddAtlasImageStep(FilePatternStep):

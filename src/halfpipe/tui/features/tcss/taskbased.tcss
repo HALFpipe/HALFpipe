@@ -137,7 +137,7 @@ offset-x: 1;
     #preprocessing {
         align: center top;
         padding: 1;
-        height: 32;
+        height: 33;
         .switch_with_input_box {
             height: 3;
             color: white;
@@ -171,10 +171,10 @@ offset-x:1;
     }
 */
     #confounds_selection {
-        height: 50;
+        height: auto;
         padding: 1 0 0 1;
+        margin: 1 0 0 0;
         border: green;
-        offset-y: 1;
         border-title-background: green;
         border-title-color: white;
         border-title-style: bold;

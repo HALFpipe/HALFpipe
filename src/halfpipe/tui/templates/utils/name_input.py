@@ -2,10 +2,7 @@
 
 from textual import on
 from textual.containers import Horizontal
-from textual.widgets import (
-    Button,
-    Input,
-)
+from textual.widgets import Button, Input, Static
 
 from ...general_widgets.draggable_modal_screen import DraggableModalScreen
 from ...specialized_widgets.confirm_screen import Confirm
@@ -67,7 +64,15 @@ class NameInput(DraggableModalScreen):
     }
     """
 
-    def __init__(self, occupied_feature_names, default_value=None, title=None) -> None:
+    def __init__(
+        self,
+        occupied_feature_names,
+        default_value=None,
+        title=None,
+        message=None,
+        id: str | None = None,
+        classes: str | None = None,
+    ) -> None:
         """
         Initializes the NameInput modal.
 
@@ -79,9 +84,10 @@ class NameInput(DraggableModalScreen):
             An optional default value to pre-fill the input field, by default None.
         """
         self.occupied_feature_names = occupied_feature_names
-        super().__init__()
+        super().__init__(id=id, classes=classes)
         self.title_bar.title = "Feature name" if title is None else title
         self.default_value = default_value if default_value is not None else None
+        self.message = message
 
     def on_mount(self) -> None:
         """
@@ -91,10 +97,10 @@ class NameInput(DraggableModalScreen):
         the UI components, including the input field and the "Ok" and
         "Cancel" buttons.
         """
-        self.content.mount(
+        content_widgets = [
             Input(
                 value=self.default_value,
-                placeholder="Enter feature name",
+                placeholder="Enter a name",
                 id="feature_name",
                 classes="feature_name",
             ),
@@ -103,7 +109,11 @@ class NameInput(DraggableModalScreen):
                 Button("Cancel", id="cancel", classes="button"),
                 classes="button_grid",
             ),
-        )
+        ]
+        if self.message is not None:
+            content_widgets.insert(0, Static(self.message, id="message"))
+
+        self.content.mount(*content_widgets)
 
     @on(Button.Pressed, "#ok")
     def ok(self) -> None:

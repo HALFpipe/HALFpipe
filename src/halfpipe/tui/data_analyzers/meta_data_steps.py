@@ -96,7 +96,7 @@ class SliceTimingFileStep:
     def _messagefun(self):
         return self.message
 
-    def __init__(self, app, filters, schema, suggestion, appendstr=""):
+    def __init__(self, app, filters, schema, suggestion, appendstr="", current_specfileobj=None):
         """
         Initializes the SliceTimingFileStep.
 
@@ -132,7 +132,7 @@ class SliceTimingFileStep:
         unit = _get_unit(self.schema, self.key)
 
         if self.filters is None:
-            specfileobj = ctx.spec.files[-1]
+            specfileobj = current_specfileobj
             self.specfileobjs: Iterable[File] = [specfileobj]
 
             self.filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(specfileobj)]
@@ -264,6 +264,7 @@ class SetMetadataStep:
         callback_message=None,
         id_key="",
         sub_id_key=None,
+        current_specfileobj=None,
     ):
         """
         Initializes the SetMetadataStep.
@@ -312,6 +313,8 @@ class SetMetadataStep:
         self.callback_message = callback_message if callback_message is not None else {self.humankey: []}
         if callback_message is not None:
             self.callback_message.update({self.humankey: []})
+
+        self.current_specfileobj = current_specfileobj
 
     async def run(self):
         """
@@ -431,8 +434,8 @@ class SetMetadataStep:
 
             value = self.field.deserialize(value)
 
-            if self.filters is None:
-                specfileobjs: Iterable[File] = [ctx.spec.files[-1]]
+            if self.filters is None and self.current_specfileobj is not None:
+                specfileobjs: Iterable[File] = [self.current_specfileobj]
             else:
                 filepaths = ctx.database.get(**self.filters)
                 specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in filepaths)
@@ -442,22 +445,22 @@ class SetMetadataStep:
                     specfileobj.metadata = dict()
                 specfileobj.metadata[key] = value
 
-            # update all fileobjs in the ctx.cache, we use the filters to filter only those to which this applies
-            for widget_id, the_dict in ctx.cache.items():
-                # should always be there
-                if "files" in the_dict:
-                    if isinstance(the_dict["files"], File):
-                        is_ok = True
-                        if self.filters is not None:
-                            if the_dict["files"].datatype != self.filters.get("datatype"):
-                                is_ok = False
-                            if the_dict["files"].suffix != self.filters.get("suffix"):
-                                is_ok = False
-                        if is_ok:
-                            # add dict if it does not exist
-                            if not hasattr(ctx.cache[widget_id]["files"], "metadata"):
-                                ctx.cache[widget_id]["files"].metadata = dict()
-                            ctx.cache[widget_id]["files"].metadata[key] = value
+            # # update all fileobjs in the ctx.cache, we use the filters to filter only those to which this applies
+            # for widget_id, the_dict in ctx.cache.items():
+            #     # should always be there
+            #     if "files" in the_dict:
+            #         if isinstance(the_dict["files"], File):
+            #             is_ok = True
+            #             if self.filters is not None:
+            #                 if the_dict["files"].datatype != self.filters.get("datatype"):
+            #                     is_ok = False
+            #                 if the_dict["files"].suffix != self.filters.get("suffix"):
+            #                     is_ok = False
+            #             if is_ok:
+            #                 # add dict if it does not exist
+            #                 if not hasattr(ctx.cache[widget_id]["files"], "metadata"):
+            #                     ctx.cache[widget_id]["files"].metadata = dict()
+            #                 ctx.cache[widget_id]["files"].metadata[key] = value
 
         if self.next_step_type is not None:
             self.next_step_instance = self.next_step_type(
@@ -466,6 +469,7 @@ class SetMetadataStep:
                 callback_message=self.callback_message,
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
+                current_specfileobj=self.current_specfileobj,
             )
             await self.next_step_instance.run()
         else:
@@ -540,7 +544,7 @@ class CheckMetadataStep:
     def _should_skip(self, _):
         return False
 
-    def __init__(self, app=None, callback=None, callback_message=None, id_key="", sub_id_key=None):
+    def __init__(self, app=None, callback=None, callback_message=None, id_key="", sub_id_key=None, current_specfileobj=None):
         """
         Initializes the CheckMetadataStep.
 
@@ -558,6 +562,8 @@ class CheckMetadataStep:
             The sub-ID key, by default None.
         """
         # SETUP
+        self.current_specfileobj = current_specfileobj
+
         self.app = app
         self.callback = callback
         self.humankey = display_str(self.key)
@@ -584,12 +590,13 @@ class CheckMetadataStep:
         This method retrieves metadata values from the database, checks if
         any values are missing, and prepares a summary of the values.
         """
-        if self.filters is None:
-            fileobjs = ctx.database.fromspecfileobj(ctx.spec.files[-1])
+        if self.filters is None and self.current_specfileobj is not None:
+            fileobjs = ctx.database.fromspecfileobj(self.current_specfileobj)
             if fileobjs is None:
                 raise ValueError("No files found for filters")
             filepaths = [fileobj.path for fileobj in fileobjs]
         else:
+            assert self.filters is not None
             filepaths = [*ctx.database.get(**self.filters)]
 
         logger.debug(f"UI->CheckMetaDataStep->key:{self.key} filepaths:{filepaths}, filter:{self.filters}")
@@ -724,6 +731,7 @@ class CheckMetadataStep:
                 callback_message=self.callback_message,
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
+                current_specfileobj=self.current_specfileobj,
             )
             await next_step_instance.run()
 
@@ -742,6 +750,7 @@ class CheckMetadataStep:
                 callback_message=self.callback_message,
                 id_key=self.id_key,
                 sub_id_key=self.sub_id_key,
+                current_specfileobj=self.current_specfileobj,
             )
             await set_instance_step.run()
         else:
