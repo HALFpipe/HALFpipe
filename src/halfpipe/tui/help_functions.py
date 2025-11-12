@@ -25,7 +25,7 @@ class LoadingModal(ModalScreen):
     """A modal screen that shows while something loads."""
 
     def compose(self):
-        yield Center(Static("⏳ Loading, please wait..."), id="load_modal")
+        yield Center(Static("⏳ Loading, please wait..."), id="load_modal_panel")
 
 
 def with_loading_modal(func):
@@ -36,7 +36,7 @@ def with_loading_modal(func):
 
     @functools.wraps(func)
     async def wrapper(self, *args, **kwargs):
-        await self.app.push_screen(LoadingModal())
+        await self.app.push_screen(LoadingModal(id="load_modal"))
         try:
             # Run the decorated async method
             return await func(self, *args, **kwargs)

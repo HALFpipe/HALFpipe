@@ -191,6 +191,9 @@ class FeatureTemplate(Widget):
         for confound in self.setting_dict.get("confounds_removal", []):
             confounds_options[confound][1] = True
 
+        # ica-aroma is separated from the rest in the spec.json file
+        confounds_options["ICA-AROMA"][1] = self.setting_dict.get("ica_aroma", False)
+
         self.confounds_options = confounds_options
         self.create_preprocessing_panel(self.setting_dict["smoothing"]["fwhm"])
 
