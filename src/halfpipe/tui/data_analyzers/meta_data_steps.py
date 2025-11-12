@@ -96,7 +96,7 @@ class SliceTimingFileStep:
     def _messagefun(self):
         return self.message
 
-    def __init__(self, app, filters, schema, suggestion, appendstr=""):
+    def __init__(self, app, filters, schema, suggestion, appendstr="", current_specfileobj=None):
         """
         Initializes the SliceTimingFileStep.
 
@@ -132,7 +132,7 @@ class SliceTimingFileStep:
         unit = _get_unit(self.schema, self.key)
 
         if self.filters is None:
-            specfileobj = ctx.spec.files[-1]
+            specfileobj = current_specfileobj
             self.specfileobjs: Iterable[File] = [specfileobj]
 
             self.filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(specfileobj)]
@@ -562,6 +562,8 @@ class CheckMetadataStep:
             The sub-ID key, by default None.
         """
         # SETUP
+        self.current_specfileobj = current_specfileobj
+
         self.app = app
         self.callback = callback
         self.humankey = display_str(self.key)
@@ -581,8 +583,6 @@ class CheckMetadataStep:
             self.is_missing = True
             return
 
-        self.current_specfileobj = current_specfileobj
-
     def evaluate(self):
         """
         Evaluates the metadata values.
@@ -590,12 +590,13 @@ class CheckMetadataStep:
         This method retrieves metadata values from the database, checks if
         any values are missing, and prepares a summary of the values.
         """
-        if self.filters is None:
+        if self.filters is None and self.current_specfileobj is not None:
             fileobjs = ctx.database.fromspecfileobj(self.current_specfileobj)
             if fileobjs is None:
                 raise ValueError("No files found for filters")
             filepaths = [fileobj.path for fileobj in fileobjs]
         else:
+            assert self.filters is not None
             filepaths = [*ctx.database.get(**self.filters)]
 
         logger.debug(f"UI->CheckMetaDataStep->key:{self.key} filepaths:{filepaths}, filter:{self.filters}")
