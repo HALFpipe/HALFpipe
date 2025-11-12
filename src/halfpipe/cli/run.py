@@ -26,13 +26,7 @@ def run_stage_ui(opts: Namespace):
 
         # 'opts' is passed by reference to the textual TUI so it is modified directly there
         app = MainApp(opts)
-        try:
-            app.run()
-        except Exception:
-            logger.error("UI crashed with an unhandled exception.")
-            # Fail hard: stop the pipeline immediately
-            os._exit(0)
-
+        app.run()
         logger.info(f"The options after running TUI are: {opts}")
 
         if opts.workdir is False:
