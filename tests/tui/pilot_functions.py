@@ -4,6 +4,7 @@ import shutil
 from pathlib import Path
 
 from halfpipe.logging import logger
+from textual.css.query import InvalidQueryFormat, NoMatches, TooManyMatches, WrongType
 
 
 async def _load_data(pilot, data_path) -> None:
@@ -16,13 +17,24 @@ async def _load_data(pilot, data_path) -> None:
         await enter_browse_path(pilot, data_path)
         # click Ok on Modal informing us that the data input is success
         # await pilot.click(offset=(121, 31))
+        # await pilot.pause(3)
+        # await pilot.wait_for_scheduled_animations()
         await pilot.click("#only_one_button")
+        # await pilot.wait_for_scheduled_animations()
         logger.debug("Bids data directory is set.")
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
-    await pilot.wait_for_scheduled_animations()
-
+    # await pilot.wait_for_scheduled_animations()
+    # this part is to safely dismiss load screen
+    load_modal = True
+    while load_modal:
+        try:
+            load_modal_widget = pilot.app.get_widget_by_id('load_modal_panel')
+            await pilot.app.pop_screen()
+            load_modal = True
+        except NoMatches:
+            load_modal = False
 
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
     try:
@@ -653,7 +665,11 @@ async def run_before_for_reho_falff_preproc(
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await pilot.click("#only_one_button")
+    try:
+        await pilot.click("#only_one_button")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
     for task in tasks_by_stage[stage]:
         await task()
