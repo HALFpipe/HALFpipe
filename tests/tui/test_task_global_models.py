@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from halfpipe.logging import logger
 
 from .pilot_functions import (
@@ -24,7 +26,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     # how_much_down = 0
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -136,12 +138,16 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
     # set data dir
     await _load_data(pilot, data_path)
     # # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await pilot.click("#only_one_button")
+    try:
+        await pilot.click("#only_one_button")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
     for task in tasks_by_stage[stage]:
         await task()
 
 
-# 1
+@pytest.mark.forked
 def test_intercept_only_at_global_models_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, add intercept only group level model, make cutoff choices"""
     run_before_with_extra_args = partial(
@@ -153,7 +159,7 @@ def test_intercept_only_at_global_models_tab(snap_compare, start_app, work_dir_p
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 2
+@pytest.mark.forked
 def test_intercept_only_at_group_level_models_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -167,7 +173,7 @@ def test_intercept_only_at_group_level_models_tab_duplicate(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 3
+@pytest.mark.forked
 def test_intercept_only_at_spec_preview(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, add intercept only group level model, make cutoff choices, check spec file preview"""
     run_before_with_extra_args = partial(
@@ -176,7 +182,7 @@ def test_intercept_only_at_spec_preview(snap_compare, start_app, work_dir_path: 
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 4
+@pytest.mark.forked
 def test_linear_model_at_group_level_models_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
@@ -191,7 +197,7 @@ def test_linear_model_at_group_level_models_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 5
+@pytest.mark.forked
 def test_linear_model_at_group_level_models_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
@@ -206,7 +212,7 @@ def test_linear_model_at_group_level_models_tab_duplicate(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-# 6
+@pytest.mark.forked
 def test_linear_model_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:

@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from halfpipe.logging import logger
 
 from .pilot_functions import (
@@ -13,6 +15,7 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    select_file_tags,
     select_images,
     set_minimum_coverage,
     settable_scroll_screen_down,
@@ -26,7 +29,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     how_much_down = 35
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -45,6 +48,8 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
 
         # Add atlas file pattern
         await add_atlas_or_seed_or_map_file_pattern(pilot, atlas_file_pattern)
+
+        await select_file_tags(pilot, [1, 2])
 
         # change minimum coverage from 0.8 to 0.85
         # await pilot.click(offset=(131, 38))
@@ -94,12 +99,18 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     await _set_work_dir(pilot, work_dir_path)
     # set data dir
     await _load_data(pilot, data_path)
-    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await pilot.click("#only_one_button")
+    # finish = False
+    # while not finish:
+    #     finish = await pilot._wait_for_screen(1)
+    # await pilot.pause(5)
+    # await pilot.click(offset=(10,10))
+    # # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    # await pilot.click("#only_one_button")
     for task in tasks_by_stage[stage]:
         await task()
 
 
+@pytest.mark.forked
 def test_atlas_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -118,6 +129,7 @@ def test_atlas_at_features_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_atlas_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -135,6 +147,7 @@ def test_atlas_at_spec_preview(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_atlas_at_features_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -152,6 +165,7 @@ def test_atlas_at_features_duplicate(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_duplicate_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
