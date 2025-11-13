@@ -189,3 +189,16 @@ SwitchWithInputBox {
  background: green 20%;
  }
 }
+
+#load_modal {
+width: auto;
+ Center {
+ width: auto;
+ }
+ Static {
+ width: auto;
+ color: white;
+  text-style: bold;
+
+ }
+}

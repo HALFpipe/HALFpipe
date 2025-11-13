@@ -1,6 +1,7 @@
 Confirm {
      #message {
          min-height: 6;
+         max-width: 100;
          width: auto;
          content-align: center middle;
                  text-style: bold;
