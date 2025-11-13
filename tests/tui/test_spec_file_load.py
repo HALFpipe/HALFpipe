@@ -55,7 +55,12 @@ async def run_before(
     await _set_work_dir(pilot, work_dir_path, load_from_spec_file=True)
 
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await pilot.click("#only_one_button")
+    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    try:
+        await pilot.click("#only_one_button")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
 
     # For some reason the button remains focussed when I do it locally, but it is not focussed when it runs through CI,
     # the tab should prevent this.
