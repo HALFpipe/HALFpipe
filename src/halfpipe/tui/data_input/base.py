@@ -30,7 +30,6 @@ from ..data_analyzers.meta_data_steps import AcqToTaskMappingStep
 from ..data_analyzers.summary_steps import AnatSummaryStep, AnatT2wSummaryStep, BoldSummaryStep, FmapSummaryStep
 from ..general_widgets.custom_switch import TextSwitch
 from ..general_widgets.selection_modal import DoubleSelectionModal, SelectionModal
-from ..help_functions import with_loading_modal
 from ..specialized_widgets.confirm_screen import Confirm, SimpleMessageModal
 from ..specialized_widgets.filebrowser import FileBrowser, FileBrowserForBIDS
 from ..specialized_widgets.non_bids_file_itemization import FileItem
