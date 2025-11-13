@@ -3,8 +3,9 @@ import os
 import shutil
 from pathlib import Path
 
+from textual.css.query import NoMatches
+
 from halfpipe.logging import logger
-from textual.css.query import InvalidQueryFormat, NoMatches, TooManyMatches, WrongType
 
 
 async def _load_data(pilot, data_path) -> None:
@@ -30,11 +31,12 @@ async def _load_data(pilot, data_path) -> None:
     load_modal = True
     while load_modal:
         try:
-            load_modal_widget = pilot.app.get_widget_by_id('load_modal_panel')
+            load_modal_widget = pilot.app.get_widget_by_id("load_modal_panel")
             await pilot.app.pop_screen()
             load_modal = True
         except NoMatches:
             load_modal = False
+
 
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
     try:
