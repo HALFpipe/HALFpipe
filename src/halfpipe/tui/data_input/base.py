@@ -799,7 +799,7 @@ of the string to be replaced by wildcards. You can also use type hints by starti
             await self.get_widget_by_id("bids_summary_panel").remove()
             await self._build_and_mount_non_bids_panel()
 
-    @with_loading_modal
+    # @with_loading_modal
     @on(FileBrowser.Changed)
     async def _on_file_browser_changed(self, message: Message):
         """
