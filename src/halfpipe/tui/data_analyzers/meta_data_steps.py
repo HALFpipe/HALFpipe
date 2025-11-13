@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
+import asyncio
 from itertools import product
 from operator import attrgetter
 from typing import ClassVar, Dict, Iterable, Optional, Type
@@ -701,18 +702,20 @@ class CheckMetadataStep:
             await self.next(choice)
         else:
             # rise modal here
-            choice = await self.app.push_screen_wait(
-                Confirm(
-                    " ".join(self._append_view),
-                    left_button_text="YES",
-                    right_button_text="NO",
-                    left_button_variant="error",
-                    right_button_variant="success",
-                    title="Check meta data",
-                    id="check_meta_data_modal",
-                    classes="confirm_warning",
-                )
+            check_meta_data_modal = Confirm(
+                " ".join(self._append_view),
+                left_button_text="YES",
+                right_button_text="NO",
+                left_button_variant="error",
+                right_button_variant="success",
+                title="Check meta data",
+                id="check_meta_data_modal",
+                classes="confirm_warning",
             )
+            choice = await self.app.push_screen_wait(check_meta_data_modal)
+            # Ensure the modal widget is actually removed from the DOM before continuing.
+            while check_meta_data_modal.is_attached:
+                await asyncio.sleep(1)
             await self.next(choice)
 
     async def next(self, choice):
