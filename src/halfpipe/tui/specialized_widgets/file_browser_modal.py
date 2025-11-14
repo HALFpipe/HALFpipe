@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 from typing import Iterable
 
-from textual import on
+from textual import on, work
 from textual.containers import Horizontal
 from textual.message import Message
 from textual.widgets import Button, DirectoryTree, Input
@@ -328,7 +328,7 @@ class FileBrowserModal(DraggableModalScreen):
         calls `_confirm_window` to validate the selected path and dismiss
         the modal.
         """
-        await self._confirm_window()
+        self._confirm_window()
 
     @on(Button.Pressed, ".cancel")
     def cancel(self):
@@ -358,6 +358,7 @@ class FileBrowserModal(DraggableModalScreen):
     async def run_path_test(self, path):
         return self.path_test_function(path)
 
+    @work(exclusive=True, name="confirm_window_worker")
     async def _confirm_window(self):
         """
         Validates the selected path and dismisses the modal.
@@ -370,7 +371,7 @@ class FileBrowserModal(DraggableModalScreen):
         """
         path_test_result = await self.run_path_test(self.selected_directory)
 
-        def ask_for_new_directory(value):
+        async def ask_for_new_directory(value):
             def create_new_directory(value):
                 if value is True:
                     os.mkdir(self.selected_directory)
@@ -378,7 +379,7 @@ class FileBrowserModal(DraggableModalScreen):
                 else:
                     pass
 
-            self.app.push_screen(
+            result = await self.app.push_screen_wait(
                 Confirm(
                     "Do you want to create a new directory?",
                     left_button_text="YES",
@@ -388,14 +389,15 @@ class FileBrowserModal(DraggableModalScreen):
                     title="Create new directory",
                     id="new_dir",
                     classes="confirm_warning",
-                ),
-                create_new_directory,
+                )
             )
+
+            create_new_directory(result)
 
         if path_test_result == "OK":
             self.dismiss(self.selected_directory)
         elif path_test_result == "File not found.":
-            self.app.push_screen(
+            result = await self.app.push_screen_wait(
                 Confirm(
                     path_test_result,
                     title="Error - Invalid path",
@@ -403,11 +405,12 @@ class FileBrowserModal(DraggableModalScreen):
                     right_button_text="OK",
                     id="invalid_path_warning_modal",
                     classes="confirm_error",
-                ),
-                ask_for_new_directory,
+                )
             )
+            await ask_for_new_directory(result)
+
         else:
-            self.app.push_screen(
+            await self.app.push_screen_wait(
                 Confirm(
                     path_test_result,
                     title="Error - Invalid path",

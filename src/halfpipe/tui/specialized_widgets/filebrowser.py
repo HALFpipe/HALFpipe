@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import os
 from dataclasses import dataclass
 
 from bids import BIDSLayout
-from textual import on
+from textual import on, work
 from textual.app import ComposeResult
 from textual.containers import Horizontal
 from textual.message import Message
@@ -128,16 +129,19 @@ class FileBrowser(Widget):
         if "-read-only" not in event.control.classes:
             self.open_browse_window()
 
-    def open_browse_window(self) -> None:
+    @work(exclusive=True, name="open_browse_window_worker")
+    async def open_browse_window(self) -> None:
         """
         Opens the file browsing modal window.
 
         This method pushes the `FileBrowserModal` onto the screen to allow
         the user to browse and select a file or directory.
         """
-        self.app.push_screen(
-            FileBrowserModal(title=self.modal_title, path_test_function=self.path_test_function), self.update_input
-        )
+        file_browser_modal = FileBrowserModal(title=self.modal_title, path_test_function=self.path_test_function)
+        results = await self.app.push_screen_wait(file_browser_modal)
+        while file_browser_modal.is_attached:
+            await asyncio.sleep(1)
+        self.update_input(results)
 
     @on(Input.Submitted, "#path_input_box")
     def update_from_input(self) -> None:
@@ -236,14 +240,16 @@ class FileBrowserForBIDS(FileBrowser):
         Opens a file browsing window with a BIDS-specific path test.
     """
 
-    def open_browse_window(self):
+    @work(exclusive=True, name="open_browse_window_worker")
+    async def open_browse_window(self) -> None:
         """
-        Opens a file browsing window with a BIDS-specific path test.
+        Opens the file browsing modal window.
 
-        This method overrides the `open_browse_window` method of the
-        parent class to use the `path_test_for_bids` function for
-        validating the selected path.
+        This method pushes the `FileBrowserModal` onto the screen to allow
+        the user to browse and select a file or directory.
         """
-        self.app.push_screen(
-            FileBrowserModal(title=self.modal_title, path_test_function=path_test_for_bids), self.update_input
-        )
+        file_browser_modal = FileBrowserModal(title=self.modal_title, path_test_function=path_test_for_bids)
+        results = await self.app.push_screen_wait(file_browser_modal)
+        while file_browser_modal.is_attached:
+            await asyncio.sleep(1)
+        self.update_input(results)

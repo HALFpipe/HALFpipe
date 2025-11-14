@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
 from typing import List
 
 from rich.text import Text
@@ -865,30 +866,32 @@ of the string to be replaced by wildcards. You can also use type hints by starti
         """
 
         self.data_load_sucess = True
-        await self.app.push_screen_wait(
-            Confirm(
-                "Data files successfully loaded!",
+        data_input_sucess_modal = Confirm(
+            "Data files successfully loaded!",
+            left_button_text=False,
+            right_button_text="OK",
+            right_button_variant="default",
+            title="Data input success",
+            id="data_input_sucess",
+            classes="confirm_success",
+        )
+        await self.app.push_screen_wait(data_input_sucess_modal)
+        while data_input_sucess_modal.is_attached:
+            await asyncio.sleep(1)
+
+        if ctx.workdir is None:
+            missing_workdir_modal = Confirm(
+                "Go back to Work dir tab and set the working directory!",
                 left_button_text=False,
                 right_button_text="OK",
                 right_button_variant="default",
-                title="Data input success",
-                id="data_input_sucess",
-                classes="confirm_success",
+                title="Missing work directory",
+                id="missing_workdir",
+                classes="confirm_warning",
             )
-        )
-
-        if ctx.workdir is None:
-            await self.app.push_screen_wait(
-                Confirm(
-                    "Go back to Work dir tab and set the working directory!",
-                    left_button_text=False,
-                    right_button_text="OK",
-                    right_button_variant="default",
-                    title="Missing work directory",
-                    id="missing_workdir",
-                    classes="confirm_warning",
-                )
-            )
+            await self.app.push_screen_wait(missing_workdir_modal)
+            while missing_workdir_modal.is_attached:
+                await asyncio.sleep(1)
 
     # def forbid_data_change(self):
     #     self.app.push_screen(
@@ -905,19 +908,21 @@ of the string to be replaced by wildcards. You can also use type hints by starti
 
     @on(Switch.Changed, ".-read-only")
     @on(Button.Pressed, ".-read-only")
-    def _read_mode_lock(self):
+    @work(exclusive=True, name="read_only_modal_worker")
+    async def _read_mode_lock(self):
         if self.app.flags_to_show_tabs["from_working_dir_tab"] and self.app.flags_to_show_tabs["from_input_data_tab"]:
-            self.app.push_screen(
-                Confirm(
-                    "Input entries cannot be changes now! Restart UI to change them.",
-                    title="Read-only",
-                    left_button_text=False,
-                    right_button_text="OK",
-                    right_button_variant="default",
-                    id="read_only_modal",
-                    classes="confirm_error",
-                )
+            read_only_modal = Confirm(
+                "Input entries cannot be changes now! Restart UI to change them.",
+                title="Read-only",
+                left_button_text=False,
+                right_button_text="OK",
+                right_button_variant="default",
+                id="read_only_modal",
+                classes="confirm_error",
             )
+            await self.app.push_screen_wait(read_only_modal)
+            while read_only_modal.is_attached:
+                await asyncio.sleep(1)
 
     def read_only_mode(self, value):
         if value:

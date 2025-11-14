@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
 from copy import deepcopy
 from pathlib import Path
 
@@ -489,21 +490,24 @@ class MainApp(App):
             tab_manager.get_widget_by_id("input_data_tab").styles.opacity = 0.7
             tab_manager.get_widget_by_id("work_dir_tab").query_one(FileBrowser).read_only_mode(True)
             tab_manager.get_widget_by_id("input_data_content").read_only_mode(True)
-            await self.app.push_screen_wait(
-                Confirm(
-                    "All set successfully! Proceed to the next tabs:\n\n\
+            all_succesfull_modal = Confirm(
+                "All set successfully! Proceed to the next tabs:\n\n\
 ➡️  General preprocessing settings ⬅️\n\
 ➡️             Features            ⬅️\n\
 ➡️        Group level models       ⬅️\n\
 ➡️           Check and run         ⬅️\n\
 The working tab and data tab are now read only! Do not change entries here!",
-                    left_button_text=False,
-                    right_button_text="OK",
-                    right_button_variant="default",
-                    title="Input successful",
-                    classes="confirm_success",
-                )
+                left_button_text=False,
+                right_button_text="OK",
+                right_button_variant="default",
+                title="Input successful",
+                classes="confirm_success",
             )
+
+            await self.app.push_screen_wait(all_succesfull_modal)
+            while all_succesfull_modal.is_attached:
+                await asyncio.sleep(1)
+
             self.tabs_are_visible = True
 
     def hide_tabs(self) -> None:
