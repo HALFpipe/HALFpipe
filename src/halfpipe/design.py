@@ -49,6 +49,10 @@ def prepare_data_frame(
     subjects: list[str] | None = None,
     na_action: Literal["impute"] | None = None,
 ) -> pd.DataFrame:
+    logger.info(f"Checking content of the spreadsheet variable: {spreadsheet}")
+    # normalize `spreadsheet` into a Path if it is a string
+    if isinstance(spreadsheet, str):
+        spreadsheet = Path(spreadsheet)
     if isinstance(spreadsheet, Path):
         data_frame: pd.DataFrame = read_spreadsheet(spreadsheet, dtype=str)
     else:
