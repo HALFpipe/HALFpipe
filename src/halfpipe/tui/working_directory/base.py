@@ -274,7 +274,23 @@ spec.json file it is possible to load the therein configuration.",
         ctx.workdir = Path(selected_path)
         self.app.opts.workdir = ctx.workdir
         # Load the spec and by this we see whether there is existing spec file or not
-        self.existing_spec = load_spec(workdir=ctx.workdir)
+        try:
+            self.existing_spec = load_spec(workdir=ctx.workdir)
+        except Exception as e:
+            await self.app.push_screen_wait(
+                Confirm(
+                    f"Spec file load failed! Reason:\n{e}",
+                    left_button_text=False,
+                    right_button_text="OK",
+                    right_button_variant="default",
+                    title="Load error",
+                    classes="confirm_error",
+                )
+            )
+            self.get_widget_by_id("work_dir_file_browser").update_input(None, send_message=False)
+            ctx.workdir = None
+            self.app.opts.workdir = ctx.workdir
+            return
         if self.existing_spec is not None:
             result = await self.app.push_screen_wait(
                 Confirm(
@@ -288,7 +304,7 @@ overwrite the working directory and start a new analysis?",
                 )
             )
             await existing_spec_file_decision(result)
-        else:
+        elif ctx.workdir is not None:
             self._evaluate_license_worker(str(selected_path))
 
     async def on_worker_state_changed(self, event: Worker.StateChanged) -> None:

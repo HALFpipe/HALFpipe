@@ -554,7 +554,7 @@ class Run(Widget):
                     left_button_text=False,
                     right_button_text="OK",
                     right_button_variant="default",
-                    title="Spec file saved",
+                    title="Invalid entry",
                     classes="confirm_error",
                 )
             )
@@ -567,7 +567,7 @@ class Run(Widget):
                     left_button_text=False,
                     right_button_text="OK",
                     right_button_variant="default",
-                    title="Spec file saved",
+                    title="Invalid entry",
                     classes="confirm_error",
                 )
             )
