@@ -152,7 +152,7 @@ jobs:
             --ignore=tests/tui
       - name: Upload snapshot report
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: snapshot-report
           path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
