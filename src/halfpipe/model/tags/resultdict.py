@@ -31,6 +31,8 @@ first_level_entities = [
     # task
     "taskcontrast",
     "condition",
+    # gradients
+    "reference",
 ]
 higher_level_entities = [
     "model",
