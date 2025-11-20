@@ -2,23 +2,24 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-#from pathlib import Path
+from pathlib import Path
+from os.path import abspath
 #from typing import Literal, Sequence
 
 #from nipype.algorithms import confounds as nac
 #from nipype.interfaces import utility as niu
-#from nipype.pipeline import engine as pe
+from nipype.pipeline import engine as pe
 
 #from ...interfaces.result.datasink import ResultdictDatasink
 #from ...interfaces.result.make import MakeResultdicts
 #from ...utils.format import format_workflow
 #from ..constants import Constants
+
 from ..memory import MemoryCalculator
 
 from nipype import Node, Workflow
-from ...interfaces.gradients import Gradients
-
-from os.path import abspath
+from halfpipe.interfaces.gradients import Gradients
+from halfpipe.model.feature import Feature
 
 ##############
 # DRAFT CODE #
@@ -29,37 +30,53 @@ from os.path import abspath
 
 def init_gradients_wf(
     workdir: str | Path,
-    # These exist everywhere but I want them gone
-    # feature: Feature | None = None,
-    # what comes out of atlas_based_connectivity_wf ? how to pass inputs here
+    # TODO inputs to functions vs. taking info from input node confusing throughout HALFpipe
+    feature: Feature | None = None,
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
     """
     create workflow for gradients
-
     """
+    ###########################
+    # Fill in optional inputs #
+    ###########################
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
 
-    workflow = pe.Workflow(name="gadients_wf")
+    # Hard for me to understand this
+    # where is feature name defined? user defines it in UI (?)
+    # where is feature generated? in UI from spec file
+    if feature is not None:
+        name = f"{format_workflow(feature.name)}_wf"
+    else:
+        name = "gradients_wf"
+    workflow = pe.Workflow(name=name)
 
     ###################
     # SETUP I/O NODES #
     ###################
-
+    # input node fields go into an identity interface that means the node does nothing to the values
+    # here define all the inputs that will go through workflow
+    # inputs will come from two places:
+        # entries to Spec file/UI input via the Feature
+        # things that were computed by halfpipe from another node
     inputnode = pe.Node(
         niu.IdentityInterface(
+            # Adding a field here means also adding it in model > tags > resultdict.py (validates allowed tags)
             fields=[
+                # these will come from prev node
                 "tags",
                 "vals",
                 "metadata",
 
                 # gradients params
+                # TODO cut these down/consider necessary
                 "n_components",
                 "approach",
                 "kernel",
                 "random_state",
                 "alignment",
-                "x",
+
+                "x", # only one not to come from halfpipe (connectivity wf)
                 "gamma",
                 "sparsity",
                 "n_iter",
@@ -70,17 +87,23 @@ def init_gradients_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
-    #min_region_coverage = 1
-    #if feature is not None:
-    #    inputnode.inputs.atlas_names = feature.atlases
-    #    if hasattr(feature, "min_region_coverage"):
-    #        min_region_coverage = feature.min_region_coverage
+    # now we will fill in in the input node
+    # Note I set dump defaults to be None in feature which is fine to pass to input spec of gradients
+    # still dont know what is coming from UI
+    if Feature is not None:
+        # Why would the Feature be None?
+        inputnode.inputs.n_components = feature.n_components
+        inputnode.inputs.approach = feature.approach
+        inputnode.inputs.kernel = feature.kernel
+        inputnode.inputs.random_state = feature.random_sate
+        inputnode.inputs.alignment = feature.alignment
 
-    #if atlas_files is not None:
-    #    inputnode.inputs.atlas_files = atlas_files
+        inputnode.inputs.gamma = feature.gamma
+        inputnode.inputs.sparsity = feature.sparsity
+        inputnode.inputs.n_iter = feature.n_iter
+        inputnode.inputs.reference = feature.reference
 
-    #if atlas_spaces is not None:
-    #    inputnode.inputs.atlas_spaces = atlas_spaces
+    # TODO how do I collect x (connectivity matrix) from previous node of halfpipe?
 
     # how to know what keys are needed/wanted?
     # here adding new keys to resultdict 
@@ -91,18 +114,16 @@ def init_gradients_wf(
         ),
         name="make_resultdicts",
     )
-     #interface: extract from resultdict node
-        # tags metadata vals
-
-    #if feature is not None:
-    #    make_resultdicts.inputs.feature = feature.name
+    if feature is not None:
+        make_resultdicts.inputs.feature = feature.name
 
     # Connect inputnode values to relevant make_resultdicts outputs
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
     workflow.connect(inputnode, "vals", make_resultdicts, "vals")
     workflow.connect(inputnode, "metadata", make_resultdicts, "metadata")
-    #workflow.connect(inputnode, "atlas_names", make_resultdicts, "atlas")
-    #workflow.connect(inputnode, "repetition_time", make_resultdicts, "sampling_frequency")
+
+    # TODO do we care to connect all the feature inputs to make_resultdicts?
+    #   e.g. under metadata keys for record keeping? (no for now)
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
@@ -110,31 +131,33 @@ def init_gradients_wf(
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    ##########################
-    # NODES W/ WF INTERFACES #
-    ##########################
+    #######################################
+    # CONNECT I/O NODES W/ GRADIENTS NODE #
+    #######################################
 
-    resample = pe.Node(
-        Gradients(# input?
+    gradientsnode = pe.Node(
+        Gradients(
+            # TODO do I need to manually pass input here is it coming from node interface connections?
         ),
-        name="gradients",
-        mem_gb=memcalc.series_std_gb, # what does this do?
+        name = "gradients",
+        mem_gb = memcalc.series_std_gb,
     )
+
     # connect inputnode values
-    workflow.connect(inputnode, "n_components", gradients, "n_components")
-    workflow.connect(inputnode, "approach", gradients, "approach")
-    workflow.connect(inputnode, "kernel", gradients, "kernel")
-    workflow.connect(inputnode, "random_state", gradients, "random_state")
-    workflow.connect(inputnode, "alignment", gradients, "alignment")
-    workflow.connect(inputnode, "x", gradients, "x")
-    workflow.connect(inputnode, "gamma", gradients, "gamma")
-    workflow.connect(inputnode, "sparsity", gradients, "sparsity")
-    workflow.connect(inputnode, "n_iter", gradients, "n_iter")
-    workflow.connect(inputnode, "reference", gradients, "reference")
+    workflow.connect(inputnode, "n_components", gradientsnode, "n_components")
+    workflow.connect(inputnode, "approach", gradientsnode, "approach")
+    workflow.connect(inputnode, "kernel", gradientsnode, "kernel")
+    workflow.connect(inputnode, "random_state", gradientsnode, "random_state")
+    workflow.connect(inputnode, "alignment", gradientsnode, "alignment")
+    workflow.connect(inputnode, "x", gradientsnode, "x")
+    workflow.connect(inputnode, "gamma", gradientsnode, "gamma")
+    workflow.connect(inputnode, "sparsity", gradientnode, "sparsity")
+    workflow.connect(inputnode, "n_iter", gradientsnode, "n_iter")
+    workflow.connect(inputnode, "reference", gradientsnode, "reference")
 
     # connect resultdicts (how does this interact/correspond w the dictionary tags?)
-    workflow.connect(gradients, "lambdas", make_resultdicts, "lambdas")
-    workflow.connect(gradients, "gradients", make_resultdicts, "gradients")
-    workflow.connect(gradients, "aligned", make_resultdicts, "aligned")
+    workflow.connect(gradientsnode, "lambdas", make_resultdicts, "lambdas")
+    workflow.connect(gradientsnode, "gradients", make_resultdicts, "gradients")
+    workflow.connect(gradientsnode, "aligned", make_resultdicts, "aligned")
 
     return workflow
