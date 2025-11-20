@@ -29,6 +29,7 @@ from brainspace.gradient.gradient import GradientMaps
 class GradientsInputSpec(BaseInterfaceInputSpec):
     """ Inputs for gradients, see https://brainspace.readthedocs.io/en/latest/generated/brainspace.gradient.gradient.GradientMaps.html#brainspace.gradient.gradient.GradientMaps """
     # GradientMaps params
+    # TODO cut these down/consider necessary
     n_components = traits.Int(10, usedefault=True,
         desc="Number of gradients. Default is 10.")
     approach = traits.Str('dm', usedefault=True,
