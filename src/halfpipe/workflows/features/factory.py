@@ -17,6 +17,7 @@ from ..factory import Factory, FactoryContext
 from ..memory import MemoryCalculator
 from ..post_processing.factory import PostProcessingFactory
 from .atlas_based_connectivity import init_atlas_based_connectivity_wf
+from .gradients import init_gradients_wf
 from .dual_regression import init_dualregression_wf
 from .falff import init_falff_wf
 from .gig_ica import init_gig_ica_wf
@@ -33,7 +34,12 @@ def _find_setting(setting_name: str, spec: Spec) -> dict[str, Any]:
 
 
 class FeatureFactory(Factory):
-    def __init__(self, ctx: FactoryContext, fmriprep_factory: Factory, post_processing_factory: PostProcessingFactory) -> None:
+    def __init__(
+        self, 
+        ctx: FactoryContext, 
+        fmriprep_factory: Factory, 
+        post_processing_factory: PostProcessingFactory) -> None:
+
         super().__init__(ctx)
         self.processing_groups: None | list = None
 
@@ -139,6 +145,7 @@ class FeatureFactory(Factory):
             database.fillmetadata("space", kwargs["seed_files"])
             kwargs["seed_spaces"] = [database.metadata(seed_file, "space") for seed_file in kwargs["seed_files"]]
             workflow = init_seed_based_connectivity_wf(**kwargs)
+
         elif feature.type in {"dual_regression", "gig_ica"}:
             confounds_action = "select"
             kwargs["map_files"] = list()
@@ -151,6 +158,7 @@ class FeatureFactory(Factory):
                 workflow = init_gig_ica_wf(**kwargs)
             elif feature.type == "dual_regression":
                 workflow = init_dualregression_wf(**kwargs)
+
         elif feature.type == "atlas_based_connectivity":
             confounds_action = "regression"
             kwargs["atlas_files"] = list()
@@ -160,9 +168,16 @@ class FeatureFactory(Factory):
             database.fillmetadata("space", kwargs["atlas_files"])
             kwargs["atlas_spaces"] = [database.metadata(atlas_file, "space") for atlas_file in kwargs["atlas_files"]]
             workflow = init_atlas_based_connectivity_wf(**kwargs)
+        
+        elif feature.type == "gradients":
+            # TODO
+
+            workflow = init_gradients_wf(**kwargs)
+
         elif feature.type == "reho":
             confounds_action = "regression"
             workflow = init_reho_wf(**kwargs)
+
         elif feature.type == "falff":
             confounds_action = "regression"
             workflow = init_falff_wf(**kwargs)
