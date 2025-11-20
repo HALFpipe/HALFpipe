@@ -51,13 +51,16 @@ def init_atlas_based_connectivity_wf(
                 "tags",  # dictionary keys to values
                 "vals",  # fd_mean, etc.
                 "metadata",  # repetition_time, etc.
-                "bold",
-                "mask",
+
+                "bold", # corresponds w input spec in_file
+                "mask", # corresponds w input spec mask_file
                 "repetition_time",
                 
-                "atlas_names",
-                "atlas_files",
-                "atlas_spaces",
+                "atlas_names", # corresponds w feature atlases
+                "atlas_files", # corresponds w input spec atlas_file (why plural here? map node possible?)
+                "atlas_spaces", # corresponds 
+                # feel like min_region_coverage belongs here
+
                 # resampling to native space
                 "std2anat_xfm",
                 "bold_ref_anat",
@@ -70,6 +73,7 @@ def init_atlas_based_connectivity_wf(
     min_region_coverage = 1
     if feature is not None:
         inputnode.inputs.atlas_names = feature.atlases
+        # why does min_region_coverage not go through the nodes?
         if hasattr(feature, "min_region_coverage"):
             min_region_coverage = feature.min_region_coverage
 
