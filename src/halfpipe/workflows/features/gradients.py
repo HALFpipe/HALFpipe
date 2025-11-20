@@ -83,20 +83,17 @@ def init_gradients_wf(
     #    inputnode.inputs.atlas_spaces = atlas_spaces
 
     # how to know what keys are needed/wanted?
+    # here adding new keys to resultdict 
     make_resultdicts = pe.Node(
         MakeResultdicts(
-            tagkeys=["feature", "atlas"], # ?
+            tagkeys=["feature", "reference"], # tag keys go to filename (needs to be changed in model.tags.resultdict.py)
             imagekeys=["lambdas", "gradients", "aligned"], # 'aligned' is an optional output so this might be wrong way
-            metadatakeys=[
-                "sources",
-                "sampling_frequency",
-                "mean_atlas_tsnr",
-                "coverage",
-            ],
-            nobroadcastkeys=["mean_atlas_tsnr", "coverage"],
         ),
         name="make_resultdicts",
     )
+     #interface: extract from resultdict node
+        # tags metadata vals
+
     #if feature is not None:
     #    make_resultdicts.inputs.feature = feature.name
 
