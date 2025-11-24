@@ -459,6 +459,7 @@ class FmriprepFactory(Factory):
         hierarchies["bold_wf"] = bold_wf_hierarchy
 
         anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
+        logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {anat_fit_wf_hierarchy}') 
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
             anat_fit_wf_hierarchy.pop(-1)
         anat_fit_wf_hierarchy.append(anat_fit_wf)
