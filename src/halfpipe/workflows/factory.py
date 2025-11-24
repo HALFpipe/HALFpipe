@@ -82,7 +82,8 @@ class Factory(ABC):
         """
 
         hierarchy: list[pe.Workflow] = [self.ctx.workflow]
-
+        logger.info(f'hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhierarch: {hierarchy}')
+        
         def require_workflow(child_name):
             workflow = hierarchy[-1]
             child = workflow.get_node(child_name)
@@ -110,6 +111,12 @@ class Factory(ABC):
 
         if childname is not None:
             require_workflow(childname)
+        
+        logger.info(f'2hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhierarch: {hierarchy}')
+
+        hierarchy: list[pe.Workflow] = [self.ctx.workflow]
+
+        logger.info(f'3hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhierarch: {hierarchy}')
 
         return hierarchy
 
