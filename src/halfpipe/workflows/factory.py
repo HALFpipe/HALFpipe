@@ -114,7 +114,7 @@ class Factory(ABC):
         
         logger.info(f'2hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhierarch: {hierarchy}')
 
-        hierarchy: list[pe.Workflow] = [self.ctx.workflow]
+       # hierarchy: list[pe.Workflow] = [self.ctx.workflow]
 
         logger.info(f'3hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhierarch: {hierarchy}')
 
