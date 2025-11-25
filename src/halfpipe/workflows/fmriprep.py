@@ -494,9 +494,11 @@ class FmriprepFactory(Factory):
 
         anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
         
-        describe_workflow(anat_fit_wf_hierarchy)
-        tree = workflow_to_dict(anat_fit_wf_hierarchy)
-        logger.info(f'tre for anat_fit_wf_hierarchy: {tree}')
+        
+        for wf in anat_fit_wf_hierarchy:
+            describe_workflow(wf) 
+            tree = workflow_to_dict(wf)
+            logger.info(f'tre for anat_fit_wf_hierarchy: {tree}')
 
         logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {anat_fit_wf_hierarchy}') 
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
