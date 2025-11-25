@@ -206,7 +206,7 @@ connections = {
     ),
 }
 
-from nipype import pipeline_engine as pe
+from nipype.pipeline import engine as pe
 
 def describe_workflow(wf: pe.Workflow, indent: int = 0):
     pad = "    " * indent
