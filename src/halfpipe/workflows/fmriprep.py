@@ -210,7 +210,7 @@ from nipype.pipeline import engine as pe
 
 def describe_workflow(wf: pe.Workflow, indent: int = 0):
     pad = "    " * indent
-    logger.info(f"{pad}- Workflow: {wf.name}")
+    logger.info(f"{pad}- WORKFLOW: {wf.name}")
 
     # List nodes directly in this workflow
     for node in wf._graph.nodes():
@@ -330,8 +330,11 @@ class FmriprepFactory(Factory):
 
         # halfpipe-specific report workflows
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
+        logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa anat_report_wf_factory{anat_report_wf_factory}')
         for subject_id in subjects:
             hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
+            logger.info(f'wffffffffffffffffffffffffffffffffffffffff hierarchy {hierarchy}')
+
             logger.info(f'ssssssssssssssssssssssssssssssssssssssss subject_id {subject_id}')
 
             wf = anat_report_wf_factory()
@@ -497,8 +500,8 @@ class FmriprepFactory(Factory):
         
         for wf in anat_fit_wf_hierarchy:
             describe_workflow(wf) 
-            tree = workflow_to_dict(wf)
-            logger.info(f'tre for anat_fit_wf_hierarchy: {tree}')
+        #    tree = workflow_to_dict(wf)
+          #  logger.info(f'tre for anat_fit_wf_hierarchy: {tree}')
 
         logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {anat_fit_wf_hierarchy}') 
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
