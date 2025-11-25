@@ -305,13 +305,20 @@ class FmriprepFactory(Factory):
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
         for subject_id in subjects:
             hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
+            logger.info(f'ssssssssssssssssssssssssssssssssssssssss subject_id {subject_id}')
 
             wf = anat_report_wf_factory()
+            logger.info(f'wffffffffffffffffffffffffffffffffffffffff {wf}')
             hierarchy[-1].add_nodes([wf])
+            logger.info(f'wffffffffffffffffffffffffffffffffffffffff hierarchy[-1] {hierarchy[-1]}')
+
             hierarchy.append(wf)
+            logger.info(f'wffffffffffffffffffffffffffffffffffffffff hierarchy {hierarchy}')
 
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = {"sub": subject_id}
+
+            logger.info(f'wffffffffffffffffffffffffffffffffffffffff inputnode {inputnode}')
 
             self.connect(hierarchy, inputnode, subject_id=subject_id)
 
@@ -451,7 +458,7 @@ class FmriprepFactory(Factory):
         """
 
         fullname = ".".join([n.name for n in nodehierarchy] + [node.name])
-        logger.debug(f"Connecting node '{fullname}'")
+        logger.info(f"Connecting node '{fullname}'")
 
         hierarchies: dict[Literal["anat_fit_wf", "bold_wf", "reports_wf"], list[pe.Workflow]] = dict()
 
