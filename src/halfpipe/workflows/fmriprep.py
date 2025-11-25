@@ -206,6 +206,33 @@ connections = {
     ),
 }
 
+from nipype import pipeline_engine as pe
+
+def describe_workflow(wf: pe.Workflow, indent: int = 0):
+    pad = "    " * indent
+    logger.info(f"{pad}- Workflow: {wf.name}")
+
+    # List nodes directly in this workflow
+    for node in wf._graph.nodes():
+        logger.info(f"{pad}    * Node: {node.name} ({node.__class__.__name__})")
+
+    # List sub-workflows (workflows are treated as nodes too)
+    for node in wf._graph.nodes():
+        if isinstance(node, pe.Workflow):
+            describe_workflow(node, indent + 1)
+
+
+def workflow_to_dict(wf: pe.Workflow):
+    d = {"name": wf.name, "nodes": [], "workflows": []}
+
+    for node in wf._graph.nodes():
+        if isinstance(node, pe.Workflow):
+            d["workflows"].append(workflow_to_dict(node))
+        else:
+            d["nodes"].append(node.name)
+
+    return d
+
 
 class FmriprepFactory(Factory):
     def __init__(self, ctx):
@@ -466,6 +493,11 @@ class FmriprepFactory(Factory):
         hierarchies["bold_wf"] = bold_wf_hierarchy
 
         anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
+        
+        describe_workflow(anat_fit_wf_hierarchy)
+        tree = workflow_to_dict(anat_fit_wf_hierarchy)
+        logger.info(f'tre for anat_fit_wf_hierarchy: {tree}')
+
         logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {anat_fit_wf_hierarchy}') 
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
             anat_fit_wf_hierarchy.pop(-1)
