@@ -279,6 +279,11 @@ class FmriprepFactory(Factory):
         spec = self.ctx.spec
         global_settings = spec.global_settings
 
+        logger.info(f'pppppppppppppppppppppppppppppppppp bids_subject_sessions {bids_subject_sessions}')
+
+        logger.info(f'pppppppppppppppppppppppppppppppppp processing_groups {processing_groups}')
+        logger.info(f'pppppppppppppppppppppppppppppppppp bids_subjects {bids_subjects}')
+
         config_file = self.get_config(workdir, bids_subjects, processing_groups)
 
         retval: dict[str, pe.Workflow] = dict()
