@@ -463,6 +463,7 @@ class FmriprepFactory(Factory):
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
             anat_fit_wf_hierarchy.pop(-1)
         anat_fit_wf_hierarchy.append(anat_fit_wf)
+        logger.info(f'2aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {anat_fit_wf_hierarchy}') 
         hierarchies["anat_fit_wf"] = anat_fit_wf_hierarchy
 
         report_wf_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id)
