@@ -82,9 +82,16 @@ class Factory(ABC):
         """
 
         hierarchy: list[pe.Workflow] = [self.ctx.workflow]
-        logger.info(f'hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhierarch: {hierarchy}')
-        
+        logger.info(f'hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh _get_hierarchy: hierarch: {hierarchy}')
+        logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaarges _get_hierarchy name{name}')
+        logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaarges _get_hierarchy source_file{source_file}')
+
+        logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaarges _get_hierarchy subject_id{subject_id}')
+        logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaarges _get_hierarchy childname{childname}')
+
         def require_workflow(child_name):
+            logger.info(f'hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh _get_hierarchy: child_name: {child_name}')
+
             workflow = hierarchy[-1]
             child = workflow.get_node(child_name)
 
@@ -101,7 +108,7 @@ class Factory(ABC):
         require_workflow(name)
 
         single_subject_wf_name = self._single_subject_wf_name(source_file=source_file, subject_id=subject_id)
-
+        
         if single_subject_wf_name is not None:
             require_workflow(single_subject_wf_name)
 
