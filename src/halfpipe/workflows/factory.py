@@ -46,8 +46,10 @@ class Factory(ABC):
     ) -> str | None:
         bids_database = self.ctx.bids_database
 
-        logger.debug(f'Factory->_single_subject_wf_name-> bids_subject_id: {bids_subject_id}, subject_id: {subject_id}, processing_group: {processing_group}')
-        
+        logger.debug(
+            f"Factory->_single_subject_wf_name-> bids_subject_id: {bids_subject_id}, subject_id: {subject_id}, processing_group: {processing_group}"
+        )
+
         if processing_group is not None:
             subject_id, sessions = processing_group
             base = f"sub_{subject_id}"
