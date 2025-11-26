@@ -16,6 +16,7 @@ from packaging.version import Version
 
 from ..collect.fmap import collect_fieldmaps
 from ..logging import logger
+from ..logging.describe_workflow import describe_workflow
 from ..utils.copy import deepcopyfactory
 from ..utils.format import inflect_engine as p
 from .constants import Constants
@@ -206,33 +207,6 @@ connections = {
     ),
 }
 
-from nipype.pipeline import engine as pe
-
-def describe_workflow(wf: pe.Workflow, indent: int = 0):
-    pad = "    " * indent
-    logger.info(f"{pad}- WORKFLOW: {wf.name}")
-
-    # List nodes directly in this workflow
-    for node in wf._graph.nodes():
-        logger.info(f"{pad}    * Node: {node.name} ({node.__class__.__name__})")
-
-    # List sub-workflows (workflows are treated as nodes too)
-    for node in wf._graph.nodes():
-        if isinstance(node, pe.Workflow):
-            describe_workflow(node, indent + 1)
-
-
-def workflow_to_dict(wf: pe.Workflow):
-    d = {"name": wf.name, "nodes": [], "workflows": []}
-
-    for node in wf._graph.nodes():
-        if isinstance(node, pe.Workflow):
-            d["workflows"].append(workflow_to_dict(node))
-        else:
-            d["nodes"].append(node.name)
-
-    return d
-
 
 class FmriprepFactory(Factory):
     def __init__(self, ctx):
@@ -279,10 +253,7 @@ class FmriprepFactory(Factory):
         spec = self.ctx.spec
         global_settings = spec.global_settings
 
-        logger.info(f'pppppppppppppppppppppppppppppppppp bids_subject_sessions {bids_subject_sessions}')
-
-        logger.info(f'pppppppppppppppppppppppppppppppppp processing_groups {processing_groups}')
-        logger.info(f'pppppppppppppppppppppppppppppppppp bids_subjects {bids_subjects}')
+        logger.debug(f"Processing groups are {processing_groups}")
 
         config_file = self.get_config(workdir, bids_subjects, processing_groups)
 
@@ -335,26 +306,16 @@ class FmriprepFactory(Factory):
 
         # halfpipe-specific report workflows
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
-        logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa anat_report_wf_factory{anat_report_wf_factory}')
         for processing_group in processing_groups:
             subject_id, sessions = processing_group
             hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
-            logger.info(f'wffffffffffffffffffffffffffffffffffffffff hierarchy {hierarchy}')
-
-            logger.info(f'ssssssssssssssssssssssssssssssssssssssss subject_id {subject_id}')
-
             wf = anat_report_wf_factory()
-            logger.info(f'wffffffffffffffffffffffffffffffffffffffff {wf}')
             hierarchy[-1].add_nodes([wf])
-            logger.info(f'wffffffffffffffffffffffffffffffffffffffff hierarchy[-1] {hierarchy[-1]}')
 
             hierarchy.append(wf)
-            logger.info(f'wffffffffffffffffffffffffffffffffffffffff hierarchy {hierarchy}')
 
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = {"sub": subject_id}
-
-            logger.info(f'wffffffffffffffffffffffffffffffffffffffff inputnode {inputnode}')
 
             self.connect(hierarchy, inputnode, subject_id=subject_id, processing_group=processing_group)
 
@@ -499,22 +460,21 @@ class FmriprepFactory(Factory):
 
         hierarchies: dict[Literal["anat_fit_wf", "bold_wf", "reports_wf"], list[pe.Workflow]] = dict()
 
-        bold_wf_hierarchy = self._get_hierarchy(get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id, processing_group=processing_group)
+        bold_wf_hierarchy = self._get_hierarchy(
+            get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id, processing_group=processing_group
+        )
         hierarchies["bold_wf"] = bold_wf_hierarchy
 
         anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
-        
-        
-        for wf in anat_fit_wf_hierarchy:
-            describe_workflow(wf) 
-        #    tree = workflow_to_dict(wf)
-          #  logger.info(f'tre for anat_fit_wf_hierarchy: {tree}')
 
-        logger.info(f'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {anat_fit_wf_hierarchy}') 
+        for wf in anat_fit_wf_hierarchy:
+            describe_workflow(wf)
+
+        logger.debug(f"anat_fit_wf_hierarchy: {anat_fit_wf_hierarchy}")
+
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
             anat_fit_wf_hierarchy.pop(-1)
         anat_fit_wf_hierarchy.append(anat_fit_wf)
-        logger.info(f'2aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {anat_fit_wf_hierarchy}') 
         hierarchies["anat_fit_wf"] = anat_fit_wf_hierarchy
 
         report_wf_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id)
