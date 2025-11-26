@@ -42,8 +42,20 @@ class Factory(ABC):
         source_file: Path | str | None = None,
         bids_subject_id: str | None = None,
         subject_id: str | None = None,
+        processing_group=None
     ) -> str | None:
         bids_database = self.ctx.bids_database
+
+        if processing_group is not None:
+            subject_id, sessions = processing_group
+            base = f"sub_{subject_id}"
+
+            if sessions is not None:  # None or empty list
+                sessions_sorted = sorted(sessions)
+                session_str = "-".join(sessions_sorted)
+                return f"{base}_ses_{session_str}"
+            else:
+                return base
 
         if bids_subject_id is None:
             if source_file is not None:
@@ -72,6 +84,7 @@ class Factory(ABC):
         subject_id: str | None = None,
         childname: str | None = None,
         create_ok: bool = True,
+        processing_group=None
     ):
         """
         Retrieve or create a hierarchy of workflows.
@@ -107,7 +120,7 @@ class Factory(ABC):
 
         require_workflow(name)
 
-        single_subject_wf_name = self._single_subject_wf_name(source_file=source_file, subject_id=subject_id)
+        single_subject_wf_name = self._single_subject_wf_name(source_file=source_file, subject_id=subject_id, processing_group=processing_group)
         
         if single_subject_wf_name is not None:
             require_workflow(single_subject_wf_name)
