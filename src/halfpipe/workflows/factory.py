@@ -51,11 +51,11 @@ class Factory(ABC):
             base = f"sub_{subject_id}"
 
             if sessions is not None:  # None or empty list
-                sessions_sorted = sorted(sessions)
+              #  sessions_sorted = sorted(sessions)
                 session_str = "-".join(sessions_sorted)
-                return f"{base}_ses_{session_str}"
+                return f"{base}_ses_{session_str}_wf"
             else:
-                return base
+                return f"{base}_wf"
 
         if bids_subject_id is None:
             if source_file is not None:
