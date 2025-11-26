@@ -52,7 +52,7 @@ class Factory(ABC):
 
             if sessions is not None:  # None or empty list
               #  sessions_sorted = sorted(sessions)
-                session_str = "-".join(sessions_sorted)
+                session_str = "-".join(sessions)
                 return f"{base}_ses_{session_str}_wf"
             else:
                 return f"{base}_wf"
