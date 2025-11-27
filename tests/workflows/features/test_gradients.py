@@ -1,31 +1,93 @@
-#import os
-#import pytest
-#import numpy as np
+import os
+import pytest
+import numpy as np
 #import pandas as pd
 
-from halfpipe.model.feature import GradientsFeatureSchema, FeatureSchema, Feature
+from halfpipe.model.feature import Feature #, GradientsFeatureSchema, FeatureSchema
+from halfpipe.workflows.memory import MemoryCalculator
 
 from halfpipe.workflows.features.gradients import init_gradients_wf
+from halfpipe.utils.nipype import run_workflow
 #from traits.trait_errors import TraitError
 
 # TODO
 # test I/O through features/nodes/workflow
 # how do you define a feature to then pass elsewhere?
-# do I need to pass inputs directly to Gradiens()? or does it come automatically from node connections?
 
-def test_gradients_feature():
-    feat = Feature("gradients", "gradients", bing_bong = 10)
-    #feat = FeatureSchema().load(dict(type="gradients", name="gradients"))
-    schema = GradientsFeatureSchema()
-    schema.load(feat)
-    #assert data['type'] is "gradients"
-    # assert data['n_components'] == 10
-    # assert data['approach'] is None
-    #assert data['bing_bong'] == 10
-    # this fails but no message e.g. its not in the schema
+def test_gradients_wf_input(tmp_path):
+    """ Test to check if input is accepted."""
+    workdir = tmp_path
 
-    # Failing
-    # schemas only create keys in the dictionary when the dump_default is not None
-    # schemas are not doing clear type checking like traits in fact I dont know what they do
-    # seems like Features are defined however you please by just passing anything to constructor odd
+    # random matrix connectome for now
+    x = np.random.randn(50,50)
+
+    # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be filled by the input spec
+    # I have many questions about how features are created and validated
+    feat = Feature(
+        "gradients", # name
+        "gradients", # type
+        # kwargs
+        **{"n_components":None,
+        "approach":None,
+        "kernel":None,
+        "random_state":None,
+        "alignment":None,
+
+        "gamma":None,
+        "sparsity":None,
+        "n_iter":None,
+        "reference":None,
+        })
+
+    memcalc = MemoryCalculator.default()
+
+    init_gradients_wf(
+        workdir,
+        x,
+        feat,
+        memcalc)
+
+def test_gradients_wf_run(tmp_path):
+    """ Test to check if wf runs."""
+    os.chdir(str(tmp_path))
+
+    workdir = tmp_path
+
+    # random matrix connectome for now
+    np.savetxt('rand1.txt', np.random.randn(100,100))
+    x = os.path.join(tmp_path,'rand1.txt')
+
+    # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be filled by the input spec
+    # I have many questions about how features are created and validated
+    feat = Feature(
+        "gradients", # name
+        "gradients", # type
+        # Traits complains for none 
+        # When trait is checked/feature created need to fill defaults w appropriate values
+        # kwargs
+        **{"n_components":10,
+        "approach":'dm',
+        "kernel":None,
+        "random_state":None,
+        "alignment":None,
+
+        "gamma":None,
+        "sparsity":0.9,
+        "n_iter":10,
+        "reference":None,
+        }
+        )
+
+    memcalc = MemoryCalculator.default()
+
+    wf = init_gradients_wf(
+        workdir,
+        x,
+        feat,
+        memcalc)
+
+    # I dont understand why this would be defined here and not in the init_wf but im following halfpipe (atlas_based_connectivity)
+    wf.base_dir = workdir
+    
+    graph = run_workflow(wf)
 
