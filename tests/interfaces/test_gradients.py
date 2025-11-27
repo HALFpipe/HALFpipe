@@ -30,7 +30,7 @@ def test_inputs_file():
     """ Test if traits are checking input correctly. """
     g = Gradients()
 
-    g.inputs.x = '/halfpipe_dev/test_data/derivatives/sub-10171/func/task-rest/sub-10171_task-rest_feature-motionParametersGSR_atlas-Schaefer2018Combined_desc-correlation_matrix.tsv'
+    g.inputs.correlation_matrix = '/halfpipe_dev/test_data/derivatives/sub-10171/func/task-rest/sub-10171_task-rest_feature-motionParametersGSR_atlas-Schaefer2018Combined_desc-correlation_matrix.tsv'
 
 def test_inputs_union(tmp_path):
     """ Test if traits are checking input correctly. """
@@ -40,7 +40,7 @@ def test_inputs_union(tmp_path):
 
     np.savetxt('rand1.txt', np.random.randn(100,100))
     np.savetxt('rand2.txt', np.random.randn(100,100))
-    g.inputs.x = ['rand1.txt','rand2.txt']
+    g.inputs.correlation_matrix = ['rand1.txt','rand2.txt']
 
 def test_gradient_single_random_array(tmp_path):
     """ Test brainspace functions on random array & that traits are filling in default values. """
@@ -49,7 +49,7 @@ def test_gradient_single_random_array(tmp_path):
     g = Gradients()
 
     np.savetxt('rand.txt', np.random.randn(100,100))
-    g.inputs.x = 'rand.txt'
+    g.inputs.correlation_matrix = 'rand.txt'
 
     g._run_interface('fake runtime')
 
@@ -63,7 +63,7 @@ def test_outputs(tmp_path):
     g = Gradients()
 
     np.savetxt('rand.txt',np.random.randn(100,100))
-    g.inputs.x = 'rand.txt'
+    g.inputs.correlation_matrix = 'rand.txt'
 
     g._run_interface('fake runtime')
 

@@ -19,7 +19,7 @@ def test_gradients_wf_input(tmp_path):
     workdir = tmp_path
 
     # random matrix connectome for now
-    x = np.random.randn(50,50)
+    correlation_matrix = np.random.randn(50,50)
 
     # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be filled by the input spec
     # I have many questions about how features are created and validated
@@ -39,13 +39,11 @@ def test_gradients_wf_input(tmp_path):
         "reference":None,
         })
 
-    memcalc = MemoryCalculator.default()
-
     init_gradients_wf(
         workdir,
-        x,
+        correlation_matrix,
         feat,
-        memcalc)
+   )
 
 def test_gradients_wf_run(tmp_path):
     """ Test to check if wf runs."""
@@ -55,7 +53,7 @@ def test_gradients_wf_run(tmp_path):
 
     # random matrix connectome for now
     np.savetxt('rand1.txt', np.random.randn(100,100))
-    x = os.path.join(tmp_path,'rand1.txt')
+    correlation_matrix = os.path.join(tmp_path,'rand1.txt')
 
     # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be filled by the input spec
     # I have many questions about how features are created and validated
@@ -82,7 +80,7 @@ def test_gradients_wf_run(tmp_path):
 
     wf = init_gradients_wf(
         workdir,
-        x,
+        correlation_matrix,
         feat,
         memcalc)
 
