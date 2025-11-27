@@ -129,7 +129,7 @@ class AtlasBasedConnectivityFeatureSchema(BaseFeatureSchema):
         dump_default="atlas_based_connectivity",
         validate=validate.Equal("atlas_based_connectivity"),
     )
-    atlases = fields.List(fields.Str())
+    atlases = fields.List(fields.Str()) # this gets passed to atlas_names in init wf
     min_region_coverage = fields.Float(dump_default=0.8, validate=validate.Range(min=0.0, max=1.0))
 
 

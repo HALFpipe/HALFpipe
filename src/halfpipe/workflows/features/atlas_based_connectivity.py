@@ -47,6 +47,9 @@ def init_atlas_based_connectivity_wf(
     # harveyaa - actual necessary inputs
     inputnode = pe.Node(
         niu.IdentityInterface(
+            # TODO very confused as to why some and not other values are included in feature
+            # feels like feature should take everything validated from input spec
+            # everything else runtime generated, ie from previous node
             fields=[
                 "tags",  # dictionary keys to values
                 "vals",  # fd_mean, etc.
@@ -58,7 +61,7 @@ def init_atlas_based_connectivity_wf(
                 
                 "atlas_names", # corresponds w feature atlases
                 "atlas_files", # corresponds w input spec atlas_file (why plural here? map node possible?)
-                "atlas_spaces", # corresponds 
+                "atlas_spaces", 
                 # feel like min_region_coverage belongs here
 
                 # resampling to native space
