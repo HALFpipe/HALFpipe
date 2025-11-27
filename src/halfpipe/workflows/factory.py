@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fmriprep.workflows.bold.base import _get_wf_name
 from nipype.pipeline import engine as pe
+from smriprep.utils.misc import stringify_sessions
 
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
@@ -60,12 +61,8 @@ class Factory(ABC):
             base = f"sub_{subject_id}"
 
             if sessions is not None:  # None or empty list
-                #  sessions_sorted = sorted(sessions)
-                if len(sessions) < 4:
-                    session_str = "-".join(sessions)
-                    return f"{base}_ses_{session_str}_wf"
-                else:
-                    return f"{base}_ses_multi-bbdf_wf"
+                session_str = stringify_sessions(sessions)
+                return f"{base}_ses_{session_str}_wf"
             else:
                 return f"{base}_wf"
 
