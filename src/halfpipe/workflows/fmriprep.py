@@ -456,7 +456,7 @@ class FmriprepFactory(Factory):
         """
 
         fullname = ".".join([n.name for n in nodehierarchy] + [node.name])
-        logger.info(f"Connecting node '{fullname}'")
+        logger.debug(f"Connecting node '{fullname}'")
 
         hierarchies: dict[Literal["anat_fit_wf", "bold_wf", "reports_wf"], list[pe.Workflow]] = dict()
 
