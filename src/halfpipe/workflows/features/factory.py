@@ -38,7 +38,8 @@ class FeatureFactory(Factory):
         self, 
         ctx: FactoryContext, 
         fmriprep_factory: Factory, 
-        post_processing_factory: PostProcessingFactory) -> None:
+        post_processing_factory: PostProcessingFactory
+        ) -> None:
 
         super().__init__(ctx)
         self.processing_groups: None | list = None
@@ -170,7 +171,10 @@ class FeatureFactory(Factory):
             workflow = init_atlas_based_connectivity_wf(**kwargs)
         
         elif feature.type == "gradients":
-            # TODO
+            # TODO unsure what is appropriate here
+            confounds_action = "regression"
+            # where do I pull these from?
+            # seems like above factory entries are also not connecting e.g. atlas based connectivity to an output preprocessed bold file ?
 
             workflow = init_gradients_wf(**kwargs)
 
