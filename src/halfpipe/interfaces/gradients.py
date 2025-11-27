@@ -58,11 +58,11 @@ class GradientsInputSpec(BaseInterfaceInputSpec):
 
 class GradientsOutputSpec(TraitedSpec):
     # Outputs from gradient computation:
-    lambdas = traits.Union(traits.Array, traits.List(trait=traits.Array),
+    lambdas = traits.Union(traits.File, traits.List(trait=traits.File),
         desc="Eigenvalues for each datatset, shape = (n_components,).")
-    gradients = traits.Union(traits.Array, traits.List(trait=traits.Array),
+    gradients = traits.Union(traits.File, traits.List(trait=traits.File),
         desc="Gradients (i.e., eigenvectors), shape = (n_samples, n_components).")
-    aligned = traits.Union(None, traits.List(trait=traits.Array),
+    aligned = traits.Union(None, traits.List(trait=traits.File),
         desc="Aligned gradients, shape = (n_samples, n_components). None if alignment is None or only one dataset is used.")
     
 
