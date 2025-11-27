@@ -46,6 +46,7 @@ class Factory(ABC):
         subject_id: str | None = None,
         processing_group: tuple | list | None = None,
     ) -> str | None:
+        """ Formats a wf name based on source file and bids & subject id."""
         bids_database = self.ctx.bids_database
 
         logger.debug(
@@ -135,7 +136,10 @@ class Factory(ABC):
             f"childname={childname}, create_ok={create_ok}, processing_group={processing_group}"
         )
 
-        def require_workflow(child_name):
+        def require_workflow(
+            child_name: str,
+            ):
+            """ Checks if child_name is in workflow, if not it is added."""
             workflow = hierarchy[-1]
             child = workflow.get_node(child_name)
 
@@ -173,21 +177,15 @@ class Factory(ABC):
     def get(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def connect_common_attrs(self, outputhierarchy, outputnode, inputhierarchy, inputnode) -> set[str]:
-        if isinstance(outputnode, str):
-            outputnode = outputhierarchy[-1].get_node(outputnode)
-        if isinstance(inputnode, str):
-            inputnode = inputhierarchy[-1].get_node(inputnode)
-
-        inputattrs = set(inputnode.inputs.copyable_trait_names())
-        outputattrs = set(outputnode.outputs.copyable_trait_names())
-        attrs = inputattrs & outputattrs  # find common attr names
-
-        for attr in attrs:
-            self.connect_attr(outputhierarchy, outputnode, attr, inputhierarchy, inputnode, attr)
-        return attrs
-
-    def connect_attr(self, outputhierarchy, outputnode, outattr, inputhierarchy, inputnode, inattr):
+    def connect_attr(
+        self, 
+        outputhierarchy, 
+        outputnode, 
+        outattr, 
+        inputhierarchy, 
+        inputnode, 
+        inattr
+        ):
         inputhierarchy = [*inputhierarchy]  # make copies
         outputhierarchy = [*outputhierarchy]
 
@@ -195,6 +193,7 @@ class Factory(ABC):
         if outputhierarchy[0] != inputhierarchy[0]:
             raise ValueError(f"Cannot connect {outputhierarchy} to {inputhierarchy}")
 
+        # removes all but last common element
         while outputhierarchy[1] == inputhierarchy[1]:
             inputhierarchy.pop(0)
             outputhierarchy.pop(0)
@@ -214,6 +213,28 @@ class Factory(ABC):
             f"to input '{inattr}' of node '{inputnode.fullname}'"
         )
         workflow.connect(*outputendpoint, *inputendpoint)
+
+    def connect_common_attrs(
+        self, 
+        outputhierarchy, 
+        outputnode, 
+        inputhierarchy, 
+        inputnode
+        ) -> set[str]:
+        # Connects workflows together based on commonly named attributes of output & input nodes
+
+        if isinstance(outputnode, str):
+            outputnode = outputhierarchy[-1].get_node(outputnode)
+        if isinstance(inputnode, str):
+            inputnode = inputhierarchy[-1].get_node(inputnode)
+
+        inputattrs = set(inputnode.inputs.copyable_trait_names())
+        outputattrs = set(outputnode.outputs.copyable_trait_names())
+        attrs = inputattrs & outputattrs  # find common attr names
+
+        for attr in attrs:
+            self.connect_attr(outputhierarchy, outputnode, attr, inputhierarchy, inputnode, attr)
+        return attrs
 
     def connect(self, nodehierarchy, node, *args, **kwargs) -> set[str]:
         outputhierarchy, outputnode = self.get(*args, **kwargs)
