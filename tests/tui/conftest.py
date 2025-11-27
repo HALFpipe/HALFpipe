@@ -10,7 +10,7 @@ from halfpipe import resource
 from halfpipe.logging import logger
 from halfpipe.tui.base import MainApp  # Ensure path aligns with your project structure
 
-from .create_mock_bids_dataset import create_bids_data
+from ..create_mock_bids_dataset import create_bids_data
 
 
 @pytest.fixture(scope="session", autouse=True)
