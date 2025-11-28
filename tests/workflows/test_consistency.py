@@ -6,6 +6,7 @@ import zipfile
 from datetime import datetime
 from multiprocessing import cpu_count
 from pathlib import Path
+
 import pytest
 from fmriprep import config
 
@@ -205,7 +206,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
     dataset_file = dataset.download(tmp_path)
     spec = make_spec(dataset_files=[dataset_file], pcc_mask=pcc_mask, test_settings=settings_list)
-    spec.features = [feature for feature in spec.features if feature.type != "gig_ica"]     # Drop gig-ica feature
+    spec.features = [feature for feature in spec.features if feature.type != "gig_ica"]  # Drop gig-ica feature
     config.nipype.omp_nthreads = cpu_count()
     save_spec(spec, workdir=tmp_path)
 
@@ -263,7 +264,13 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         confounds = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".tsv")
         reports_folder = tmp_path / "reports" / f"sub-{sub}"
         report_figures = [f for f in index.tags_by_paths.keys() if reports_folder in f.parents]
-        paths_to_zip.extend(list(tsnr_fmriprep or []) + [spec_file] + list(confounds or []) + list(confounds_sidecar or []) + (report_figures or []))
+        paths_to_zip.extend(
+            list(tsnr_fmriprep or [])
+            + [spec_file]
+            + list(confounds or [])
+            + list(confounds_sidecar or [])
+            + (report_figures or [])
+        )
 
         # Create the zip file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
