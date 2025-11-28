@@ -164,13 +164,14 @@ class ModelTemplate(Widget):
         # Since all inputs are aggregated in the same way, we use the first one to check over what is the aggregation done.
         test_string = self.model_dict["inputs"][0]
         matches = [key for key, value in entity_label_dict.items() if value in test_string]
+        print("qqqqqqqqqqqqqqqqqqqqqqq", ctx.get_available_images)
         self.aggregate_panel = Vertical(
             Static("Aggregate individual feature statistics across:", id="aggregate_switch_label", classes="label"),
             SelectionList[str](
                 *[
                     Selection(entity_label_dict[entity], entity, True if entity in matches else False)
                     for entity in ctx.get_available_images.keys()
-                    if entity != "sub"
+                    if entity == "task"
                 ],
                 id="aggregate_selection_list",
             ),

@@ -190,15 +190,18 @@ SwitchWithInputBox {
  }
 }
 
-#load_modal {
-width: auto;
- Center {
- width: auto;
- }
- Static {
- width: auto;
- color: white;
-  text-style: bold;
+#load_modal_panel {
+    width: auto;
+    Center {
+        width: auto;
+    }
+    Static {
+        width: auto;
+        color: white;
+        text-style: bold;
+    }
+}
 
- }
+#file_tag_selection {
+    width: 106;
 }

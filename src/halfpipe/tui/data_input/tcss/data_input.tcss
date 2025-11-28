@@ -180,3 +180,40 @@ FieldMapFilesPanel {
 
 #data_input_sucess {
 }
+
+#file_tag_modal {
+
+    #draggable_modal_screen_container_wrapper {
+        border-left: thick $warning;
+        border-right: thick $warning;
+        border-bottom: thick $warning;
+    }
+    WindowTitleBar {
+        background: $warning;
+    }
+    WindowTitleBar Button {
+        background: $warning;
+        color: black;
+    }
+    WindowTitleBar Button:hover {
+        background: $warning;
+    }
+            WindowTitleBar Button:focus {
+            background: $warning;
+        }
+    .window_title {
+        color: black;
+        width: 90%;
+    }
+    #message {
+        color: white;
+        text-style:bold;
+        border: transparent;
+        offset-y: 1;
+    }
+    .feature_name {
+        height: 3;
+        width: 40;
+        margin: 1;
+    }
+}
