@@ -263,7 +263,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         confounds_sidecar = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".json")
         confounds = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".tsv")
         reports_folder = tmp_path / "reports" / f"sub-{sub}"
-        report_figures = [f for f in index.tags_by_paths.keys() if reports_folder in f.parents]
+        report_figures = [f for f in index.tags_by_paths.keys() if isinstance(f, Path) and reports_folder in f.parents]
         paths_to_zip.extend(
             list(tsnr_fmriprep or [])
             + [spec_file]
