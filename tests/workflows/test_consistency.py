@@ -268,9 +268,11 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
             for f in index.tags_by_paths.keys()
             if isinstance(f, Path) and not isinstance(f, zipfile.Path) and reports_folder in f.parents
         ]
-        paths_to_zip.extend(
-            list(tsnr_fmriprep or []) + [spec_file] + list(confounds or []) + list(confounds_sidecar or []) + report_figures
-        )
+        paths_to_zip.extend(list(tsnr_fmriprep or []))
+        paths_to_zip.append(spec_file)
+        paths_to_zip.extend(list(confounds or []))
+        paths_to_zip.extend(list(confounds_sidecar or []))
+        paths_to_zip.extend(report_figures)
 
         # Create the zip file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
