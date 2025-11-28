@@ -273,7 +273,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
             + [spec_file]
             + list(confounds or [])
             + list(confounds_sidecar or [])
-            + (report_figures or [])
+            + report_figures
         )
 
         # Create the zip file in the specified output directory
