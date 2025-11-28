@@ -269,11 +269,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
             if isinstance(f, Path) and not isinstance(f, zipfile.Path) and reports_folder in f.parents
         ]
         paths_to_zip.extend(
-            list(tsnr_fmriprep or [])
-            + [spec_file]
-            + list(confounds or [])
-            + list(confounds_sidecar or [])
-            + report_figures
+            list(tsnr_fmriprep or []) + [spec_file] + list(confounds or []) + list(confounds_sidecar or []) + report_figures
         )
 
         # Create the zip file in the specified output directory
