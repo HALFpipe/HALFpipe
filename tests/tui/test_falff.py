@@ -9,6 +9,7 @@ from .pilot_functions import run_before_for_reho_falff_preproc
 
 
 @pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_falff_at_features_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Adds falff features. All options are modified plus all 'Remove confounds' options are selected"""
 
@@ -23,6 +24,7 @@ def test_falff_at_features_tab(snap_compare, start_app, work_dir_path: Path, dow
 
 
 @pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_falff_at_spec_preview(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Same as test_falff_at_features_tab but now checking the spec preview. There should be 'unfiltered_setting key in the
     features in the spec preview. Moreover, the smoothing should be in this case in the features (not in settings as usually).

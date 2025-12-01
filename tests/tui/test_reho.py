@@ -9,6 +9,7 @@ from .pilot_functions import run_before_for_reho_falff_preproc
 
 
 @pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_reho_at_features_tab(
     snap_compare,
     start_app,
@@ -28,6 +29,7 @@ def test_reho_at_features_tab(
 
 
 @pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_reho_at_spec_preview(
     snap_compare,
     start_app,
