@@ -100,7 +100,6 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     # set data dir
     await _load_data(pilot, data_path)
 
-
     # finish = False
     # while not finish:
     #     finish = await pilot._wait_for_screen(1)
