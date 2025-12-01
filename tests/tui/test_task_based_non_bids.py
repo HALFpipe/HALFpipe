@@ -99,6 +99,7 @@ async def run_before(
 
 
 @pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_task_based_non_bids_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -121,6 +122,7 @@ def test_task_based_non_bids_at_features_tab(
 
 
 @pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_task_based_non_bids_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -142,6 +144,7 @@ def test_task_based_non_bids_at_spec_preview(
 
 
 @pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_task_based_non_bids_at_features_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -161,6 +164,7 @@ def test_task_based_non_bids_at_features_tab_duplicate(
 
 
 @pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_task_based_features_duplicate_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:

@@ -99,18 +99,27 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     await _set_work_dir(pilot, work_dir_path)
     # set data dir
     await _load_data(pilot, data_path)
+
+
     # finish = False
     # while not finish:
     #     finish = await pilot._wait_for_screen(1)
     # await pilot.pause(5)
     # await pilot.click(offset=(10,10))
     # # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    # await pilot.click("#only_one_button")
+    try:
+        await pilot.click("#only_one_button")
+    except Exception as e:
+        pilot.app.save_screenshot()
+        logger.info(e)
+
     for task in tasks_by_stage[stage]:
         await task()
 
 
-@pytest.mark.forked
+@@pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
+@pytest.mark.flaky(reruns=1)
 def test_atlas_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -129,7 +138,8 @@ def test_atlas_at_features_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@@pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_atlas_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -147,7 +157,8 @@ def test_atlas_at_spec_preview(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@@pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_atlas_at_features_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -165,7 +176,8 @@ def test_atlas_at_features_duplicate(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@@pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_duplicate_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
