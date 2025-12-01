@@ -9,6 +9,7 @@ import nipype.pipeline.engine as pe
 from nipype.interfaces import ants, fsl
 
 from ...interfaces.image_maths.resample import Resample
+from ..configurables import configurables
 from ..constants import Constants
 from ..memory import MemoryCalculator
 
@@ -55,7 +56,7 @@ def init_jacobian_wf(
             interpolation="LanczosWindowedSinc",
             print_out_composite_warp_file=True,
             reference_space=Constants.reference_space,
-            reference_res=Constants.reference_res,
+            reference_res=configurables.reference_res,
         ),
         name="create_composite_transform",
         mem_gb=memcalc.volume_gb * 10,  # TODO measure this
@@ -82,7 +83,7 @@ def init_jacobian_wf(
     )
     workflow.connect(create_composite_transform, "output_image", create_jacobian, "deformationField")
 
-    voxel_volume = Constants.reference_res**3
+    voxel_volume = configurables.reference_res**3
     scale_jacobian = pe.Node(
         fsl.ImageMaths(
             op_string=f"-mul {voxel_volume}",
