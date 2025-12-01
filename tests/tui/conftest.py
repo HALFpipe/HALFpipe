@@ -2,7 +2,6 @@
 # conftest.py
 import os
 import shutil
-import sys
 from pathlib import Path
 
 import pytest
@@ -29,9 +28,13 @@ def copy_jinja2_file(resolved_test_dir_path):
     is delete during the docker build."""
     source_file = resolved_test_dir_path / "snapshot_report_template.jinja2"
 
-    # Dynamically get Python version
-    python_version = f"{sys.version_info.major}.{sys.version_info.minor}"
-    destination = Path(f"/opt/conda/envs/fmriprep/lib/python{python_version}/site-packages/resources/")
+    import pytest_textual_snapshot
+
+    # Path to the module file
+    module_path = Path(pytest_textual_snapshot.__file__)
+
+    # Go up one level (site-packages) and append "resources"
+    destination = module_path.parent / "resources"
 
     try:
         destination.mkdir(parents=True, exist_ok=True)
@@ -70,6 +73,8 @@ def work_dir_path(fixed_tmp_path) -> Path:
 @pytest.fixture(scope="session")
 def spec_file_dir_path(fixed_tmp_path, resolved_test_dir_path) -> Path:
     source_dir = resolved_test_dir_path / "spec_file_for_load_test"
+    shutil.copy(source_dir / "spec.json", source_dir / "spec_reference.json")
+
     destination_dir = fixed_tmp_path / "spec_file_for_load_test/"
     if os.path.exists(destination_dir):
         shutil.rmtree(destination_dir)
