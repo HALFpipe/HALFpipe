@@ -71,7 +71,6 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         await task()
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=3)
 @pytest.mark.forked
 def test_dual_reg_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
@@ -91,7 +90,6 @@ def test_dual_reg_at_features_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.flaky(reruns=2, reruns_delay=3)
 @pytest.mark.forked
 def test_dual_reg_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
