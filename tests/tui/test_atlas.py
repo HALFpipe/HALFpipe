@@ -15,6 +15,7 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    click_until_gone,
     select_file_tags,
     select_images,
     set_minimum_coverage,
@@ -100,25 +101,14 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     # set data dir
     await _load_data(pilot, data_path)
 
-    # finish = False
-    # while not finish:
-    #     finish = await pilot._wait_for_screen(1)
-    # await pilot.pause(5)
-    # await pilot.click(offset=(10,10))
-    # # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    try:
-        await pilot.click("#only_one_button")
-    except Exception as e:
-        pilot.app.save_screenshot()
-        logger.info(e)
+    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    await click_until_gone(pilot, "#only_one_button")
 
     for task in tasks_by_stage[stage]:
         await task()
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
-@pytest.mark.flaky(reruns=1)
 def test_atlas_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -138,7 +128,6 @@ def test_atlas_at_features_tab(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_atlas_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -157,7 +146,6 @@ def test_atlas_at_spec_preview(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_atlas_at_features_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:
@@ -176,7 +164,6 @@ def test_atlas_at_features_duplicate(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_duplicate_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
 ) -> None:

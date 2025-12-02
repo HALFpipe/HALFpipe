@@ -3,13 +3,11 @@
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from halfpipe.logging import logger
 
-from .pilot_functions import (
-    _set_work_dir,
-    check_and_run_tab_refresh,
-    settable_scroll_screen_down,
-)
+from .pilot_functions import _set_work_dir, check_and_run_tab_refresh, click_until_gone, settable_scroll_screen_down
 from .utils.compare_jsons import compare_json_files
 
 widget_label_map = {
@@ -23,7 +21,6 @@ widget_label_map = {
     "fALFF_2": "#feature_item_7_flabel",
     "preproc_1": "#feature_item_8_flabel",
 }
-import pytest
 
 
 async def run_before(
@@ -55,12 +52,7 @@ async def run_before(
     await _set_work_dir(pilot, work_dir_path, load_from_spec_file=True)
 
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    try:
-        await pilot.click("#only_one_button")
-    except Exception as e:
-        pilot.app.save_screenshot()
-        logger.info(e)
+    await click_until_gone(pilot, "#only_one_button", max_failures=7)
 
     # For some reason the button remains focussed when I do it locally, but it is not focussed when it runs through CI,
     # the tab should prevent this.

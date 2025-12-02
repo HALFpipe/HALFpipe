@@ -15,6 +15,7 @@ from .pilot_functions import (
     add_fmap,
     associate_fmaps,
     clear_entry,
+    click_until_gone,
     set_non_bids_data,
     settable_scroll_screen_down,
 )
@@ -61,7 +62,7 @@ async def run_before(
         # await pilot.press('w')
         # filename = "{}_after_load_data.svg".format(stage)
         # pilot.app.save_screenshot(filename=filename)
-        await pilot.click("#only_one_button")
+        await click_until_gone(pilot, "#only_one_button")
 
     if stage == "non_bids_data_tab" or stage == "non_bids_data_tab_with_fmaps" or stage == "preproc_settings":
         await _set_work_dir(pilot, work_dir_path)
@@ -162,8 +163,8 @@ async def run_before(
     # pilot.app.call_later(pilot.app.exit)  # 👈 schedule clean exit
 
 
+@pytest.mark.flaky(reruns=1, reruns_delay=3)
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(
@@ -172,8 +173,8 @@ def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_d
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.flaky(reruns=1, reruns_delay=3)
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether a bids data can be loaded. This should yield some non-zero found files at the file summary panel."""
     run_before_with_extra_args = partial(
@@ -182,8 +183,8 @@ def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downl
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.flaky(reruns=1, reruns_delay=3)
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_non_bids_data_input_tab(
     snap_compare, start_app, work_dir_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -198,8 +199,8 @@ def test_non_bids_data_input_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.flaky(reruns=1, reruns_delay=3)
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_non_bids_data_input_tab_with_fmaps(
     snap_compare,
     start_app,
@@ -222,8 +223,8 @@ def test_non_bids_data_input_tab_with_fmaps(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.flaky(reruns=1, reruns_delay=3)
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_preproc_settings_tab(
     snap_compare, start_app, work_dir_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
