@@ -389,8 +389,8 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id(
                 "input_switch_input_box"
             ).styles.visibility = "visible"
-            self.get_widget_by_id("preprocessing").styles.height = 32
-            self.get_widget_by_id("confounds_selection").styles.offset = (0, 1)
+            self.get_widget_by_id("preprocessing").styles.height = 33
+            self.get_widget_by_id("confounds_selection").styles.offset = (0, 0)
             self.setting_dict["bandpass_filter"] = self.temp_bandpass_filter_selection
             # pass some default values to lp and hp widgets using this function
             self.set_bandpass_filter_values_after_toggle(message.control.value)
@@ -406,8 +406,8 @@ class FeatureTemplate(Widget):
             self.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id(
                 "input_switch_input_box"
             ).styles.visibility = "hidden"
-            self.get_widget_by_id("preprocessing").styles.height = 26
-            self.get_widget_by_id("confounds_selection").styles.offset = (0, -5)
+            self.get_widget_by_id("preprocessing").styles.height = 27
+            self.get_widget_by_id("confounds_selection").styles.offset = (0, -6)
             self.temp_bandpass_filter_selection = copy.deepcopy(self.setting_dict["bandpass_filter"])
             self.setting_dict["bandpass_filter"]["type"] = None
 
