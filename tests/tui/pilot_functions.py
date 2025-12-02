@@ -1,11 +1,28 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import os
 import shutil
 from pathlib import Path
 
-from textual.css.query import NoMatches
-
 from halfpipe.logging import logger
+
+
+async def click_until_gone(pilot, selector: str, max_failures: int = 3, delay: float = 0.1):
+    """
+    Clicks a UI element repeatedly until it no longer exists.
+
+    Stops only after `max_failures` consecutive exceptions.
+    """
+    failures = 0
+
+    while failures < max_failures:
+        try:
+            await pilot.click(selector)
+            failures = 0
+        except Exception:
+            failures += 1
+
+        await asyncio.sleep(delay)
 
 
 async def _load_data(pilot, data_path) -> None:
@@ -28,14 +45,14 @@ async def _load_data(pilot, data_path) -> None:
         logger.info(e)
     # await pilot.wait_for_scheduled_animations()
     # this part is to safely dismiss load screen
-    load_modal = True
-    while load_modal:
-        try:
-            load_modal_widget = pilot.app.get_widget_by_id("load_modal_panel")
-            await pilot.app.pop_screen()
-            load_modal = True
-        except NoMatches:
-            load_modal = False
+    # load_modal = True
+    # while load_modal:
+    #     try:
+    #         load_modal_widget = pilot.app.get_widget_by_id("load_modal_panel")
+    #         await pilot.app.pop_screen()
+    #         load_modal = True
+    #     except NoMatches:
+    #         load_modal = False
 
 
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
@@ -174,7 +191,9 @@ async def add_new_feature(pilot, feature_type=None, label=None, tab_type="f") ->
             await pilot.press(letter)
         # click on Ok button
         # await pilot.click(offset=(100, 30))
-        await pilot.click("#ok")
+        await click_until_gone(pilot, "#only_one_button")
+        await click_until_gone(pilot, "#ok")
+
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
@@ -407,13 +426,12 @@ async def add_bold(pilot, bold_pattern_path, set_repetition_time) -> None:
         await pilot.click("#cancel_right_button")
 
         # Specify repetition time in seconds: Click into prompt
-        # await pilot.click(offset=(96, 27))
-        await pilot.click("#input_prompt")
+        # await pilot.click(pilot.app.get_widget_by_id("input_prompt"))
         await clear_entry(pilot)
-        # Set time to '9'
+        # # Set time to '9'
         await pilot.press("9")
-        # Click Ok to dismiss
-        # await pilot.click(offset=(96, 31))
+        # # Click Ok to dismiss
+        # # await pilot.click(offset=(96, 31))
         await pilot.click("#only_one_button")
     else:
         # click Ok
@@ -665,11 +683,8 @@ async def run_before_for_reho_falff_preproc(
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    try:
-        await pilot.click("#only_one_button")
-    except Exception as e:
-        pilot.app.save_screenshot()
-        logger.info(e)
+    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    await click_until_gone(pilot, "#only_one_button")
 
     for task in tasks_by_stage[stage]:
         await task()
@@ -700,6 +715,10 @@ async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_
         # make choices of the space if it is not an event file pattern
         if event_file_pattern is False:
             await confirm_space_meta_data_after_selecting_file_pattern(pilot)
+
+        await click_until_gone(pilot, "#only_one_button")
+        await click_until_gone(pilot, "#ok")
+
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)

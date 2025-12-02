@@ -15,6 +15,7 @@ from .pilot_functions import (
     add_contrast_value_column,
     add_new_feature,
     check_and_run_tab_refresh,
+    click_until_gone,
     delete_column,
     deselect_conditions,
     preprocessing_options,
@@ -92,18 +93,13 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    try:
-        await pilot.click("#only_one_button")
-    except Exception as e:
-        pilot.app.save_screenshot()
-        logger.info(e)
+    await click_until_gone(pilot, "#only_one_button")
 
     for task in tasks_by_stage[stage]:
         await task()
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, unselect a condition, make a column in the table, delete it, make it again"""
     run_before_with_extra_args = partial(
@@ -113,7 +109,6 @@ def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: P
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_task_based_at_features_tab_p2(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -126,7 +121,6 @@ def test_task_based_at_features_tab_p2(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_task_based_features_at_spec_preview(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -141,7 +135,6 @@ def test_task_based_features_at_spec_preview(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_task_based_features_at_features_duplicate(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -155,7 +148,6 @@ def test_task_based_features_at_features_duplicate(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_task_based_features_duplicate_at_spec_preview(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
