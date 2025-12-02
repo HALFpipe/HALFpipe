@@ -146,7 +146,6 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_intercept_only_at_global_models_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, add intercept only group level model, make cutoff choices"""
     run_before_with_extra_args = partial(
@@ -159,7 +158,6 @@ def test_intercept_only_at_global_models_tab(snap_compare, start_app, work_dir_p
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_intercept_only_at_group_level_models_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -174,7 +172,6 @@ def test_intercept_only_at_group_level_models_tab_duplicate(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_intercept_only_at_spec_preview(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, add intercept only group level model, make cutoff choices, check spec file preview"""
     run_before_with_extra_args = partial(
@@ -184,7 +181,6 @@ def test_intercept_only_at_spec_preview(snap_compare, start_app, work_dir_path: 
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_linear_model_at_group_level_models_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
@@ -200,7 +196,6 @@ def test_linear_model_at_group_level_models_tab(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_linear_model_at_group_level_models_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
@@ -216,7 +211,6 @@ def test_linear_model_at_group_level_models_tab_duplicate(
 
 
 @pytest.mark.forked
-@pytest.mark.flaky(reruns=1)
 def test_linear_model_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:
