@@ -51,6 +51,8 @@ class BatchOptions:
     watchdog: bool = False
     verbose: bool = False
     fs_root: str | None = None
+    spec_path: str | None = None
+    bids_database_dir: str | None = None
 
     def validate(self):
         valid_keep = ["all", "some"]
@@ -462,6 +464,9 @@ class Run(Widget):
                         try:
                             batch_options = BatchOptions(batch_option_values)
                             batch_options.workdir = ctx.workdir
+                            batch_options.spec_path = None
+                            batch_options.bids_database_dir = None
+                            batch_options.fs_root = self.app.opts.fs_root
                             self._run_stage_workflow(batch_options)
                         except BaseException as e:
                             self.app.push_screen(
