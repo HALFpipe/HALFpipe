@@ -187,7 +187,7 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
     return make_spec(dataset_files=[bids_file], pcc_mask=pcc_mask, test_settings=test_settings, event_file=mock_task_events)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def bids_season_test_data(request):
     """
     Create a parallel-safe temporary BIDS hierarchy with optional number of sessions + workdir.
