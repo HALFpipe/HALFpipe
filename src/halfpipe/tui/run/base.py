@@ -462,6 +462,7 @@ class Run(Widget):
                         try:
                             batch_options = BatchOptions(batch_option_values)
                             batch_options.workdir = ctx.workdir
+                            batch_options.spec_path = None
                             self._run_stage_workflow(batch_options)
                         except BaseException as e:
                             self.app.push_screen(
