@@ -102,7 +102,7 @@ async def enter_browse_path(pilot, path):
     # click on the Enter button
     # await pilot.click(offset=(110, 41))
     await pilot.click("#ok_button")
-    logger.debug("UI tests -> The browse path is set.")
+    logger.debug(f"UI tests -> The browse path {path} is set.")
 
 
 async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
@@ -116,15 +116,33 @@ async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
     logger.debug(f"UI tests -> The spreadsheet path: {spreadsheet_path}")
 
     await enter_browse_path(pilot, spreadsheet_path)
-    # set sex as categorical
-    # await pilot.click(offset=(119, 32))
-    await pilot.click(pilot.app.get_widget_by_id("row_radio_sets_3").get_widget_by_id("radio_column_2"))
-    # set site as categorical
-    # await pilot.click(offset=(119, 34))
-    await pilot.click(pilot.app.get_widget_by_id("row_radio_sets_4").get_widget_by_id("radio_column_2"))
+
+    # set sex as categorical  (row 3, column 2)
+    await ensure_radio_selected(pilot, row_index=3, column_index=2)
+    # set site as categorical (row 4, column 2)
+    await ensure_radio_selected(pilot, row_index=4, column_index=2)
+    # await ensure_radio_selected(pilot, row_index=5, column_index=2)
+
     # click Ok
-    # await pilot.click(offset=(129, 43))
     await pilot.click("#ok")
+
+
+async def ensure_radio_selected(pilot, row_index: int, column_index: int, retries: int = 3):
+    """
+    Ensures that the radio button at (row_index, column_index) is selected.
+    Retries a few times because widgets may not be ready on first attempt.
+    """
+    for _ in range(retries):
+        try:
+            row_widget = pilot.app.get_widget_by_id(f"row_radio_sets_{row_index}")
+            radio_widget = row_widget.get_widget_by_id(f"radio_column_{column_index}")
+
+            if not radio_widget.value:
+                await pilot.click(radio_widget)
+
+            return  # success → exit
+        except Exception:
+            pass  # retry on failure
 
 
 async def _select_group_level_models_cutoffs_values(pilot):

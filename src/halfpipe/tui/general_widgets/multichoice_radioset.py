@@ -153,11 +153,28 @@ class MultipleRadioSet(Widget):
                 yield Label(" " + v_label + " " * (vmax_length - len(v_label)) + "  ", classes="v_labels")
                 with RadioSet(id="row_radio_sets_" + str(i)):
                     for j, _ in enumerate(self.horizontal_label_set):
-                        is_first_column = True if (self.unique_first_column and i == 0 and j == 0) else False
-                        value = 1 if is_first_column else (j + 1 - self.default_value_column)
+                        # old logic:
+                        # is_first_column = True if (self.unique_first_column and i == 0 and j == 0) else False
+                        # value = 1 if is_first_column else (j + 1 - self.default_value_column)
+                        # if self.default_values is not None:
+                        #     value = j == self.default_values[i]
+                        # yield RadioButton(id=f"radio_column_{j}", value=value)
+
+                        # new logic:
+                        # True when the widget is configured to make the first column unique
+                        # and this is the first row/first column cell (keeps original behavior).
+                        is_first_column = bool(self.unique_first_column and i == 0 and j == 0)
+
                         if self.default_values is not None:
-                            value = j == self.default_values[i]
-                        yield RadioButton(id=f"radio_column_{j}", value=value)
+                            # If per-row default_values are given, use them — but still allow the
+                            # special first-column flag to force True.
+                            checked = is_first_column or (j == int(self.default_values[i]))
+                        else:
+                            # Otherwise check if this column is the configured default column,
+                            # or the special first-column case.
+                            checked = is_first_column or (j == int(self.default_value_column))
+
+                        yield RadioButton(id=f"radio_column_{j}", value=bool(checked))
 
     def on_mount(self):
         """
