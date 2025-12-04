@@ -8,6 +8,7 @@ from pathlib import Path
 
 from fmriprep.workflows.bold.base import _get_wf_name
 from nipype.pipeline import engine as pe
+from smriprep.utils.misc import stringify_sessions
 
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
@@ -42,8 +43,28 @@ class Factory(ABC):
         source_file: Path | str | None = None,
         bids_subject_id: str | None = None,
         subject_id: str | None = None,
+        processing_group: list | None = None,
     ) -> str | None:
         bids_database = self.ctx.bids_database
+
+        logger.debug(
+            (
+                "Factory->_single_subject_wf_name-> "
+                f"bids_subject_id: {bids_subject_id}, "
+                f"subject_id: {subject_id}, "
+                f"processing_group: {processing_group}"
+            )
+        )
+
+        if processing_group is not None:
+            subject_id, sessions = processing_group
+            base = f"sub_{subject_id}"
+
+            if sessions is not None:  # None or empty list
+                session_str = stringify_sessions(sessions)
+                return f"{base}_ses_{session_str}_wf"
+            else:
+                return f"{base}_wf"
 
         if bids_subject_id is None:
             if source_file is not None:
@@ -72,6 +93,7 @@ class Factory(ABC):
         subject_id: str | None = None,
         childname: str | None = None,
         create_ok: bool = True,
+        processing_group=None,
     ):
         """
         Retrieve or create a hierarchy of workflows.
@@ -84,6 +106,8 @@ class Factory(ABC):
         hierarchy: list[pe.Workflow] = [self.ctx.workflow]
 
         def require_workflow(child_name):
+            logger.debug(f"_get_hierarchy-> require_workflow -> child_name: {child_name}")
+
             workflow = hierarchy[-1]
             child = workflow.get_node(child_name)
 
@@ -99,7 +123,9 @@ class Factory(ABC):
 
         require_workflow(name)
 
-        single_subject_wf_name = self._single_subject_wf_name(source_file=source_file, subject_id=subject_id)
+        single_subject_wf_name = self._single_subject_wf_name(
+            source_file=source_file, subject_id=subject_id, processing_group=processing_group
+        )
 
         if single_subject_wf_name is not None:
             require_workflow(single_subject_wf_name)
@@ -110,6 +136,8 @@ class Factory(ABC):
 
         if childname is not None:
             require_workflow(childname)
+
+        logger.debug(f"_get_hierarchy-> hierarchy: {hierarchy}")
 
         return hierarchy
 
