@@ -2,12 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import zipfile
+import tarfile
 from datetime import datetime
 from multiprocessing import cpu_count
 from pathlib import Path
 
 import pytest
+import zstandard
 from fmriprep import config
 
 from halfpipe.cli.parser import build_parser
@@ -274,15 +275,20 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         paths_to_zip.extend(list(confounds_sidecar or []))
         paths_to_zip.extend(report_figures)
 
-        # Create the zip file in the specified output directory
+        # Create the zstandard-compressed tar file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        zip_filename = f"{dataset.openneuro_id}_sub-{sub}_time-{timestamp}.zip"
-        zip_filepath = tmp_path / zip_filename
-        with zipfile.ZipFile(zip_filepath, "w") as zipf:
+        archive_filename = f"{dataset.openneuro_id}_sub-{sub}_time-{timestamp}.tar.zst"
+        archive_filepath = tmp_path / archive_filename
+        compressor = zstandard.ZstdCompressor(level=22, threads=24)
+        with (
+            archive_filepath.open("wb") as file_handle,
+            compressor.stream_writer(file_handle) as compression_handle,
+            tarfile.open(mode="w|", fileobj=compression_handle) as tar_file,
+        ):
             for file in paths_to_zip:
                 # Ensure file is a Path instance and convert it to string if needed
                 if not isinstance(file, Path):
                     raise TypeError(f"Unexpected type for file: {type(file)}")
-                zipf.write(str(file), arcname=str(file.relative_to(tmp_path)))
+                tar_file.add(file, arcname=str(file.relative_to(tmp_path)))
 
-        logger.info(f"Created zip file: {zip_filepath}")
+        logger.info(f"Created archive file: {archive_filepath}")
