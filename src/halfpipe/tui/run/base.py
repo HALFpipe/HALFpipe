@@ -10,7 +10,7 @@ from typing import Any
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Horizontal, ScrollableContainer
+from textual.containers import Horizontal, HorizontalScroll, ScrollableContainer
 from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, Pretty, RadioButton, Select, Static, TextArea
@@ -161,9 +161,16 @@ class BatchOptionModal(DraggableModalScreen):
         singularity_container_path = os.environ.get("SINGULARITY_CONTAINER", None)
         singularity_path_widget = Horizontal(
             Label("Singularity container path", classes="labels"),
-            PathOnlyInput(
-                value=singularity_container_path, validate_on="none", id="singularity_path_input", classes="input_path_values"
+            HorizontalScroll(
+                PathOnlyInput(
+                    value=singularity_container_path,
+                    validate_on="none",
+                    id="singularity_path_input",
+                    classes="input_list_values",
+                ),
+                id="singularity_path_input_horizontal_wrapper",
             ),
+            id="singularity_top_panel",
             classes="option_lists options",
         )
 
