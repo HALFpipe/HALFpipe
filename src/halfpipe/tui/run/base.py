@@ -10,7 +10,7 @@ from typing import Any
 
 from textual import on, work
 from textual.app import ComposeResult
-from textual.containers import Horizontal, ScrollableContainer
+from textual.containers import Horizontal, HorizontalScroll, ScrollableContainer
 from textual.message import Message
 from textual.widget import Widget
 from textual.widgets import Button, Input, Label, Pretty, RadioButton, Select, Static, TextArea
@@ -51,6 +51,8 @@ class BatchOptions:
     watchdog: bool = False
     verbose: bool = False
     fs_root: str | None = None
+    spec_path: str | None = None
+    bids_database_dir: str | None = None
 
     def validate(self):
         valid_keep = ["all", "some"]
@@ -159,9 +161,16 @@ class BatchOptionModal(DraggableModalScreen):
         singularity_container_path = os.environ.get("SINGULARITY_CONTAINER", None)
         singularity_path_widget = Horizontal(
             Label("Singularity container path", classes="labels"),
-            PathOnlyInput(
-                value=singularity_container_path, validate_on="none", id="singularity_path_input", classes="input_path_values"
+            HorizontalScroll(
+                PathOnlyInput(
+                    value=singularity_container_path,
+                    validate_on="none",
+                    id="singularity_path_input",
+                    classes="input_list_values",
+                ),
+                id="singularity_path_input_horizontal_wrapper",
             ),
+            id="singularity_top_panel",
             classes="option_lists options",
         )
 
@@ -462,6 +471,9 @@ class Run(Widget):
                         try:
                             batch_options = BatchOptions(batch_option_values)
                             batch_options.workdir = ctx.workdir
+                            batch_options.spec_path = None
+                            batch_options.bids_database_dir = None
+                            batch_options.fs_root = self.app.opts.fs_root
                             self._run_stage_workflow(batch_options)
                         except BaseException as e:
                             self.app.push_screen(

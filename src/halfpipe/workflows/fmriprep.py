@@ -16,6 +16,7 @@ from packaging.version import Version
 
 from ..collect.fmap import collect_fieldmaps
 from ..logging import logger
+from ..logging.describe_workflow import describe_workflow
 from ..utils.copy import deepcopyfactory
 from ..utils.format import inflect_engine as p
 from .constants import Constants
@@ -252,6 +253,8 @@ class FmriprepFactory(Factory):
         spec = self.ctx.spec
         global_settings = spec.global_settings
 
+        logger.debug(f"Processing groups are {processing_groups}")
+
         config_file = self.get_config(workdir, bids_subjects, processing_groups)
 
         retval: dict[str, pe.Workflow] = dict()
@@ -303,17 +306,18 @@ class FmriprepFactory(Factory):
 
         # halfpipe-specific report workflows
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
-        for subject_id in subjects:
+        for processing_group in processing_groups:
+            subject_id, sessions = processing_group
             hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
-
             wf = anat_report_wf_factory()
             hierarchy[-1].add_nodes([wf])
+
             hierarchy.append(wf)
 
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = {"sub": subject_id}
 
-            self.connect(hierarchy, inputnode, subject_id=subject_id)
+            self.connect(hierarchy, inputnode, subject_id=subject_id, processing_group=processing_group)
 
         for bold_file_path in bold_file_paths:
             hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path)
@@ -444,6 +448,7 @@ class FmriprepFactory(Factory):
         source_file: Path | str | None = None,
         subject_id: str | None = None,
         ignore_attrs: frozenset[str] = frozenset({"alt_bold_file_std", "alt_bold_mask_std"}),
+        processing_group=None,
         **_: Any,
     ) -> set[str]:
         """
@@ -455,10 +460,18 @@ class FmriprepFactory(Factory):
 
         hierarchies: dict[Literal["anat_fit_wf", "bold_wf", "reports_wf"], list[pe.Workflow]] = dict()
 
-        bold_wf_hierarchy = self._get_hierarchy(get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id)
+        bold_wf_hierarchy = self._get_hierarchy(
+            get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id, processing_group=processing_group
+        )
         hierarchies["bold_wf"] = bold_wf_hierarchy
 
         anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
+
+        for wf in anat_fit_wf_hierarchy:
+            describe_workflow(wf)
+
+        logger.debug(f"anat_fit_wf_hierarchy: {anat_fit_wf_hierarchy}")
+
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
             anat_fit_wf_hierarchy.pop(-1)
         anat_fit_wf_hierarchy.append(anat_fit_wf)
