@@ -1,7 +1,7 @@
 BatchOptionModal {
     align: center middle;
     #draggable_modal_screen_container_wrapper {
-        width: 72;
+        width: 90;
         height: auto;
         background: black;
     }
@@ -16,9 +16,9 @@ BatchOptionModal {
         border: white;
         width: auto;
     }
-        .input_list_values {
+    .input_list_values {
         border: white;
-        width: 32;
+        width: 50;
         height: auto;
     }
     .option_bools {
@@ -41,10 +41,26 @@ BatchOptionModal {
 
     #button_panel {
         align: right bottom;
-        height: 5;
+        height: 3;
         Button {
             margin: 0 1;
             width: 15;
         }
+    }
+    #singularity_path_input {
+        height: 1;
+        width: auto;
+        border: none;
+        min-width: 50;
+        padding: 0;
+    }
+    #singularity_path_input_horizontal_wrapper {
+    height: auto;
+                overflow-x: scroll;
+                height: 4;
+                border:white;        min-width: 50;
+    }
+    #singularity_top_panel {
+        offset-y: -1;
     }
 }
