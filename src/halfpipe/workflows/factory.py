@@ -221,7 +221,7 @@ class Factory(ABC):
         inputhierarchy, 
         inputnode
         ) -> set[str]:
-        # Connects workflows together based on commonly named attributes of output & input nodes
+        """ Connects workflows together based on commonly named attributes of output & input nodes. """
 
         if isinstance(outputnode, str):
             outputnode = outputhierarchy[-1].get_node(outputnode)
@@ -230,12 +230,20 @@ class Factory(ABC):
 
         inputattrs = set(inputnode.inputs.copyable_trait_names())
         outputattrs = set(outputnode.outputs.copyable_trait_names())
-        attrs = inputattrs & outputattrs  # find common attr names
+        # common attr names
+        attrs = inputattrs & outputattrs
 
         for attr in attrs:
             self.connect_attr(outputhierarchy, outputnode, attr, inputhierarchy, inputnode, attr)
         return attrs
 
-    def connect(self, nodehierarchy, node, *args, **kwargs) -> set[str]:
+    def connect(
+        self, 
+        nodehierarchy, 
+        node, 
+        *args, 
+        **kwargs
+        ) -> set[str]:
+        # get is implemented by subclasses
         outputhierarchy, outputnode = self.get(*args, **kwargs)
         return self.connect_common_attrs(outputhierarchy, outputnode, nodehierarchy, node)
