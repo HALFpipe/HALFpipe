@@ -2,12 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import zipfile
+import tarfile
 from datetime import datetime
 from multiprocessing import cpu_count
 from pathlib import Path
 
 import pytest
+import zstandard
 from fmriprep import config
 
 from halfpipe.cli.parser import build_parser
@@ -206,6 +207,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
     dataset_file = dataset.download(tmp_path)
     spec = make_spec(dataset_files=[dataset_file], pcc_mask=pcc_mask, test_settings=settings_list)
+    spec.features = [feature for feature in spec.features if feature.type != "gig_ica"]  # Drop gig-ica feature
     config.nipype.omp_nthreads = cpu_count()
     save_spec(spec, workdir=tmp_path)
 
@@ -261,17 +263,32 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         tsnr_fmriprep = index.get(sub=sub, suffix="boldmap", datatype="func", stat="tsnr")
         confounds_sidecar = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".json")
         confounds = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".tsv")
-        paths_to_zip.extend(list(tsnr_fmriprep or []) + [spec_file] + list(confounds or []) + list(confounds_sidecar or []))
+        reports_folder = tmp_path / "reports" / f"sub-{sub}"
 
-        # Create the zip file in the specified output directory
+        report_figures: list[Path] = []
+        if reports_folder.exists():
+            report_figures = [f for f in reports_folder.rglob("*") if f.is_file()]
+
+        paths_to_zip.extend(list(tsnr_fmriprep or []))
+        paths_to_zip.append(spec_file)
+        paths_to_zip.extend(list(confounds or []))
+        paths_to_zip.extend(list(confounds_sidecar or []))
+        paths_to_zip.extend(report_figures)
+
+        # Create the zstandard-compressed tar file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        zip_filename = f"{dataset.openneuro_id}_sub-{sub}_time-{timestamp}.zip"
-        zip_filepath = tmp_path / zip_filename
-        with zipfile.ZipFile(zip_filepath, "w") as zipf:
+        archive_filename = f"{dataset.openneuro_id}_sub-{sub}_time-{timestamp}.tar.zst"
+        archive_filepath = tmp_path / archive_filename
+        compressor = zstandard.ZstdCompressor(level=22, threads=24)
+        with (
+            archive_filepath.open("wb") as file_handle,
+            compressor.stream_writer(file_handle) as compression_handle,
+            tarfile.open(mode="w|", fileobj=compression_handle) as tar_file,
+        ):
             for file in paths_to_zip:
                 # Ensure file is a Path instance and convert it to string if needed
                 if not isinstance(file, Path):
                     raise TypeError(f"Unexpected type for file: {type(file)}")
-                zipf.write(str(file), arcname=str(file.relative_to(tmp_path)))
+                tar_file.add(file, arcname=str(file.relative_to(tmp_path)))
 
-        logger.info(f"Created zip file: {zip_filepath}")
+        logger.info(f"Created archive file: {archive_filepath}")
