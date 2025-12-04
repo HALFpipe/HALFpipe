@@ -19,7 +19,7 @@ from ..memory import MemoryCalculator
 
 from nipype import Node, Workflow
 from halfpipe.interfaces.gradients import Gradients
-from halfpipe.model.feature import Feature
+from halfpipe.model.downstream_feature import DownstreamFeature
 
 ##############
 # DRAFT CODE #
@@ -31,26 +31,13 @@ from halfpipe.model.feature import Feature
 def init_gradients_wf(
     workdir: str | Path,
     correlation_matrix, # TODO remove this & link I/O properly
-    feature: Feature | None = None,
+    downstream_feature: DownstreamFeature | None = None,
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
-    """
-    create workflow for gradients
-    """
-    ###########################
-    # Fill in optional inputs #
-    ###########################
+    """ Create workflow for gradients. """
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
 
-    # Hard for me to understand this
-    # where is feature name defined? 
-    #   user defines it in UI (?)
-    # where is feature generated? 
-    #   in UI from spec file
-    if feature is not None:
-        name = f"{format_workflow(feature.name)}_wf"
-    else:
-        name = "gradients_wf"
+    name = f"{format_workflow(downstream_feature.name)}_wf"
     workflow = pe.Workflow(name=name)
 
     ###################
@@ -89,33 +76,31 @@ def init_gradients_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
-    if Feature is not None:
-        # Why would the Feature be None?
-        inputnode.inputs.n_components = feature.n_components
-        inputnode.inputs.approach = feature.approach
-        inputnode.inputs.kernel = feature.kernel
-        inputnode.inputs.random_state = feature.random_state
-        inputnode.inputs.alignment = feature.alignment
+    inputnode.inputs.n_components = downstream_feature.n_components
+    inputnode.inputs.approach = downstream_feature.approach
+    inputnode.inputs.kernel = downstream_feature.kernel
+    inputnode.inputs.random_state = downstream_feature.random_state
+    inputnode.inputs.alignment = downstream_feature.alignment
 
-        inputnode.inputs.gamma = feature.gamma
-        inputnode.inputs.sparsity = feature.sparsity
-        inputnode.inputs.n_iter = feature.n_iter
-        inputnode.inputs.reference = feature.reference
+    inputnode.inputs.gamma = downstream_feature.gamma
+    inputnode.inputs.sparsity = downstream_feature.sparsity
+    inputnode.inputs.n_iter = downstream_feature.n_iter
+    inputnode.inputs.reference = downstream_feature.reference
 
     # TODO how do I collect x (connectivity matrix) from previous node of halfpipe?
+    # additionally think of multiple atlases case 
     inputnode.inputs.correlation_matrix = correlation_matrix
 
     # how to know what keys are needed/wanted?
     # here adding new keys to resultdict 
     make_resultdicts = pe.Node(
         MakeResultdicts(
-            tagkeys=["feature", "reference"], # tag keys go to filename (needs to be changed in model.tags.resultdict.py)
+            tagkeys=["downstream_feature", "reference"], # tag keys go to filename (needs to be changed in model.tags.resultdict.py)
             imagekeys=["lambdas", "gradients", "aligned"], # 'aligned' is an optional output so this might be wrong way
         ),
         name="make_resultdicts",
     )
-    if feature is not None:
-        make_resultdicts.inputs.feature = feature.name
+    make_resultdicts.inputs.downstream_feature = downstream_feature.name
 
     # Connect inputnode values to relevant make_resultdicts outputs
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")

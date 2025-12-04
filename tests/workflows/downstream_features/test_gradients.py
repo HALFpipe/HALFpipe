@@ -3,16 +3,12 @@ import pytest
 import numpy as np
 #import pandas as pd
 
-from halfpipe.model.feature import Feature #, GradientsFeatureSchema, FeatureSchema
+from halfpipe.model.downstream_feature import DownstreamFeature
 from halfpipe.workflows.memory import MemoryCalculator
 
-from halfpipe.workflows.features.gradients import init_gradients_wf
+from halfpipe.workflows.downstream_features.gradients import init_gradients_wf
 from halfpipe.utils.nipype import run_workflow
 #from traits.trait_errors import TraitError
-
-# TODO
-# test I/O through features/nodes/workflow
-# how do you define a feature to then pass elsewhere?
 
 def test_gradients_wf_input(tmp_path):
     """ Test to check if input is accepted."""
@@ -23,7 +19,7 @@ def test_gradients_wf_input(tmp_path):
 
     # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be filled by the input spec
     # I have many questions about how features are created and validated
-    feat = Feature(
+    feat = DownstreamFeature(
         "gradients", # name
         "gradients", # type
         # kwargs
@@ -57,7 +53,7 @@ def test_gradients_wf_run(tmp_path):
 
     # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be filled by the input spec
     # I have many questions about how features are created and validated
-    feat = Feature(
+    feat = DownstreamFeature(
         "gradients", # name
         "gradients", # type
         # Traits complains for none 
@@ -85,7 +81,7 @@ def test_gradients_wf_run(tmp_path):
         memcalc)
 
     # I dont understand why this would be defined here and not in the init_wf but im following halfpipe (atlas_based_connectivity)
+    # bc of nested workflows w/ different base_dir
     wf.base_dir = workdir
     
     graph = run_workflow(wf)
-
