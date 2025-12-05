@@ -26,7 +26,7 @@ jobs:
     timeout-minutes: 1440 # Set to 24 hours
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           # Check out full history for `setuptools_scm`
           fetch-depth: 0
@@ -152,7 +152,7 @@ jobs:
             --ignore=tests/tui
       - name: Upload snapshot report
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: snapshot-report
           path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
