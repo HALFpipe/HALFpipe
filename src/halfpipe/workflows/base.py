@@ -7,6 +7,7 @@ from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
+from ..configurables import configurables
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
@@ -72,6 +73,9 @@ def init_workflow(
 
     if len(spec.features) == 0 and not any(setting.get("output_image") is True for setting in spec.settings):
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
+
+    # globally initialize reference resolution from the global settings
+    configurables.reference_res = spec.global_settings.get("reference_res")
 
     # create factories
 

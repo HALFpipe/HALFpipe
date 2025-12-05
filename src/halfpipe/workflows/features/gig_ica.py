@@ -16,6 +16,7 @@ from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ...model.feature import Feature
 from ...utils.format import format_workflow
+from ..configurables import configurables
 from ..constants import Constants
 from ..memory import MemoryCalculator
 
@@ -101,7 +102,7 @@ def init_gig_ica_wf(
     )
     if space == "standard":
         resample_maps.inputs.reference_space = Constants.reference_space
-        resample_maps.inputs.reference_res = Constants.reference_res
+        resample_maps.inputs.reference_res = configurables.reference_res
     elif space == "native":
         workflow.connect(inputnode, "std2anat_xfm", resample_maps, "transforms")
         workflow.connect(inputnode, "bold_ref_anat", resample_maps, "reference_image")

@@ -9,6 +9,7 @@ import pint
 from templateflow.api import get as get_template
 
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
+from .configurables import configurables
 from .constants import Constants
 
 ureg = pint.UnitRegistry()
@@ -29,7 +30,7 @@ class MemoryCalculator(NamedTuple):
 
         reference_file = get_template(
             Constants.reference_space,
-            resolution=Constants.reference_res,
+            resolution=configurables.reference_res,
             desc="brain",
             suffix="mask",
         )

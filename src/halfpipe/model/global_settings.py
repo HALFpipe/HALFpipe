@@ -50,6 +50,8 @@ class GlobalSettingsSchema(Schema):
 
     sloppy = fields.Boolean(dump_default=False)
 
+    reference_res = fields.Int(dump_default=2)
+
     @pre_load
     def fill_default_values(self, in_data, **_):  # make load_default equal to dump_default
         for k, v in self.fields.items():

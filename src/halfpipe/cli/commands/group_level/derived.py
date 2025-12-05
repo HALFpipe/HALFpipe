@@ -27,6 +27,7 @@ from ....result.variables import Continuous
 from ....utils.multiprocessing import make_pool_or_null_context
 from ....utils.nipype import run_workflow
 from ....utils.path import AnyPath
+from ....workflows.configurables import configurables
 from ....workflows.constants import Constants
 from ....workflows.features.jacobian import init_jacobian_wf
 from .design import DesignBase
@@ -173,7 +174,7 @@ class ImagingVariables:
             datatype="anat",
             sub=subject,
             space=Constants.reference_space,
-            res=str(Constants.reference_res),
+            res=str(configurables.reference_res),
             desc="brain",
             suffix="mask",
             extension=".nii.gz",
