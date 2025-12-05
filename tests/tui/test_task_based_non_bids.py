@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from halfpipe.logging import logger
 
 from .pilot_functions import (
@@ -12,6 +14,7 @@ from .pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
+    click_until_gone,
     select_images,
     set_non_bids_data,
     settable_scroll_screen_down,
@@ -25,7 +28,7 @@ async def run_before(
     # -n 2 flag for the pytest, i.e., running each test with a separate worker
     how_much_down = 0
 
-    pilot.app.reload_ui()
+    # pilot.app.reload_ui()
     if isinstance(data_path, Path):
         data_path = str(data_path)
     if isinstance(work_dir_path, Path):
@@ -74,7 +77,7 @@ async def run_before(
     if stage == "at_spec_preview":
         how_much_down = 60
     elif stage == "duplicate_at_spec_preview":
-        how_much_down = 36
+        how_much_down = 38
 
     # Execute tasks based on the specified stage
     # set work dir
@@ -83,11 +86,7 @@ async def run_before(
     await set_non_bids_data(pilot, t1_path_pattern, bold_path_pattern)
     # same reason for this as at work_tab case
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    try:
-        await pilot.click("#only_one_button")
-    except Exception as e:
-        pilot.app.save_screenshot()
-        logger.info(e)
+    await click_until_gone(pilot, "#only_one_button")
 
     await pilot.click(offset=(25, 25))
     await pilot.click(offset=(25, 25))
@@ -96,6 +95,7 @@ async def run_before(
         await task()
 
 
+@pytest.mark.forked
 def test_task_based_non_bids_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -117,6 +117,7 @@ def test_task_based_non_bids_at_features_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_task_based_non_bids_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -137,6 +138,7 @@ def test_task_based_non_bids_at_spec_preview(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_task_based_non_bids_at_features_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -155,6 +157,7 @@ def test_task_based_non_bids_at_features_tab_duplicate(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_task_based_features_duplicate_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -171,39 +174,3 @@ def test_task_based_features_duplicate_at_spec_preview(
         bold_path_pattern=bold_path_pattern,
     )
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-#
-# def test_task_based_features_at_spec_preview(
-#     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
-# ) -> None:
-#     """Continue from p1 and p2 to spec preview (last tab), also the spec file is saved for further inspection"""
-#     run_before_with_extra_args = partial(
-#         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_spec_preview"
-#     )
-#
-#     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-# def test_task_based_features_at_features_duplicate(
-#     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
-# ) -> None:
-#     """Continue from p1 and p2, click on duplicate, scroll to the part where the table and preprocessing
-#     options can be seen."""
-#     run_before_with_extra_args = partial(
-#         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_features_duplicate"
-#     )
-#
-#     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-#
-#
-# def test_task_based_features_duplicate_at_spec_preview(
-#     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
-# ) -> None:
-#     """Continue from test_task_based_features_at_features_duplicate to spec preview because we need to be sure that the
-#     duplicate was propagated also the the cache and further to the spec file."""
-#     run_before_with_extra_args = partial(
-#         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="duplicate_at_spec_preview"
-#     )
-#
-#     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)

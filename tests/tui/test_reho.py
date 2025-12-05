@@ -3,9 +3,12 @@
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from .pilot_functions import run_before_for_reho_falff_preproc
 
 
+@pytest.mark.forked
 def test_reho_at_features_tab(
     snap_compare,
     start_app,
@@ -24,6 +27,7 @@ def test_reho_at_features_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_reho_at_spec_preview(
     snap_compare,
     start_app,
