@@ -58,10 +58,14 @@ class FeatureFactory(Factory):
         return False
 
     def setup(self, raw_sources_dict: dict | None = None):
+        logger.info(f'FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict}')
+
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
 
         for feature in self.ctx.spec.features:
+            logger.info(f'FeatureFactory->setup-> feature: {feature}')
             source_files = set(raw_sources_dict.keys())
+            logger.info(f'FeatureFactory->setup-> source_files: {source_files}')
 
             setting = _find_setting(feature.setting, self.ctx.spec)
 
@@ -74,6 +78,7 @@ class FeatureFactory(Factory):
                 self.create(source_file, feature, raw_sources=source_file_raw_sources)
 
     def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
+        logger.info(f'FeatureFactory->create args: source_file: {source_file}, feature: {feature}, raw_sources: {raw_sources}')
         raw_sources = [] if raw_sources is None else raw_sources
         hierarchy = self._get_hierarchy("features_wf", source_file=source_file)
         parent_workflow = hierarchy[-1]
@@ -206,6 +211,7 @@ class FeatureFactory(Factory):
         return workflow
 
     def get(self, feature_name: str, *_: Any) -> list[list[pe.Workflow]]:
+        logger.info(f'FeatureFactory->get->print whole workflow {self.workflows}')
         return self.workflows[feature_name]
 
     def connect(self, *args, **kwargs):

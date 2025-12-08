@@ -271,6 +271,10 @@ class FmriprepFactory(Factory):
         skipped = set()
         for bold_file_path in bold_file_paths:
             func_preproc_wf = self._get_hierarchy(get_fmriprep_wf_name(), source_file=bold_file_path)[-1]
+            logger.info(f'FmriPrepFactory->setup-> func_preproc_wf: {func_preproc_wf} and bold_file_path: {bold_file_path} and len(func_preproc_wf._graph: {len(func_preproc_wf._graph)}')
+            func_preproc_wf_hierarchy = describe_workflow(func_preproc_wf)
+
+            logger.debug(f"func_preproc_wf_hierarchy: {func_preproc_wf_hierarchy}")
 
             if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
                 logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
