@@ -8,6 +8,7 @@ from ..factory import Factory
 from ..fmriprep import FmriprepFactory
 from ..memory import MemoryCalculator
 from .alt import init_alt_bold_std_trans_wf
+from ...logging import logger
 
 
 class AltBOLDFactory(Factory):
@@ -45,7 +46,16 @@ class AltBOLDFactory(Factory):
         hierarchy.append(vwf)
 
         if connect:
-            self.previous_factory.connect(hierarchy, inputnode, source_file=source_file)
+
+
+            if self.previous_factory.__class__.__name__ == "FmriprepFactory":
+                logger.debug("resamping, connect with fmriprep factory")
+                self.previous_factory.connect(hierarchy, inputnode, source_file=source_file,
+                                              processing_group=self.previous_factory.processing_groups
+                )
+            else:
+                self.previous_factory.connect(hierarchy, inputnode, source_file=source_file)
+
 
         outputnode = vwf.get_node("outputnode")
 

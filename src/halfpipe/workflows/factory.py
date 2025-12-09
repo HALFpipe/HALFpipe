@@ -85,17 +85,19 @@ class Factory(ABC):
 
         if isinstance(processing_group, list):
             sessions = dict(processing_group)[bids_subject_id]
-            session_str = stringify_sessions(sessions)
-            wf_label = f"sub_{bids_subject_id}_ses_{session_str}_wf"
-            logger.debug(
-                (
-                    "Factory->_single_subject_wf_name-> if bids_subject_id is none"
-                    "and processing_group is a list -> "
-                    f"return : {wf_label}, "
-                )
-            )
+            if sessions is not None:  # None or empty list
 
-            return wf_label
+                session_str = stringify_sessions(sessions)
+                wf_label = f"sub_{bids_subject_id}_ses_{session_str}_wf"
+                logger.debug(
+                    (
+                        "Factory->_single_subject_wf_name-> if bids_subject_id is none"
+                        "and processing_group is a list -> "
+                        f"return : {wf_label}, "
+                    )
+                )
+
+                return wf_label
 
         if bids_subject_id is not None:
             # the naming has changed from single_subject_% to sub_% in fmriprep24
