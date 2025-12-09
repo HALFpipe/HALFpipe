@@ -43,20 +43,22 @@ class Factory(ABC):
         source_file: Path | str | None = None,
         bids_subject_id: str | None = None,
         subject_id: str | None = None,
-        processing_group: list | None = None,
+        processing_group: tuple | list | None = None,
     ) -> str | None:
         bids_database = self.ctx.bids_database
 
         logger.debug(
             (
+                f"Operating in class: {self.__class__.__name__} ",
                 "Factory->_single_subject_wf_name-> "
+                f"source_file: {source_file},"
                 f"bids_subject_id: {bids_subject_id}, "
                 f"subject_id: {subject_id}, "
-                f"processing_group: {processing_group}"
+                f"processing_group: {processing_group}",
             )
         )
 
-        if processing_group is not None:
+        if isinstance(processing_group, tuple):
             subject_id, sessions = processing_group
             base = f"sub_{subject_id}"
 
@@ -73,6 +75,27 @@ class Factory(ABC):
                 subject_id = bids_database.get_tag_value(bids_path, "subject")
             if subject_id is not None:
                 bids_subject_id = format_like_bids(subject_id)
+            logger.debug(
+                (
+                    "Factory->_single_subject_wf_name-> if bids_subject_id is none"
+                    "and processing_group is a list -> "
+                    f"bids_subject_id: {bids_subject_id}, "
+                )
+            )
+
+        if isinstance(processing_group, list):
+            sessions = dict(processing_group)[bids_subject_id]
+            session_str = stringify_sessions(sessions)
+            wf_label = f"sub_{bids_subject_id}_ses_{session_str}_wf"
+            logger.debug(
+                (
+                    "Factory->_single_subject_wf_name-> if bids_subject_id is none"
+                    "and processing_group is a list -> "
+                    f"return : {wf_label}, "
+                )
+            )
+
+            return wf_label
 
         if bids_subject_id is not None:
             # the naming has changed from single_subject_% to sub_% in fmriprep24
@@ -104,6 +127,12 @@ class Factory(ABC):
         """
 
         hierarchy: list[pe.Workflow] = [self.ctx.workflow]
+        logger.debug(f"_get_hierarchy-> Operating in class: {self.__class__.__name__} ")
+        logger.debug(f"_get_hierarchy-> name: {name} ")
+        logger.debug(f"_get_hierarchy-> source_file: {source_file} ")
+        logger.debug(f"_get_hierarchy-> childname: {childname} ")
+        logger.debug(f"_get_hierarchy-> create_ok: {create_ok} ")
+        logger.debug(f"_get_hierarchy-> processing_group: {processing_group} ")
 
         def require_workflow(child_name):
             logger.debug(f"_get_hierarchy-> require_workflow -> child_name: {child_name}")

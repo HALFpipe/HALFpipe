@@ -259,16 +259,16 @@ def create_bids_data(
 
 
 # # Example usage
-# base_path = "ds002785"  # Root directory
-# number_of_subjects = 3  # Number of subjects to create directories for
-# tasks_conditions_dict = {
-#     # 'gstroop_acq-seq':['congruent', 'incongruent'],
-#     "anticipation_acq-seq": ["cue_negative", "cue_neutral", "img_negative", "img_neutral"],
-#     "workingmemory_acq-seq": ["active_change", "active_nochange", "passive"],
-#     "restingstate-mb3": [],
-#     # 'emomatching-seq':['control', 'emotion'],
-#     # 'faces-mb3':['anger', 'contempt', 'joy', 'neutral', 'pride']
-# }
-# create_bids_data(
-#     base_path, number_of_subjects=number_of_subjects, tasks_conditions_dict=tasks_conditions_dict, field_maps=True
-# )
+base_path = "bidstestdata"  # Root directory
+number_of_subjects = 3  # Number of subjects to create directories for
+tasks_conditions_dict = {
+    # 'gstroop_acq-seq':['congruent', 'incongruent'],
+    "anticipation_acq-seq": ["cue_negative", "cue_neutral", "img_negative", "img_neutral"],
+    "workingmemory_acq-seq": ["active_change", "active_nochange", "passive"],
+    "restingstate-mb3": [],
+    # 'emomatching-seq':['control', 'emotion'],
+    # 'faces-mb3':['anger', 'contempt', 'joy', 'neutral', 'pride']
+}
+create_bids_data(
+    base_path, number_of_subjects=number_of_subjects, tasks_conditions_dict=tasks_conditions_dict, field_maps=True, sessions=None
+)

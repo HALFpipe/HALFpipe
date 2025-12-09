@@ -80,7 +80,9 @@ class ICAAROMAComponentsFactory(Factory):
             self.ctx.database.fillmetadata("repetition_time", [source_file])
             inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
             self.alt_bold_factory.connect(hierarchy, inputnode, source_file=source_file)
-            self.fmriprep_factory.connect(hierarchy, inputnode, source_file=source_file)
+            self.fmriprep_factory.connect(
+                hierarchy, inputnode, source_file=source_file, processing_group=self.fmriprep_factory.processing_groups
+            )
 
         outputnode = vwf.get_node("outputnode")
 
@@ -90,6 +92,7 @@ class ICAAROMAComponentsFactory(Factory):
 class LookupFactory(Factory):
     def __init__(self, ctx: FactoryContext, previous_factory: Factory) -> None:
         super(LookupFactory, self).__init__(ctx)
+        self.processing_groups = None
 
         self.wf_names: dict[SettingTuple, str] = dict()
         self.wf_factories: dict[LookupTuple, Callable] = dict()
@@ -97,8 +100,15 @@ class LookupFactory(Factory):
         self.tpl_by_setting_name: dict[str, SettingTuple] = dict()
 
         self.previous_factory = previous_factory
+        logger.debug(f"previous_factory: {self.previous_factory.__class__.__name__} ")
+        logger.debug(f"current_factory: {self.__class__.__name__} ")
+
+        self.processing_groups = self.previous_factory.processing_groups
+        logger.debug(f"processing_group: {self.processing_groups} ")
 
     def setup(self) -> None:
+        logger.debug(f"setup previous_factory: {self.previous_factory.__class__.__name__}")
+        logger.debug(f"setup current_factory: {self.__class__.__name__} ")
         setting_names = [setting["name"] for setting in self.ctx.spec.settings]
 
         previous_tpls: list[SettingTuple] = []
@@ -138,12 +148,26 @@ class LookupFactory(Factory):
         return obj is None
 
     def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple):
+        logger.debug(f"_connect_inputs previous_factory: {self.previous_factory.__class__.__name__} ")
+        logger.debug(f"_connect_inputs current_factory: {self.__class__.__name__} ")
+
         if hasattr(inputnode.inputs, "repetition_time"):
             self.ctx.database.fillmetadata("repetition_time", [source_file])
             inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
         if hasattr(inputnode.inputs, "tags"):
             inputnode.inputs.tags = self.ctx.database.tags(source_file)
-        self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
+        logger.debug(f"self.previous_factory.__class__.__name__  {self.previous_factory.__class__.__name__}")
+        if self.previous_factory.__class__.__name__ == "FmriprepFactory":
+            logger.debug("heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeereeeeeeeeeeeeeeeeeeee")
+            self.previous_factory.connect(
+                hierarchy,
+                inputnode,
+                source_file=source_file,
+                setting_name=setting_name,
+                processing_group=self.previous_factory.processing_groups,
+            )
+        else:
+            self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
 
     def wf_factory(self, lookup_tuple: LookupTuple):
         if lookup_tuple not in self.wf_factories:
@@ -440,7 +464,7 @@ class PostProcessingFactory(Factory):
                     source_files |= self.ctx.database.applyfilters(bold_file_paths, filters)
         return source_files
 
-    def setup(self, raw_sources_dict: dict | None = None) -> None:
+    def setup(self, raw_sources_dict: dict | None = None, processing_groups=None) -> None:
         if raw_sources_dict is None:
             raw_sources_dict = dict()
 
@@ -471,7 +495,9 @@ class PostProcessingFactory(Factory):
                 source_files = self.ctx.database.applyfilters(source_files, filters)
 
             for source_file in source_files:
-                hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
+                hierarchy = self._get_hierarchy(
+                    "post_processing_wf", source_file=source_file, processing_group=processing_groups
+                )
 
                 wf = setting_output_wf_factory()
                 hierarchy[-1].add_nodes([wf])

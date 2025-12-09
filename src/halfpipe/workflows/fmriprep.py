@@ -211,6 +211,7 @@ connections = {
 class FmriprepFactory(Factory):
     def __init__(self, ctx):
         super(FmriprepFactory, self).__init__(ctx)
+        self.processing_groups = None
 
     def setup(self, workdir: Path, bold_file_paths: set[str]) -> set[str]:
         """
@@ -249,6 +250,7 @@ class FmriprepFactory(Factory):
             (bids_subject, list(bids_subject_sessions[bids_subject]) if bids_subject_sessions[bids_subject] else None)
             for bids_subject in bids_subjects
         ]
+        self.processing_groups = processing_groups
 
         spec = self.ctx.spec
         global_settings = spec.global_settings
@@ -270,8 +272,12 @@ class FmriprepFactory(Factory):
         # check and patch workflow
         skipped = set()
         for bold_file_path in bold_file_paths:
-            func_preproc_wf = self._get_hierarchy(get_fmriprep_wf_name(), source_file=bold_file_path)[-1]
-            logger.info(f'FmriPrepFactory->setup-> func_preproc_wf: {func_preproc_wf} and bold_file_path: {bold_file_path} and len(func_preproc_wf._graph: {len(func_preproc_wf._graph)}')
+            func_preproc_wf = self._get_hierarchy(
+                get_fmriprep_wf_name(), source_file=bold_file_path, processing_group=processing_groups
+            )[-1]
+            logger.info(
+                f"FmriPrepFactory->setup-> func_preproc_wf: {func_preproc_wf} and bold_file_path: {bold_file_path} and len(func_preproc_wf._graph: {len(func_preproc_wf._graph)}"
+            )
             func_preproc_wf_hierarchy = describe_workflow(func_preproc_wf)
 
             logger.debug(f"func_preproc_wf_hierarchy: {func_preproc_wf_hierarchy}")
@@ -321,6 +327,7 @@ class FmriprepFactory(Factory):
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = {"sub": subject_id}
 
+            logger.debug("FMRIprep connecting on anat_report_wf_factory")
             self.connect(hierarchy, inputnode, subject_id=subject_id, processing_group=processing_group)
 
         for bold_file_path in bold_file_paths:
@@ -341,9 +348,10 @@ class FmriprepFactory(Factory):
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
 
-            self.connect(hierarchy, inputnode, source_file=bold_file_path)
+            logger.debug("FMRIprep connecting on init_func_report_wf")
+            self.connect(hierarchy, inputnode, source_file=bold_file_path, processing_group=processing_groups)
 
-        return bold_file_paths
+        return bold_file_paths, processing_groups
 
     def get_config(
         self, workdir: Path, bids_subjects: set[str], processing_groups: list[tuple[str, list[str] | None]]
@@ -474,7 +482,9 @@ class FmriprepFactory(Factory):
         for wf in anat_fit_wf_hierarchy:
             describe_workflow(wf)
 
+        logger.debug(f"Operating in class: {self.__class__.__name__} ")
         logger.debug(f"anat_fit_wf_hierarchy: {anat_fit_wf_hierarchy}")
+        logger.debug(f"processing_group were: {processing_group}")
 
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
             anat_fit_wf_hierarchy.pop(-1)

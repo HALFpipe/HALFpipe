@@ -23,7 +23,6 @@ from .memory import MemoryCalculator
 from .mriqc import MriqcFactory
 from .post_processing import PostProcessingFactory
 from .stats import StatsFactory
-from ..logging import logger
 
 
 def init_workflow(
@@ -75,7 +74,7 @@ def init_workflow(
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
     # create factories
-    logger.info('init_workflow->creating factories')
+    logger.info("init_workflow->creating factories")
     ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
     fmriprep_factory = FmriprepFactory(ctx)
     post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
@@ -83,7 +82,7 @@ def init_workflow(
     stats_factory = StatsFactory(ctx, feature_factory)
 
     bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)
-    logger.info(f'init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}')
+    logger.info(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
 
     # write out
 
@@ -107,7 +106,7 @@ def init_workflow(
     # setup preprocessing
 
     if spec.global_settings.get("run_mriqc") is True:
-        logger.info('init_workflow->going to setup mriqc_factory')
+        logger.info("init_workflow->going to setup mriqc_factory")
         mriqc_factory = MriqcFactory(ctx)
         mriqc_factory.setup(
             workdir,
@@ -115,12 +114,12 @@ def init_workflow(
         )
 
     if spec.global_settings.get("run_fmriprep") is True:
-        logger.info('init_workflow->going to setup fmriprep_factory')
-        fmriprep_bold_file_paths = fmriprep_factory.setup(
+        logger.info("init_workflow->going to setup fmriprep_factory")
+        fmriprep_bold_file_paths, processing_groups = fmriprep_factory.setup(
             workdir,
             set(bold_file_paths_dict.keys()),
         )
-        logger.info(f'init_workflow->fmriprep_bold_file_paths: {fmriprep_bold_file_paths}')
+        logger.info(f"init_workflow->fmriprep_bold_file_paths: {fmriprep_bold_file_paths}")
 
         # filter out skipped files
         bold_file_paths_dict = {
@@ -128,14 +127,14 @@ def init_workflow(
             for bold_file_path, associated_file_paths in bold_file_paths_dict.items()
             if bold_file_path in fmriprep_bold_file_paths
         }
-        logger.info(f'init_workflow->bold_file_paths_dict: {bold_file_paths_dict}')
+        logger.info(f"init_workflow->bold_file_paths_dict: {bold_file_paths_dict}")
 
         if spec.global_settings.get("run_halfpipe") is True:
-            logger.info('init_workflow->going to setup post_processing_factory')
-            post_processing_factory.setup(bold_file_paths_dict)
-            logger.info('init_workflow->going to setup feature_factory')
+            logger.info("init_workflow->going to setup post_processing_factory")
+            post_processing_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
+            logger.info("init_workflow->going to setup feature_factory")
             feature_factory.setup(bold_file_paths_dict)
-            logger.info('init_workflow->going to setup stats_factory')
+            logger.info("init_workflow->going to setup stats_factory")
             stats_factory.setup()
 
     # patch workflow
