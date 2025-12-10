@@ -24,6 +24,7 @@ from .mriqc import MriqcFactory
 from .post_processing import PostProcessingFactory
 from .stats import StatsFactory
 
+from ..logging.describe_workflow import describe_workflow
 
 def init_workflow(
     workdir: Path, spec: Optional[Spec] = None, spec_path: Path | None = None, bids_database_dir: Path | None = None
@@ -133,7 +134,7 @@ def init_workflow(
             logger.info("init_workflow->going to setup post_processing_factory")
             post_processing_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
             logger.info("init_workflow->going to setup feature_factory")
-            feature_factory.setup(bold_file_paths_dict)
+            feature_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
             logger.info("init_workflow->going to setup stats_factory")
             stats_factory.setup()
 
@@ -154,5 +155,11 @@ def init_workflow(
 
     logger.info(f"Finished workflow {uuidstr}")
     cache_obj(workdir, ".workflow", workflow)
+
+
+    describe_workflow(workflow)
+
+    workflow.write_graph( graph2use='exec', format='svg', simple_form=False, dotfilename='./graph.dot')
+
 
     return workflow

@@ -51,12 +51,13 @@ class ICAAROMAComponentsFactory(Factory):
         self.alt_bold_factory = alt_bold_factory
         self.fmriprep_factory = fmriprep_factory
 
-    def setup(self):
+    def setup(self, processing_groups=None):
         prototype = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir))
         self.wf_name = prototype.name
+        self.processing_groups = processing_groups
 
     def get(self, source_file, **_):
-        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
+        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
         wf = hierarchy[-1]
 
         vwf = wf.get_node(self.wf_name)
@@ -106,7 +107,8 @@ class LookupFactory(Factory):
         self.processing_groups = self.previous_factory.processing_groups
         logger.debug(f"processing_group: {self.processing_groups} ")
 
-    def setup(self) -> None:
+    def setup(self, processing_groups=None) -> None:
+        self.processing_groups = processing_groups
         logger.debug(f"setup previous_factory: {self.previous_factory.__class__.__name__}")
         logger.debug(f"setup current_factory: {self.__class__.__name__} ")
         setting_names = [setting["name"] for setting in self.ctx.spec.settings]
@@ -167,7 +169,7 @@ class LookupFactory(Factory):
                 processing_group=self.previous_factory.processing_groups,
             )
         else:
-            self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
+            self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)#, processing_group=self.processing_groups)
 
     def wf_factory(self, lookup_tuple: LookupTuple):
         if lookup_tuple not in self.wf_factories:
@@ -182,7 +184,7 @@ class LookupFactory(Factory):
         return self.wf_factories[lookup_tuple]()
 
     def get(self, source_file, setting_name):
-        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
+        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
         wf = hierarchy[-1]
 
         setting_tuple = self.tpl_by_setting_name[setting_name]
@@ -205,6 +207,8 @@ class LookupFactory(Factory):
         inputnode = vwf.get_node("inputnode")
         hierarchy.append(vwf)
 
+        logger.debug(f'lookup factory get-> hierarchy {hierarchy}, inputnode: {inputnode}, source_file: {source_file}'
+                     f', setting_name {setting_name}, lookup_tuple {lookup_tuple}')
         if connect_inputs:
             self._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
 
@@ -468,17 +472,17 @@ class PostProcessingFactory(Factory):
         if raw_sources_dict is None:
             raw_sources_dict = dict()
 
-        self.alt_bold_factory.setup()
-        self.ica_aroma_components_factory.setup()
-        self.fmriprep_adapter_factory.setup()
-        self.smoothing_factory.setup()
-        self.grand_mean_scaling_factory.setup()
-        self.ica_aroma_regression_factory.setup()
-        self.bandpass_filter_factory.setup()
+        self.alt_bold_factory.setup(processing_groups=processing_groups)
+        self.ica_aroma_components_factory.setup(processing_groups=processing_groups)
+        self.fmriprep_adapter_factory.setup(processing_groups=processing_groups)
+        self.smoothing_factory.setup(processing_groups=processing_groups)
+        self.grand_mean_scaling_factory.setup(processing_groups=processing_groups)
+        self.ica_aroma_regression_factory.setup(processing_groups=processing_groups)
+        self.bandpass_filter_factory.setup(processing_groups=processing_groups)
 
-        self.setting_adapter_factory.setup()
-        self.confounds_select_factory.setup()
-        self.confounds_regression_factory.setup()
+        self.setting_adapter_factory.setup(processing_groups=processing_groups)
+        self.confounds_select_factory.setup(processing_groups=processing_groups)
+        self.confounds_regression_factory.setup(processing_groups=processing_groups)
 
         for setting in self.ctx.spec.settings:
             setting_output_wf_factory = deepcopyfactory(

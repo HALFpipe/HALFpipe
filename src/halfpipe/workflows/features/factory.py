@@ -59,6 +59,7 @@ class FeatureFactory(Factory):
 
     def setup(self, raw_sources_dict: dict | None = None, processing_groups=None):
         logger.info(f"FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict}")
+        self.processing_groups = processing_groups
 
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
 
@@ -80,7 +81,7 @@ class FeatureFactory(Factory):
     def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
         logger.info(f"FeatureFactory->create args: source_file: {source_file}, feature: {feature}, raw_sources: {raw_sources}")
         raw_sources = [] if raw_sources is None else raw_sources
-        hierarchy = self._get_hierarchy("features_wf", source_file=source_file)
+        hierarchy = self._get_hierarchy("features_wf", source_file=source_file, processing_group=self.processing_groups)
         parent_workflow = hierarchy[-1]
 
         database = self.ctx.database

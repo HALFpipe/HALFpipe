@@ -318,7 +318,7 @@ class FmriprepFactory(Factory):
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
         for processing_group in processing_groups:
             subject_id, sessions = processing_group
-            hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
+            hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id, processing_group=processing_group)
             wf = anat_report_wf_factory()
             hierarchy[-1].add_nodes([wf])
 
@@ -331,7 +331,7 @@ class FmriprepFactory(Factory):
             self.connect(hierarchy, inputnode, subject_id=subject_id, processing_group=processing_group)
 
         for bold_file_path in bold_file_paths:
-            hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path)
+            hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path, processing_group=processing_groups)
 
             wf = init_func_report_wf(
                 workdir=str(workdir),
@@ -491,8 +491,17 @@ class FmriprepFactory(Factory):
         anat_fit_wf_hierarchy.append(anat_fit_wf)
         hierarchies["anat_fit_wf"] = anat_fit_wf_hierarchy
 
-        report_wf_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id)
+        report_wf_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id, processing_group=processing_group)
         hierarchies["reports_wf"] = report_wf_hierarchy
+
+        logger.debug(f"connect on fmriprep hierarchies after anat_fit_wf_hierarchy append->hierarchies {hierarchies}: ")
+        for key in hierarchies:
+            logger.debug(f"key: {key}")
+            for wf in hierarchies[key]:
+                try:
+                    describe_workflow(hierarchies[wf])
+                except:
+                    pass
 
         connected_attrs: set[str] = set()
         missing_attrs: set[str] = set()
