@@ -159,7 +159,4 @@ def init_workflow(
 
     describe_workflow(workflow)
 
-    workflow.write_graph( graph2use='exec', format='svg', simple_form=False, dotfilename='./graph.dot')
-
-
     return workflow
