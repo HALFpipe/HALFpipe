@@ -491,7 +491,9 @@ class FmriprepFactory(Factory):
         anat_fit_wf_hierarchy.append(anat_fit_wf)
         hierarchies["anat_fit_wf"] = anat_fit_wf_hierarchy
 
-        report_wf_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id, processing_group=processing_group)
+        report_wf_hierarchy = self._get_hierarchy(
+            "reports_wf", source_file=source_file, subject_id=subject_id, processing_group=processing_group
+        )
         hierarchies["reports_wf"] = report_wf_hierarchy
 
         logger.debug(f"connect on fmriprep hierarchies after anat_fit_wf_hierarchy append->hierarchies {hierarchies}: ")

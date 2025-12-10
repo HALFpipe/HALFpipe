@@ -169,7 +169,9 @@ class LookupFactory(Factory):
                 processing_group=self.previous_factory.processing_groups,
             )
         else:
-            self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)#, processing_group=self.processing_groups)
+            self.previous_factory.connect(
+                hierarchy, inputnode, source_file=source_file, setting_name=setting_name
+            )  # , processing_group=self.processing_groups)
 
     def wf_factory(self, lookup_tuple: LookupTuple):
         if lookup_tuple not in self.wf_factories:
@@ -207,8 +209,10 @@ class LookupFactory(Factory):
         inputnode = vwf.get_node("inputnode")
         hierarchy.append(vwf)
 
-        logger.debug(f'lookup factory get-> hierarchy {hierarchy}, inputnode: {inputnode}, source_file: {source_file}'
-                     f', setting_name {setting_name}, lookup_tuple {lookup_tuple}')
+        logger.debug(
+            f"lookup factory get-> hierarchy {hierarchy}, inputnode: {inputnode}, source_file: {source_file}"
+            f", setting_name {setting_name}, lookup_tuple {lookup_tuple}"
+        )
         if connect_inputs:
             self._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
 

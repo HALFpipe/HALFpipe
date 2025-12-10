@@ -11,6 +11,7 @@ from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
 from ..logging import logger
+from ..logging.describe_workflow import describe_workflow
 from ..model.spec import Spec, load_spec
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
@@ -24,7 +25,6 @@ from .mriqc import MriqcFactory
 from .post_processing import PostProcessingFactory
 from .stats import StatsFactory
 
-from ..logging.describe_workflow import describe_workflow
 
 def init_workflow(
     workdir: Path, spec: Optional[Spec] = None, spec_path: Path | None = None, bids_database_dir: Path | None = None
@@ -155,7 +155,6 @@ def init_workflow(
 
     logger.info(f"Finished workflow {uuidstr}")
     cache_obj(workdir, ".workflow", workflow)
-
 
     describe_workflow(workflow)
 

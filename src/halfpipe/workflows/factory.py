@@ -86,7 +86,6 @@ class Factory(ABC):
         if isinstance(processing_group, list):
             sessions = dict(processing_group)[bids_subject_id]
             if sessions is not None:  # None or empty list
-
                 session_str = stringify_sessions(sessions)
                 wf_label = f"sub_{bids_subject_id}_ses_{session_str}_wf"
                 logger.debug(

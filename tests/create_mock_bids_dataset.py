@@ -270,5 +270,9 @@ tasks_conditions_dict = {
     # 'faces-mb3':['anger', 'contempt', 'joy', 'neutral', 'pride']
 }
 create_bids_data(
-    base_path, number_of_subjects=number_of_subjects, tasks_conditions_dict=tasks_conditions_dict, field_maps=True, sessions=None
+    base_path,
+    number_of_subjects=number_of_subjects,
+    tasks_conditions_dict=tasks_conditions_dict,
+    field_maps=True,
+    sessions=None,
 )

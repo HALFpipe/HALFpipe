@@ -4,12 +4,13 @@
 
 import re
 
+from ...logging import logger
 from ..factory import Factory
 from ..features.factory import FeatureFactory
 from .base import init_stats_wf
-from ...logging import logger
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
+
 
 class StatsFactory(Factory):
     def __init__(self, ctx, feature_factory: FeatureFactory) -> None:
@@ -40,16 +41,16 @@ class StatsFactory(Factory):
 
         inputs = []
         for inputname in model.inputs:
-            logger.info(f'StatsFactory->inputname: {inputname}')
+            logger.info(f"StatsFactory->inputname: {inputname}")
             if self.has(inputname):
                 inputs.extend(self.get(inputname))
-                logger.info(f'StatsFactory->extending inputs by self->inputs: {inputs}')
+                logger.info(f"StatsFactory->extending inputs by self->inputs: {inputs}")
             elif self.feature_factory.has(inputname):
                 inputs.extend(self.feature_factory.get(inputname))
-                logger.info(f'StatsFactory->extending inputs by feature_factory->inputs: {inputs}')
+                logger.info(f"StatsFactory->extending inputs by feature_factory->inputs: {inputs}")
             else:
                 raise ValueError(f'Unknown input name "{inputname}"')
-        logger.info(f'StatsFactory->inputs: {inputs}')
+        logger.info(f"StatsFactory->inputs: {inputs}")
 
         vwf = init_stats_wf(
             self.ctx.workdir,
