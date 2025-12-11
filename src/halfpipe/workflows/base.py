@@ -27,7 +27,10 @@ from .stats import StatsFactory
 
 
 def init_workflow(
-    workdir: Path, spec: Optional[Spec] = None, spec_path: Path | None = None, bids_database_dir: Path | None = None
+    workdir: Path, 
+    spec: Optional[Spec] = None, 
+    spec_path: Path | None = None, 
+    bids_database_dir: Path | None = None,
 ) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
@@ -38,13 +41,13 @@ def init_workflow(
 
     if not spec:
         spec = load_spec(workdir=workdir, path=spec_path)
-
     assert spec is not None, "A spec file could not be loaded"
+
     logger.info("Initializing file database")
     database = Database(spec, bids_database_dir=bids_database_dir)
+
     # uuid depends on the spec file, the files found and the version of the program
     uuid = uuid5(spec.uuid, database.sha1 + __version__)
-
     workflow = uncache_obj(workdir, ".workflow", uuid, display_str="workflow")
     if workflow is not None:
         assert isinstance(workflow, IdentifiableWorkflow)
@@ -71,6 +74,7 @@ def init_workflow(
         )
     )
 
+    # TODO modify this to include downstream_features
     if len(spec.features) == 0 and not any(setting.get("output_image") is True for setting in spec.settings):
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
@@ -80,6 +84,7 @@ def init_workflow(
     fmriprep_factory = FmriprepFactory(ctx)
     post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
     feature_factory = FeatureFactory(ctx, fmriprep_factory, post_processing_factory)
+    # TODO downstream feature factory ?
     stats_factory = StatsFactory(ctx, feature_factory)
 
     bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)
@@ -109,6 +114,7 @@ def init_workflow(
     if spec.global_settings.get("run_mriqc") is True:
         logger.debug("init_workflow->going to setup mriqc_factory")
         mriqc_factory = MriqcFactory(ctx)
+        # why doesnt this raise not implemented error?
         mriqc_factory.setup(
             workdir,
             list(bold_file_paths_dict.keys()),
@@ -130,6 +136,7 @@ def init_workflow(
         }
         logger.debug(f"init_workflow->bold_file_paths_dict after filtering: {bold_file_paths_dict}")
 
+        # TODO modify to add downstream_feature
         if spec.global_settings.get("run_halfpipe") is True:
             logger.debug("init_workflow->going to setup post_processing_factory")
             post_processing_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)

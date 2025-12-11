@@ -2,8 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from typing import TYPE_CHECKING, Any
-
 from marshmallow import Schema, fields, post_dump, post_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
@@ -24,10 +22,6 @@ class DownstreamFeature:
     def __hash__(self):
         return hash(self.name)  # name is unique
 
-    if TYPE_CHECKING:
-
-        def __getattr__(self, attribute: str) -> Any: ...
-
 
 class BaseDownstreamFeatureSchema(Schema):
     # how is a name different than type?
@@ -35,7 +29,7 @@ class BaseDownstreamFeatureSchema(Schema):
 
     @post_load
     def make_object(self, data, **_):
-        return Feature(**data)
+        return DownstreamFeature(**data)
 
     @post_dump(pass_many=False)
     def remove_none(self, data, many):

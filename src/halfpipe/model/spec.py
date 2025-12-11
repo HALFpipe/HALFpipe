@@ -136,6 +136,29 @@ class Spec:
                 return
         self.files.append(fileobj)
 
+    # TODO test/validate
+    # potentially get rid of this altogether
+    def has(
+        self, 
+        name: str, 
+        type: str,
+        ) -> bool:
+        """ Checks if context has named attribute of given type. Type must be one of {'feature', 'model'}."""
+
+        # TODO get rid of this? never used
+        if type == 'feature':
+            for feature in self.spec.features:
+                if feature.name == name:
+                    return True
+            return False
+
+        # used by stats factory
+        if type == 'model'
+            for model in self.spec.models:
+                if model.name == name:
+                    return True
+            return False
+
 
 def load_spec(
     workdir: str | Path | None = None,
