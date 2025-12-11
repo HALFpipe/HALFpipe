@@ -30,6 +30,7 @@ class FactoryContext:
 class Factory(ABC):
     def __init__(self, ctx: FactoryContext):
         self.ctx = ctx
+        self.processing_groups: list | None = None
 
     def _endpoint(self, hierarchy, node, attr):
         if len(hierarchy) > 1:
@@ -128,16 +129,13 @@ class Factory(ABC):
         """
 
         hierarchy: list[pe.Workflow] = [self.ctx.workflow]
-        logger.debug(f"_get_hierarchy-> Operating in class: {self.__class__.__name__} ")
-        logger.debug(f"_get_hierarchy-> name: {name} ")
-        logger.debug(f"_get_hierarchy-> source_file: {source_file} ")
-        logger.debug(f"_get_hierarchy-> childname: {childname} ")
-        logger.debug(f"_get_hierarchy-> create_ok: {create_ok} ")
-        logger.debug(f"_get_hierarchy-> processing_group: {processing_group} ")
+        logger.debug(
+            f"_get_hierarchy({self.__class__.__name__}): "
+            f"name={name}, source_file={source_file}, subject_id={subject_id}, "
+            f"childname={childname}, create_ok={create_ok}, processing_group={processing_group}"
+        )
 
         def require_workflow(child_name):
-            logger.debug(f"_get_hierarchy-> require_workflow -> child_name: {child_name}")
-
             workflow = hierarchy[-1]
             child = workflow.get_node(child_name)
 

@@ -75,7 +75,7 @@ def init_workflow(
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
     # create factories
-    logger.info("init_workflow->creating factories")
+    logger.debug("init_workflow->creating factories")
     ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
     fmriprep_factory = FmriprepFactory(ctx)
     post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
@@ -83,7 +83,7 @@ def init_workflow(
     stats_factory = StatsFactory(ctx, feature_factory)
 
     bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)
-    logger.info(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
+    logger.debug(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
 
     # write out
 
@@ -131,11 +131,11 @@ def init_workflow(
         logger.info(f"init_workflow->bold_file_paths_dict: {bold_file_paths_dict}")
 
         if spec.global_settings.get("run_halfpipe") is True:
-            logger.info("init_workflow->going to setup post_processing_factory")
+            logger.debug("init_workflow->going to setup post_processing_factory")
             post_processing_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
-            logger.info("init_workflow->going to setup feature_factory")
+            logger.debug("init_workflow->going to setup feature_factory")
             feature_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
-            logger.info("init_workflow->going to setup stats_factory")
+            logger.debug("init_workflow->going to setup stats_factory")
             stats_factory.setup()
 
     # patch workflow
@@ -156,6 +156,7 @@ def init_workflow(
     logger.info(f"Finished workflow {uuidstr}")
     cache_obj(workdir, ".workflow", workflow)
 
+    logger.debug(f"Printing final workflow {uuidstr}")
     describe_workflow(workflow)
 
     return workflow

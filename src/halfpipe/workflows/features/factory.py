@@ -35,6 +35,7 @@ def _find_setting(setting_name: str, spec: Spec) -> dict[str, Any]:
 class FeatureFactory(Factory):
     def __init__(self, ctx: FactoryContext, fmriprep_factory: Factory, post_processing_factory: PostProcessingFactory) -> None:
         super().__init__(ctx)
+        self.processing_groups: None | list = None
 
         self.fmriprep_factory = fmriprep_factory
         self.post_processing_factory = post_processing_factory
@@ -58,7 +59,9 @@ class FeatureFactory(Factory):
         return False
 
     def setup(self, raw_sources_dict: dict | None = None, processing_groups=None):
-        logger.info(f"FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict}")
+        logger.debug(f"FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict},processing_groups: {processing_groups}")
+        # pass processing_groups also here so that when later _get_hierarchy is used in create, the processing_groups can
+        # there so that the right workflow can be found
         self.processing_groups = processing_groups
 
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
@@ -79,7 +82,6 @@ class FeatureFactory(Factory):
                 self.create(source_file, feature, raw_sources=source_file_raw_sources)
 
     def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
-        logger.info(f"FeatureFactory->create args: source_file: {source_file}, feature: {feature}, raw_sources: {raw_sources}")
         raw_sources = [] if raw_sources is None else raw_sources
         hierarchy = self._get_hierarchy("features_wf", source_file=source_file, processing_group=self.processing_groups)
         parent_workflow = hierarchy[-1]
@@ -202,6 +204,7 @@ class FeatureFactory(Factory):
                     setting_name,
                     confounds_action=confounds_action,
                 )
+                # fmriprep has its own processing_groups from the beginning so pass its own instance
                 self.fmriprep_factory.connect(
                     hierarchy,
                     node,
@@ -213,7 +216,6 @@ class FeatureFactory(Factory):
         return workflow
 
     def get(self, feature_name: str, *_: Any) -> list[list[pe.Workflow]]:
-        logger.info(f"FeatureFactory->get->print whole workflow {self.workflows}")
         return self.workflows[feature_name]
 
     def connect(self, *args, **kwargs):

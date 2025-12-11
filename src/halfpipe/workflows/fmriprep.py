@@ -5,7 +5,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Tuple
 from unittest.mock import patch
 
 from fmriprep import config
@@ -211,9 +211,9 @@ connections = {
 class FmriprepFactory(Factory):
     def __init__(self, ctx):
         super(FmriprepFactory, self).__init__(ctx)
-        self.processing_groups = None
+        self.processing_groups: list | None = None
 
-    def setup(self, workdir: Path, bold_file_paths: set[str]) -> set[str]:
+    def setup(self, workdir: Path, bold_file_paths: set[str]) -> Tuple[set[str], list]:
         """
         This needs to be documented.
         """
@@ -275,13 +275,14 @@ class FmriprepFactory(Factory):
             func_preproc_wf = self._get_hierarchy(
                 get_fmriprep_wf_name(), source_file=bold_file_path, processing_group=processing_groups
             )[-1]
-            logger.info(
-                f"FmriPrepFactory->setup-> func_preproc_wf: {func_preproc_wf} and bold_file_path: {bold_file_path} and len(func_preproc_wf._graph: {len(func_preproc_wf._graph)}"
-            )
+
             func_preproc_wf_hierarchy = describe_workflow(func_preproc_wf)
-
             logger.debug(f"func_preproc_wf_hierarchy: {func_preproc_wf_hierarchy}")
-
+            # this is a good debug because thanks to it we see why it was skipped, either 0 graphs or not a workflow
+            logger.debug(
+                f"FmriPrepFactory->setup-> func_preproc_wf: {func_preproc_wf} and bold_file_path: {bold_file_path} "
+                f"and len(func_preproc_wf._graph: {len(func_preproc_wf._graph)}"
+            )
             if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
                 logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
                 skipped.add(bold_file_path)
@@ -327,7 +328,6 @@ class FmriprepFactory(Factory):
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = {"sub": subject_id}
 
-            logger.debug("FMRIprep connecting on anat_report_wf_factory")
             self.connect(hierarchy, inputnode, subject_id=subject_id, processing_group=processing_group)
 
         for bold_file_path in bold_file_paths:
@@ -482,9 +482,11 @@ class FmriprepFactory(Factory):
         for wf in anat_fit_wf_hierarchy:
             describe_workflow(wf)
 
-        logger.debug(f"Operating in class: {self.__class__.__name__} ")
-        logger.debug(f"anat_fit_wf_hierarchy: {anat_fit_wf_hierarchy}")
-        logger.debug(f"processing_group were: {processing_group}")
+        logger.debug(
+            f"{self.__class__.__name__} -> connect: "
+            f"anat_fit_wf_hierarchy={anat_fit_wf_hierarchy}, "
+            f"processing_group={processing_group}"
+        )
 
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
             anat_fit_wf_hierarchy.pop(-1)
@@ -495,15 +497,6 @@ class FmriprepFactory(Factory):
             "reports_wf", source_file=source_file, subject_id=subject_id, processing_group=processing_group
         )
         hierarchies["reports_wf"] = report_wf_hierarchy
-
-        logger.debug(f"connect on fmriprep hierarchies after anat_fit_wf_hierarchy append->hierarchies {hierarchies}: ")
-        for key in hierarchies:
-            logger.debug(f"key: {key}")
-            for wf in hierarchies[key]:
-                try:
-                    describe_workflow(hierarchies[wf])
-                except:
-                    pass
 
         connected_attrs: set[str] = set()
         missing_attrs: set[str] = set()

@@ -20,6 +20,7 @@ class AltBOLDFactory(Factory):
         super(AltBOLDFactory, self).__init__(ctx)
 
         self.previous_factory = fmriprep_factory
+        self.processing_groups: None | list = None
 
     def setup(self, processing_groups=None) -> None:
         prototype = init_alt_bold_std_trans_wf()
@@ -47,12 +48,15 @@ class AltBOLDFactory(Factory):
         hierarchy.append(vwf)
 
         if connect:
-            if self.previous_factory.__class__.__name__ == "FmriprepFactory":
-                logger.debug("resamping, connect with fmriprep factory")
+            previous_factory_name = self.previous_factory.__class__.__name__
+            logger.debug(f"AltBOLDFactory-> previous_factory_name: {previous_factory_name}")
+            if previous_factory_name == "FmriprepFactory":
+                logger.debug("AltBOLDFactory-> connect with fmriprep factory")
                 self.previous_factory.connect(
                     hierarchy, inputnode, source_file=source_file, processing_group=self.previous_factory.processing_groups
                 )
             else:
+                logger.debug("AltBOLDFactory-> connect NOT with fmriprep factory")
                 self.previous_factory.connect(hierarchy, inputnode, source_file=source_file)
 
         outputnode = vwf.get_node("outputnode")

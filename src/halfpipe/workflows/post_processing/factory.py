@@ -50,6 +50,7 @@ class ICAAROMAComponentsFactory(Factory):
 
         self.alt_bold_factory = alt_bold_factory
         self.fmriprep_factory = fmriprep_factory
+        self.processing_groups: list | None = None
 
     def setup(self, processing_groups=None):
         prototype = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir))
@@ -101,16 +102,25 @@ class LookupFactory(Factory):
         self.tpl_by_setting_name: dict[str, SettingTuple] = dict()
 
         self.previous_factory = previous_factory
-        logger.debug(f"previous_factory: {self.previous_factory.__class__.__name__} ")
-        logger.debug(f"current_factory: {self.__class__.__name__} ")
+        logger.debug(
+            "LookupFactory swap:\n"
+            f"  previous={self.previous_factory.__class__.__name__}\n"
+            f"  current={self.__class__.__name__}\n"
+        )
 
-        self.processing_groups = self.previous_factory.processing_groups
-        logger.debug(f"processing_group: {self.processing_groups} ")
+        # i think this is not needed because all is set up through setup in postprocessing factory
+        # self.processing_groups = self.previous_factory.processing_groups
+        self.processing_groups = None
 
     def setup(self, processing_groups=None) -> None:
         self.processing_groups = processing_groups
-        logger.debug(f"setup previous_factory: {self.previous_factory.__class__.__name__}")
-        logger.debug(f"setup current_factory: {self.__class__.__name__} ")
+        logger.debug(
+            "LookupFactory swap:\n"
+            f"  previous={self.previous_factory.__class__.__name__}\n"
+            f"  current={self.__class__.__name__}\n"
+            f"  processing_group={self.processing_groups}"
+        )
+
         setting_names = [setting["name"] for setting in self.ctx.spec.settings]
 
         previous_tpls: list[SettingTuple] = []
@@ -158,9 +168,7 @@ class LookupFactory(Factory):
             inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
         if hasattr(inputnode.inputs, "tags"):
             inputnode.inputs.tags = self.ctx.database.tags(source_file)
-        logger.debug(f"self.previous_factory.__class__.__name__  {self.previous_factory.__class__.__name__}")
         if self.previous_factory.__class__.__name__ == "FmriprepFactory":
-            logger.debug("heeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeereeeeeeeeeeeeeeeeeeee")
             self.previous_factory.connect(
                 hierarchy,
                 inputnode,
@@ -169,9 +177,7 @@ class LookupFactory(Factory):
                 processing_group=self.previous_factory.processing_groups,
             )
         else:
-            self.previous_factory.connect(
-                hierarchy, inputnode, source_file=source_file, setting_name=setting_name
-            )  # , processing_group=self.processing_groups)
+            self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
 
     def wf_factory(self, lookup_tuple: LookupTuple):
         if lookup_tuple not in self.wf_factories:
@@ -476,6 +482,8 @@ class PostProcessingFactory(Factory):
         if raw_sources_dict is None:
             raw_sources_dict = dict()
 
+        # here pass everywhere processing_groups so that when there are multiple sessions, a special string suffix can
+        # be made out of them in order to find correct workflow when a method _get_hierarchy is used
         self.alt_bold_factory.setup(processing_groups=processing_groups)
         self.ica_aroma_components_factory.setup(processing_groups=processing_groups)
         self.fmriprep_adapter_factory.setup(processing_groups=processing_groups)
@@ -503,6 +511,7 @@ class PostProcessingFactory(Factory):
                 source_files = self.ctx.database.applyfilters(source_files, filters)
 
             for source_file in source_files:
+                # also pass processing_groups here
                 hierarchy = self._get_hierarchy(
                     "post_processing_wf", source_file=source_file, processing_group=processing_groups
                 )
@@ -548,4 +557,4 @@ class PostProcessingFactory(Factory):
         elif confounds_action is None:
             return self.setting_adapter_factory.get(source_file, setting_name)
         else:
-            raise ValueError(f"Unknown counfounds action '{confounds_action}'")
+            raise ValueError(f"Unknown confounds action '{confounds_action}'")
