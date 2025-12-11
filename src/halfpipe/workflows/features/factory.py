@@ -35,6 +35,7 @@ def _find_setting(setting_name: str, spec: Spec) -> dict[str, Any]:
 class FeatureFactory(Factory):
     def __init__(self, ctx: FactoryContext, fmriprep_factory: Factory, post_processing_factory: PostProcessingFactory) -> None:
         super().__init__(ctx)
+        self.processing_groups: None | list = None
 
         self.fmriprep_factory = fmriprep_factory
         self.post_processing_factory = post_processing_factory
@@ -57,11 +58,18 @@ class FeatureFactory(Factory):
                 return True
         return False
 
-    def setup(self, raw_sources_dict: dict | None = None):
+    def setup(self, raw_sources_dict: dict | None = None, processing_groups=None):
+        logger.debug(f"FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict},processing_groups: {processing_groups}")
+        # pass processing_groups also here so that when later _get_hierarchy is used in create, the processing_groups can
+        # there so that the right workflow can be found
+        self.processing_groups = processing_groups
+
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
 
         for feature in self.ctx.spec.features:
+            logger.info(f"FeatureFactory->setup-> feature: {feature}")
             source_files = set(raw_sources_dict.keys())
+            logger.info(f"FeatureFactory->setup-> source_files: {source_files}")
 
             setting = _find_setting(feature.setting, self.ctx.spec)
 
@@ -75,7 +83,7 @@ class FeatureFactory(Factory):
 
     def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
         raw_sources = [] if raw_sources is None else raw_sources
-        hierarchy = self._get_hierarchy("features_wf", source_file=source_file)
+        hierarchy = self._get_hierarchy("features_wf", source_file=source_file, processing_group=self.processing_groups)
         parent_workflow = hierarchy[-1]
 
         database = self.ctx.database
@@ -196,11 +204,13 @@ class FeatureFactory(Factory):
                     setting_name,
                     confounds_action=confounds_action,
                 )
+                # fmriprep has its own processing_groups from the beginning so pass its own instance
                 self.fmriprep_factory.connect(
                     hierarchy,
                     node,
                     source_file=source_file,
                     ignore_attrs=frozenset({"vals"}),
+                    processing_group=self.fmriprep_factory.processing_groups,
                 )
 
         return workflow
