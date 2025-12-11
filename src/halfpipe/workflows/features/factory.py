@@ -51,12 +51,6 @@ class FeatureFactory(Factory):
 
         self.workflows: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
 
-    def has(self, name):
-        for feature in self.ctx.spec.features:
-            if feature.name == name:
-                return True
-        return False
-
     def setup(self, raw_sources_dict: dict | None = None):
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
 
@@ -205,15 +199,16 @@ class FeatureFactory(Factory):
 
         return workflow
 
-    # never called so safe to change
-    def get(self, feature_name: str, *_: Any) -> list[list[pe.Workflow]]:
-        # modify to return hierarchy and outputnode
-        # is this the same as _get_hierarchy?
+    # TODO modify to return hierarchy, outputnode?
+    def get(
+        self, 
+        feature_name: str,
+        ): 
+        #*_: Any,
+        # ) -> list[list[pe.Workflow]]:
         hierarchy = self.workflows[feature_name]
-        wf = hierarchy[-1]
-        outputnode = None
-        # TODO how to find outputnode
+        outputnode = hierarchy[-1].get_node("outputnode")
         return hierarchy, outputnode
 
-    def connect(self, *args, **kwargs):
-        raise NotImplementedError()
+    #def connect(self, *args, **kwargs):
+    #    raise NotImplementedError()

@@ -27,7 +27,10 @@ class FactoryContext:
 
 
 class Factory(ABC):
-    def __init__(self, ctx: FactoryContext):
+    def __init__(
+        self, 
+        ctx: FactoryContext,
+        ):
         self.ctx = ctx
 
     def _endpoint(self, hierarchy, node, attr):
@@ -81,38 +84,51 @@ class Factory(ABC):
         `name`, `source_file`, `subject_id`, and `childname` arguments. It ensures
         that each workflow exists, creating them if allowed (`create_ok=True`).
         """
+        # TODO i dont understand this function at all it seems like its just adding blank workflows, never calling init_(appropriate wf name)_wf
 
         hierarchy: list[pe.Workflow] = [self.ctx.workflow]
 
+        # TODO this function seems unnecessary/refactor
         def require_workflow(
             child_name: str,
             ):
             """ Checks if child_name is in workflow, if not it is added."""
+            # workflow is last in hierarchy list
             workflow = hierarchy[-1]
             child = workflow.get_node(child_name)
 
             if child is None:
                 if create_ok is False:
+                    # TODO make the error informative
                     raise ValueError()
-
+                
+                # This seems bizarre, just creating any workflow w/ correct name?
                 child = pe.Workflow(name=child_name)
+                # Will this new workflow have any nodes?
                 workflow.add_nodes([child])
 
             assert isinstance(child, pe.Workflow)
+
+            # add newest workflow to end of hierarchy list
             hierarchy.append(child)
 
+        # eg on first call to create in setup of stats py this will create a blank workflow called stats_wf
         require_workflow(name)
 
+        # get the correct name formatted or None
         single_subject_wf_name = self._single_subject_wf_name(source_file=source_file, subject_id=subject_id)
 
         if single_subject_wf_name is not None:
+            # adds a blank wf called single subject wf name to hierarchy
             require_workflow(single_subject_wf_name)
 
         if source_file is not None:
             if self.ctx.database.tagval(source_file, "datatype") == "func":
+                # adds a blank wf called bold wf name to hierarchy
                 require_workflow(self._bold_wf_name(source_file))
 
         if childname is not None:
+            # adds a blank wf called childname to hierarchy
             require_workflow(childname)
 
         return hierarchy
