@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+import shutil
 import tarfile
 import tempfile
 
@@ -236,6 +237,4 @@ def bids_session_test_data(request):
     yield data_path, workdir_path
 
     # Cleanup after the test
-
-
-#    shutil.rmtree(base_path)
+    shutil.rmtree(base_path)
