@@ -107,7 +107,7 @@ def init_workflow(
     # setup preprocessing
 
     if spec.global_settings.get("run_mriqc") is True:
-        logger.info("init_workflow->going to setup mriqc_factory")
+        logger.debug("init_workflow->going to setup mriqc_factory")
         mriqc_factory = MriqcFactory(ctx)
         mriqc_factory.setup(
             workdir,
@@ -115,12 +115,12 @@ def init_workflow(
         )
 
     if spec.global_settings.get("run_fmriprep") is True:
-        logger.info("init_workflow->going to setup fmriprep_factory")
+        logger.debug("init_workflow->going to setup fmriprep_factory")
         fmriprep_bold_file_paths, processing_groups = fmriprep_factory.setup(
             workdir,
             set(bold_file_paths_dict.keys()),
         )
-        logger.info(f"init_workflow->fmriprep_bold_file_paths: {fmriprep_bold_file_paths}")
+        logger.debug(f"init_workflow->fmriprep_bold_file_paths: {fmriprep_bold_file_paths}")
 
         # filter out skipped files
         bold_file_paths_dict = {
@@ -128,7 +128,7 @@ def init_workflow(
             for bold_file_path, associated_file_paths in bold_file_paths_dict.items()
             if bold_file_path in fmriprep_bold_file_paths
         }
-        logger.info(f"init_workflow->bold_file_paths_dict: {bold_file_paths_dict}")
+        logger.debug(f"init_workflow->bold_file_paths_dict after filtering: {bold_file_paths_dict}")
 
         if spec.global_settings.get("run_halfpipe") is True:
             logger.debug("init_workflow->going to setup post_processing_factory")
