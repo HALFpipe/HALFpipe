@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pytest
 
-from halfpipe import resource
 from halfpipe.logging import logger
 from halfpipe.tui.base import MainApp  # Ensure path aligns with your project structure
 
@@ -59,26 +58,26 @@ def downloaded_data_path(fixed_tmp_path) -> Path:
     return data_path
 
 
-@pytest.fixture(scope="session")
-def atlases_maps_seed_images_path(fixed_tmp_path) -> Path:
-    # set atlases, seed maps and spatial maps
-    test_online_resources = {
-        "FIND_ica_maps_2009.nii.gz": "https://drive.google.com/file/d/1XnFGm9aCcTIuXgKZ71fDqATBJWAxkInO/view?usp=drive_link",
-        "tpl-MNI152NLin2009cAsym_atlas-schaefer2011Combined_dseg.nii": "https://drive.google.com/file/d/1CR0rjbznad-tkfVc1vrGKsKJg5_nrf5E/view?usp=drive_link",
-        "tpl-MNI152NLin2009cAsym_atlas-brainnetomeCombined_dseg.nii": "https://drive.google.com/file/d/1MYF4VaZrWmQXL1Jl3ZWMg1tWaKBfPo4W/view?usp=drive_link",
-        "R_vmPFC_seed_2009.nii.gz": "https://drive.google.com/file/d/16L_HXOrrMqw08BdGTOh7RTErNTVytyvS/view?usp=drive_link",
-        "R_vlPFC_pt_seed_2009.nii.gz": "https://drive.google.com/file/d/1fNr8ctHpTN8XJn95mclMxTetKdpbdddV/view?usp=drive_link",
-        "R_vlPFC_po_seed_2009.nii.gz": "https://drive.google.com/file/d/1te1g3tpFaHdjx8GyZ1myMg_ayaHXPYKO/view?usp=drive_link",
-    }
-
-    resource.resource_dir = Path(fixed_tmp_path / "atlases_maps_seed_images")
-    resource.resource_dir.mkdir(exist_ok=True, parents=True)
-    resource.online_resources.update(test_online_resources)
-
-    for item in test_online_resources:
-        resource.get(item)
-
-    return resource.resource_dir
+# @pytest.fixture(scope="session")
+# def atlases_maps_seed_images_path(fixed_tmp_path) -> Path:
+#     # set atlases, seed maps and spatial maps
+#     test_online_resources = {
+#         "FIND_ica_maps_2009.nii.gz": "https://drive.google.com/file/d/1XnFGm9aCcTIuXgKZ71fDqATBJWAxkInO/view?usp=drive_link",
+#         "tpl-MNI152NLin2009cAsym_atlas-schaefer2011Combined_dseg.nii": "https://drive.google.com/file/d/1CR0rjbznad-tkfVc1vrGKsKJg5_nrf5E/view?usp=drive_link",
+#         "tpl-MNI152NLin2009cAsym_atlas-brainnetomeCombined_dseg.nii": "https://drive.google.com/file/d/1MYF4VaZrWmQXL1Jl3ZWMg1tWaKBfPo4W/view?usp=drive_link",
+#         "R_vmPFC_seed_2009.nii.gz": "https://drive.google.com/file/d/16L_HXOrrMqw08BdGTOh7RTErNTVytyvS/view?usp=drive_link",
+#         "R_vlPFC_pt_seed_2009.nii.gz": "https://drive.google.com/file/d/1fNr8ctHpTN8XJn95mclMxTetKdpbdddV/view?usp=drive_link",
+#         "R_vlPFC_po_seed_2009.nii.gz": "https://drive.google.com/file/d/1te1g3tpFaHdjx8GyZ1myMg_ayaHXPYKO/view?usp=drive_link",
+#     }
+#
+#     resource.resource_dir = Path(fixed_tmp_path / "atlases_maps_seed_images")
+#     resource.resource_dir.mkdir(exist_ok=True, parents=True)
+#     resource.online_resources.update(test_online_resources)
+#
+#     for item in test_online_resources:
+#         resource.get(item)
+#
+#     return resource.resource_dir
 
 
 @pytest.fixture(scope="session")
