@@ -24,7 +24,7 @@ from .spec import TestSetting, make_spec
 
 settings_list: list[TestSetting] = [
     TestSetting(
-        name="noConfounds",  # was FalseComb0
+        name="baseline",  # was FalseComb0
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
@@ -40,7 +40,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaACompCorCSF",  # was TrueComb1
+        name="icaAromaCCompCor",  # was TrueComb1
         base_setting=dict(
             confounds_removal=["c_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -48,7 +48,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaACompCorCSFWM",
+        name="icaAromaACompCor",
         base_setting=dict(
             confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -56,7 +56,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaMotionParameters",  # was TrueComb2
+        name="icaAromaMotionParameters6",  # was TrueComb2
         base_setting=dict(
             confounds_removal=["(trans|rot)_[xyz]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -64,7 +64,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaSimple",  # was TrueComb3
+        name="icaAromaMotionParameters",  # was TrueComb3
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -77,7 +77,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaSimpleGSR",  # was TrueComb4
+        name="icaAromaMotionParametersGSR",  # was TrueComb4
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -93,18 +93,34 @@ settings_list: list[TestSetting] = [
     TestSetting(
         name="icaAromaGSR",  # was TrueComb5
         base_setting=dict(
+            confounds_removal=["global_signal"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="icaAromaScrubbing",
+        base_setting=dict(
+            confounds_removal=["motion_outlier[0-9]+"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="icaAromaScrubbingGSR",
+        base_setting=dict(
             confounds_removal=[
+                "motion_outlier[0-9]+",
                 "global_signal",
             ],
             grand_mean_scaling=dict(mean=10000.0),
             ica_aroma=True,
         ),
     ),
-    # we had to change the name of the confounds removal
-    # so we get the CSF only instead of the
-    # combined CSF + White matter.
+    # cCompCor = CSF
+    # aCompCor = CSF + White matter.
     TestSetting(
-        name="aCompCorCSF",  # was FalseComb1
+        name="cCompCor",  # was FalseComb1
         base_setting=dict(
             confounds_removal=["c_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -112,7 +128,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="aCompCorCSFWM",
+        name="aCompCor",
         base_setting=dict(
             confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -120,7 +136,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="motionParameters",  # was FalseComb2
+        name="motionParameters6",  # was FalseComb2
         base_setting=dict(
             confounds_removal=["(trans|rot)_[xyz]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -128,7 +144,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="simple",  # was FalseComb3
+        name="motionParameters",  # was FalseComb3
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -141,7 +157,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="simpleGSR",  # was FalseComb4
+        name="motionParametersGSR",  # was FalseComb4
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -165,7 +181,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="simpleScrubbing",
+        name="motionParametersScrubbing",
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -179,7 +195,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="simpleScrubbingGSR",
+        name="motionParametersScrubbingGSR",
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -193,9 +209,118 @@ settings_list: list[TestSetting] = [
             ica_aroma=False,
         ),
     ),
-    # ? Add counterparts with ICA_AROMA not enabled
+    TestSetting(
+        name="Wang2023Simple",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "white_matter",
+                "csf",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023SimpleGSR",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "white_matter",
+                "csf",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023Scrubbing",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "white_matter",
+                "csf",
+                "motion_outlier[0-9]+",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023ScrubbingGSR",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "white_matter",
+                "csf",
+                "motion_outlier[0-9]+",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023ACompCor",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "a_comp_cor_0[0-4]",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023ACompCorGSR",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "a_comp_cor_0[0-4]",
+                "global_signal"
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="everything",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "motion_outlier[0-9]+",
+                "white_matter",
+                "csf",
+                "c_comp_cor_0[0-4]",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
 ]
-
 
 @pytest.mark.parametrize("dataset", datasets)
 def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
