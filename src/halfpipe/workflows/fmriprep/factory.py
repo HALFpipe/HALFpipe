@@ -30,6 +30,9 @@ def get_fmriprep_wf_name() -> str:
     return f"fmriprep_{ver.major}_{ver.minor}_wf"
 
 
+# TODO refactoring
+
+
 @dataclass(frozen=True, kw_only=True)
 class Connection:
     source: Literal["anat_fit_wf", "bold_wf", "reports_wf"]

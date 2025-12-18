@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 from uuid import uuid5
 
+# TODO change imports to be from top
 from .. import __version__
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
@@ -19,7 +20,7 @@ from .constants import Constants
 from .convert import convert_all
 from .factory import FactoryContext
 from .features import FeatureFactory
-from .fmriprep import FmriprepFactory
+from halfpipe.workflows.fmriprep.factory import FmriprepFactory
 from .memory import MemoryCalculator
 from .mriqc import MriqcFactory
 from .post_processing import PostProcessingFactory
