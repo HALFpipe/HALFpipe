@@ -37,6 +37,7 @@ class DownstreamFeatureFactory(Factory):
         # TODO do we need any source_files?
 
         # filled in by .create()
+        # could be renamed hierarchies
         self.workflows: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
     
     def get(
