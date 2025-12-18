@@ -324,7 +324,7 @@ def bids_session_expanded_real_test_data(
             {"name": "Severity", "type": "continuous"},
         ]
     }
-    
+
     covariant_spreadsheet_file_obj = file_schema.load(
         dict(path=str(covariant_spreadsheet_path), datatype="spreadsheet", metadata=spreadsheet_metadata)
     )
@@ -335,7 +335,7 @@ def bids_session_expanded_real_test_data(
     )
 
     mock_spec.files.append(seed_file_obj)
-    
+
     # make one preproc 'feature'
     mock_spec.settings.append(
         {
@@ -362,7 +362,7 @@ def bids_session_expanded_real_test_data(
             "output_image": False,
         }
     )
-    
+
     feature_schema = FeatureSchema()
 
     test_seed_based_feature = feature_schema.load(
