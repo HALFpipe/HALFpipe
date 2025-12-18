@@ -296,7 +296,7 @@ settings_list: list[TestSetting] = [
                 "(trans|rot)_[xyz]_power2",
                 "(trans|rot)_[xyz]_derivative1_power2",
                 "a_comp_cor_0[0-4]",
-                "global_signal"
+                "global_signal",
             ],
             grand_mean_scaling=dict(mean=10000.0),
             ica_aroma=False,
@@ -321,6 +321,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
 ]
+
 
 @pytest.mark.parametrize("dataset", datasets)
 def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
