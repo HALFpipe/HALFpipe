@@ -11,6 +11,7 @@ import datalad.api as dl
 import openneuro as on
 
 from halfpipe.file_index.bids import BIDSIndex
+from halfpipe.logging import logger
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
 
@@ -39,10 +40,9 @@ class Dataset:
             if "*" in path:
                 if not path.startswith("*"):
                     path = os.path.join(str(tmp_path).replace(".", ""), path)
-                #                print(path, path.replace('*',''))
                 found_paths = [file for file in list(all_files.keys()) if path.replace("*", "") in str(file)]
                 for p in found_paths:
-                    print(p)
+                    logger.debug(p)
                     ds.get(p)
             else:
                 ds.get(path)

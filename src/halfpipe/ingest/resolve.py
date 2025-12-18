@@ -158,16 +158,21 @@ class ResolvedSpec:
             )
             return list()
 
-        # load using pybids
-        validate = False  # save time
+        # Load using pybids
+        validate = False  # Save time
+
+        reset_database = True  # Force reindex in case files have changed
+        if self.bids_database_dir is not None:
+            reset_database = False
+
         layout = BIDSLayout(
             root=fileobj.path,
-            reset_database=True,  # force reindex in case files have changed
+            reset_database=reset_database,
             database_path=self.bids_database_dir,
             validate=validate,
             indexer=BIDSLayoutIndexer(
                 validate=validate,
-                index_metadata=False,  # save time
+                index_metadata=False,  # Save time
             ),
         )
 

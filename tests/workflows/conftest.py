@@ -11,6 +11,7 @@ import tempfile
 from math import inf
 from pathlib import Path
 from random import choices, normalvariate, seed
+from typing import Iterator
 from zipfile import ZipFile
 
 import nibabel as nib
@@ -125,7 +126,7 @@ def mock_task_events(tmp_path_factory, bids_data) -> File:
 
 
 @pytest.fixture(scope="session")
-def atlas_harvard_oxford(tmp_path_factory) -> dict[str, Path]:
+def atlas_harvard_oxford(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
     tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
 
     os.chdir(str(tmp_path))
@@ -144,7 +145,7 @@ def atlas_harvard_oxford(tmp_path_factory) -> dict[str, Path]:
 
 
 @pytest.fixture(scope="session")
-def pcc_mask(tmp_path_factory, atlas_harvard_oxford: dict[str, Path]) -> Path:
+def pcc_mask(tmp_path_factory: pytest.TempPathFactory, atlas_harvard_oxford: dict[str, Path]) -> Path:
     tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
 
     os.chdir(str(tmp_path))
@@ -188,7 +189,7 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
 
 
 @pytest.fixture(scope="session")
-def bids_session_test_data(request):
+def bids_session_test_data(request: pytest.FixtureRequest) -> Iterator[tuple[Path, Path]]:
     """
     Create a parallel-safe temporary BIDS hierarchy with optional number of sessions + workdir.
 
