@@ -1,6 +1,7 @@
-from pathlib import Path
-import shutil
 import re
+import shutil
+from pathlib import Path
+
 # from datasets import Dataset
 
 # # this downloads a small fragment of the whole dataset
@@ -19,10 +20,6 @@ import re
 #         "sub-002/func/sub-002_task-rest_bold.json",
 #     ],
 # )
-
-from pathlib import Path
-import shutil
-import re
 
 
 def expand_bids_dataset(
@@ -75,12 +72,7 @@ def expand_bids_dataset(
                     continue  # drop fmap, dwi, etc. (change if needed)
 
                 # ---------- OUTPUT DIR ----------
-                out_dir = (
-                    output_dataset_dir
-                    / new_sub
-                    / ses
-                    / datatype
-                )
+                out_dir = output_dataset_dir / new_sub / ses / datatype
                 out_dir.mkdir(parents=True, exist_ok=True)
 
                 # ---------- RENAME ----------
