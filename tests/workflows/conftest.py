@@ -312,11 +312,7 @@ def bids_session_expanded_real_test_data(
     bids_file = FileSchema().load(dict(datatype="bids", path=str(data_path)))
     logger.info(f"Covariant spreadsheet path: {covariant_spreadsheet_path}")
     mock_spec = make_bids_only_spec(dataset_files=[bids_file])
-    logger.info(f"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa {mock_spec.files}")
     file_schema = FileSchema()
-    seed_file = file_schema.load(
-        dict(path=str(seed_image_file_pattern), datatype="ref", suffix="seed", extension=".nii.gz", tags={}, metadata=dict())
-    )
 
     spreadsheet_metadata = {
         "variables": [
@@ -328,35 +324,19 @@ def bids_session_expanded_real_test_data(
             {"name": "Severity", "type": "continuous"},
         ]
     }
-
-    mock_spec.files.append(seed_file)
+    
     covariant_spreadsheet_file_obj = file_schema.load(
         dict(path=str(covariant_spreadsheet_path), datatype="spreadsheet", metadata=spreadsheet_metadata)
     )
     mock_spec.files.append(covariant_spreadsheet_file_obj)
 
-    # seed_file = file_schema.load(
-    #     dict(
-    #         datatype="ref",
-    #         suffix="seed",
-    #         extension=".nii.gz",
-    #         tags=dict(desc="pcc"),
-    #         path=str(pcc_mask),
-    #         metadata=dict(space="MNI152NLin6Asym"),
-    #     )
-    # )
-    # spec.files.append(seed_file)
-    # # mock_spec.files.extend(fileobj)
-    #     {
-    #         "path": seed_image_file_pattern,
-    #         "datatype": "ref",
-    #         "suffix": "seed",
-    #         "extension": ".nii.gz",
-    #         "tags": {},
-    #         "metadata": {}
-    #     }
-    # )
+    seed_file_obj = file_schema.load(
+        dict(path=str(seed_image_file_pattern), datatype="ref", suffix="seed", extension=".nii.gz", tags={}, metadata=dict())
+    )
 
+    mock_spec.files.append(seed_file_obj)
+    
+    # make one preproc 'feature'
     mock_spec.settings.append(
         {
             "space": "standard",
@@ -382,9 +362,10 @@ def bids_session_expanded_real_test_data(
             "output_image": False,
         }
     )
+    
     feature_schema = FeatureSchema()
 
-    seed_based_feature = feature_schema.load(
+    test_seed_based_feature = feature_schema.load(
         dict(
             name="seedCorr",
             setting="seedCorrSetting",
@@ -396,10 +377,10 @@ def bids_session_expanded_real_test_data(
             min_seed_coverage=0.8,
         )
     )
-    mock_spec.features.append(seed_based_feature)
+    mock_spec.features.append(test_seed_based_feature)
 
     model_schema = ModelSchema()
-    model_obj = model_schema.load(
+    test_lm_model = model_schema.load(
         dict(
             name="model",
             inputs=["seedCorr"],
@@ -411,7 +392,7 @@ def bids_session_expanded_real_test_data(
             contrasts=[{"type": "infer", "variable": ["Case"]}],
         )
     )
-    mock_spec.models.append(model_obj)
+    mock_spec.models.append(test_lm_model)
 
     save_spec(mock_spec, workdir=workdir_path)
 
