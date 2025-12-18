@@ -7,6 +7,8 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 
+from halfpipe.logging import logger
+
 
 def create_fake_event_file(num_trials=12, file_name="fake_event_file.tsv", trial_types=None, dry_run=False):
     # Define the possible trial types (if not provided)
@@ -47,9 +49,9 @@ def create_fake_event_file(num_trials=12, file_name="fake_event_file.tsv", trial
             file_name = Path(file_name) if not isinstance(file_name, Path) else file_name
             df.to_csv(file_name, sep="\t", index=False)
 
-        print(f"Fake event file saved as {file_name}")
+        logger.debug(f"Fake event file saved as {file_name}")
     else:
-        print(f"No event file saved as {file_name}! No conditions for that one!")
+        logger.debug(f"No event file saved as {file_name}! No conditions for that one!")
 
 
 def create_mock_anat_nifti_empty(output_path, dry_run=False):
@@ -62,7 +64,7 @@ def create_mock_anat_nifti_empty(output_path, dry_run=False):
     # Save the mock NIfTI file
     if not dry_run:
         nib.save(nii_img, output_path)
-    print(f"Mock anat file with header saved to: {output_path}")
+    logger.debug(f"Mock anat file with header saved to: {output_path}")
 
 
 def create_mock_func_nifti_with_header(output_path, dry_run=False):
@@ -133,8 +135,8 @@ def create_mock_func_nifti_with_header(output_path, dry_run=False):
         with open(json_file_path, "w") as json_file:
             json.dump(desc_data, json_file, indent=4)
 
-    print(f"Mock func bold file with header saved to: {output_path}")
-    print(f"Mock func json description file save to: {json_file_path}")
+    logger.debug(f"Mock func bold file with header saved to: {output_path}")
+    logger.debug(f"Mock func json description file save to: {json_file_path}")
 
 
 def generate_file_names(subject_id="1", sessions=None, tasks=None, type=None):
@@ -173,7 +175,7 @@ def create_mock_fmaps(save_dir, subject_id, dry_run=False):
         f"sub-{subject_id}_phasediff.nii.gz",
     ]:
         output_path = save_dir / file_name
-        print(f"Mock field map saved to: {output_path}")
+        logger.debug(f"Mock field map saved to: {output_path}")
 
         # Save the mock bold file
         if not dry_run:
@@ -206,8 +208,8 @@ def create_bids_data(
             anat_path = base_for_ses / "anat"
             func_path = base_for_ses / "func"
 
-            print(f"Created: {anat_path}")
-            print(f"Created: {func_path}")
+            logger.debug(f"Created: {anat_path}")
+            logger.debug(f"Created: {func_path}")
 
             if not dry_run:
                 os.makedirs(anat_path, exist_ok=True)
@@ -222,7 +224,7 @@ def create_bids_data(
                 # Define path for field maps
                 fmap_path = base_for_ses / "fmap"
                 os.makedirs(fmap_path, exist_ok=True)
-                print(f"Created: {fmap_path}")
+                logger.debug(f"Created: {fmap_path}")
                 create_mock_fmaps(fmap_path, subject_id + (f"_ses-{ses}" if ses else ""), dry_run=dry_run)
 
             # FUNC runs

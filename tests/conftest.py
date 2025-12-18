@@ -4,6 +4,7 @@
 
 import os
 import tarfile
+from typing import Any
 
 import pytest
 
@@ -25,7 +26,7 @@ def logging(request: pytest.FixtureRequest) -> None:
 
 
 @pytest.fixture(scope="session")
-def wakemandg_hensonrn_raw(tmp_path_factory):
+def wakemandg_hensonrn_raw(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Any]:
     tmp_path = tmp_path_factory.mktemp(basename="wakemandg_hensonrn")
 
     os.chdir(str(tmp_path))
