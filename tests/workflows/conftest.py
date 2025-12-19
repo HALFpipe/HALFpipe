@@ -11,7 +11,6 @@ import tempfile
 from math import inf
 from pathlib import Path
 from random import choices, normalvariate, seed
-from typing import Iterator
 from zipfile import ZipFile
 
 import nibabel as nib
