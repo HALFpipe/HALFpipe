@@ -7,6 +7,8 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 
+from halfpipe.logging import logger
+
 
 def create_fake_event_file(num_trials=12, file_name="fake_event_file.tsv", trial_types=None, dry_run=False):
     # Define the possible trial types (if not provided)
@@ -47,9 +49,9 @@ def create_fake_event_file(num_trials=12, file_name="fake_event_file.tsv", trial
             file_name = Path(file_name) if not isinstance(file_name, Path) else file_name
             df.to_csv(file_name, sep="\t", index=False)
 
-        print(f"Fake event file saved as {file_name}")
+        logger.debug(f"Fake event file saved as {file_name}")
     else:
-        print(f"No event file saved as {file_name}! No conditions for that one!")
+        logger.debug(f"No event file saved as {file_name}! No conditions for that one!")
 
 
 def create_mock_anat_nifti_empty(output_path, dry_run=False):
@@ -62,7 +64,7 @@ def create_mock_anat_nifti_empty(output_path, dry_run=False):
     # Save the mock NIfTI file
     if not dry_run:
         nib.save(nii_img, output_path)
-    print(f"Mock anat file with header saved to: {output_path}")
+    logger.debug(f"Mock anat file with header saved to: {output_path}")
 
 
 def create_mock_func_nifti_with_header(output_path, dry_run=False):
@@ -133,12 +135,13 @@ def create_mock_func_nifti_with_header(output_path, dry_run=False):
         with open(json_file_path, "w") as json_file:
             json.dump(desc_data, json_file, indent=4)
 
-    print(f"Mock func bold file with header saved to: {output_path}")
-    print(f"Mock func json description file save to: {json_file_path}")
+    logger.debug(f"Mock func bold file with header saved to: {output_path}")
+    logger.debug(f"Mock func json description file save to: {json_file_path}")
 
 
-def generate_file_names(subject_id=1, tasks=None, type=None):
+def generate_file_names(subject_id="1", sessions=None, tasks=None, type=None):
     type = "bold" if type is None else type
+
     if type == "bold":
         suffix = "_bold.nii.gz"
     elif type == "event":
@@ -146,19 +149,17 @@ def generate_file_names(subject_id=1, tasks=None, type=None):
     else:
         suffix = ""
 
-    # Default tasks if none are provided
     tasks = [] if tasks is None else tasks
+    sessions = [None] if sessions is None else sessions
 
-    # List to store the generated file names
-    updated_file_names = []
+    file_names = []
 
-    # Loop through tasks
-    for task in tasks:
-        # Format the file name with the subject and task
-        new_file_name = f"sub-{subject_id}_task-{task}{suffix}"
-        updated_file_names.append(new_file_name)
+    for ses in sessions:
+        for task in tasks:
+            ses_tag = f"_ses-{ses}" if ses is not None else ""
+            file_names.append(f"sub-{subject_id}{ses_tag}_task-{task}{suffix}")
 
-    return updated_file_names
+    return file_names
 
 
 def create_mock_fmaps(save_dir, subject_id, dry_run=False):
@@ -174,15 +175,18 @@ def create_mock_fmaps(save_dir, subject_id, dry_run=False):
         f"sub-{subject_id}_phasediff.nii.gz",
     ]:
         output_path = save_dir / file_name
-        print(f"Mock field map saved to: {output_path}")
+        logger.debug(f"Mock field map saved to: {output_path}")
 
         # Save the mock bold file
         if not dry_run:
             nib.save(nii_img, output_path)
 
 
-def create_bids_data(base_path, number_of_subjects=1, tasks_conditions_dict=None, dry_run=False, field_maps=False):
+def create_bids_data(
+    base_path, number_of_subjects=1, tasks_conditions_dict=None, sessions=None, dry_run=False, field_maps=False
+):
     tasks_conditions_dict = {} if tasks_conditions_dict is None else tasks_conditions_dict
+    sessions = [None] if sessions is None else sessions
 
     # Convert the base_path to a Path object
     if not isinstance(base_path, Path):
@@ -190,38 +194,61 @@ def create_bids_data(base_path, number_of_subjects=1, tasks_conditions_dict=None
 
     # Loop through the subjects
     for i in range(1, number_of_subjects + 1):
-        # Format subject number with leading zeros (e.g., sub-0001)
         subject_id = f"{i:04d}"
         subject_tag = f"sub-{subject_id}"
 
-        # Define paths for 'anat' and 'func' directories
-        anat_path = base_path / subject_tag / "anat"
-        func_path = base_path / subject_tag / "func"
+        for ses in sessions:
+            ses_tag = f"ses-{ses}" if ses is not None else None
 
-        print(f"Created: {anat_path}")
-        print(f"Created: {func_path}")
+            base_for_ses = base_path / subject_tag
+            if ses_tag:
+                base_for_ses = base_for_ses / ses_tag
 
-        if field_maps is True:
-            # Define path for field maps
-            fmap_path = base_path / subject_tag / "fmap"
-            os.makedirs(fmap_path, exist_ok=True)
-            print(f"Created: {fmap_path}")
-            create_mock_fmaps(fmap_path, subject_id, dry_run=dry_run)
+            # Define paths for 'anat' and 'func' directories
+            anat_path = base_for_ses / "anat"
+            func_path = base_for_ses / "func"
 
-        # Create directories (will not crash if they already exist)
-        if not dry_run:
-            os.makedirs(anat_path, exist_ok=True)
-        create_mock_anat_nifti_empty(base_path / subject_tag / "anat" / f"sub-{subject_id}_T1w.nii.gz", dry_run=dry_run)
+            logger.debug(f"Created: {anat_path}")
+            logger.debug(f"Created: {func_path}")
 
-        os.makedirs(func_path, exist_ok=True)
-        for nii_file_name in generate_file_names(subject_id=subject_id, tasks=tasks_conditions_dict.keys(), type="bold"):
-            create_mock_func_nifti_with_header(base_path / subject_tag / "func" / nii_file_name, dry_run=dry_run)
+            if not dry_run:
+                os.makedirs(anat_path, exist_ok=True)
+                os.makedirs(func_path, exist_ok=True)
 
-        for task, conditions in tasks_conditions_dict.items():
-            (event_file_name,) = generate_file_names(subject_id=subject_id, tasks=[task], type="event")
-            create_fake_event_file(
-                file_name=base_path / subject_tag / "func" / event_file_name, trial_types=conditions, dry_run=dry_run
-            )
+            # ANAT
+            anat_file = f"sub-{subject_id}" + (f"_ses-{ses}" if ses is not None else "") + "_T1w.nii.gz"
+            create_mock_anat_nifti_empty(anat_path / anat_file, dry_run=dry_run)
+
+            # FMAPS (optional)
+            if field_maps:
+                # Define path for field maps
+                fmap_path = base_for_ses / "fmap"
+                os.makedirs(fmap_path, exist_ok=True)
+                logger.debug(f"Created: {fmap_path}")
+                create_mock_fmaps(fmap_path, subject_id + (f"_ses-{ses}" if ses else ""), dry_run=dry_run)
+
+            # FUNC runs
+            for nii_file_name in generate_file_names(
+                subject_id, sessions=[ses], tasks=tasks_conditions_dict.keys(), type="bold"
+            ):
+                create_mock_func_nifti_with_header(
+                    func_path / nii_file_name,
+                    dry_run=dry_run,
+                )
+
+            # EVENTS
+            for task, conditions in tasks_conditions_dict.items():
+                (event_file_name,) = generate_file_names(
+                    subject_id,
+                    sessions=[ses],
+                    tasks=[task],
+                    type="event",
+                )
+                create_fake_event_file(
+                    file_name=func_path / event_file_name,
+                    trial_types=conditions,
+                    dry_run=dry_run,
+                )
 
     # create database description file
     fake_database_desc = {

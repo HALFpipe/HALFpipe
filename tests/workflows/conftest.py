@@ -3,10 +3,15 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import os
+import shutil
 import tarfile
+import tempfile
+
+# from halfpipe.logging.context import Context, setup as setup_logging
 from math import inf
 from pathlib import Path
 from random import choices, normalvariate, seed
+from typing import Iterator
 from zipfile import ZipFile
 
 import nibabel as nib
@@ -17,12 +22,13 @@ from nilearn.image import new_img_like
 from halfpipe.ingest.database import Database
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
-from halfpipe.model.spec import Spec, SpecSchema
+from halfpipe.model.spec import Spec, SpecSchema, save_spec
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
 
+from ..create_mock_bids_dataset import create_bids_data
 from ..resource import setup as setup_test_resources
-from .spec import TestSetting, make_spec
+from .spec import TestSetting, make_bids_only_spec, make_spec
 
 
 @pytest.fixture(scope="session")
@@ -120,7 +126,7 @@ def mock_task_events(tmp_path_factory, bids_data) -> File:
 
 
 @pytest.fixture(scope="session")
-def atlas_harvard_oxford(tmp_path_factory) -> dict[str, Path]:
+def atlas_harvard_oxford(tmp_path_factory: pytest.TempPathFactory) -> dict[str, Path]:
     tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
 
     os.chdir(str(tmp_path))
@@ -139,7 +145,7 @@ def atlas_harvard_oxford(tmp_path_factory) -> dict[str, Path]:
 
 
 @pytest.fixture(scope="session")
-def pcc_mask(tmp_path_factory, atlas_harvard_oxford: dict[str, Path]) -> Path:
+def pcc_mask(tmp_path_factory: pytest.TempPathFactory, atlas_harvard_oxford: dict[str, Path]) -> Path:
     tmp_path = tmp_path_factory.mktemp(basename="pcc_mask")
 
     os.chdir(str(tmp_path))
@@ -180,3 +186,56 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
     ]
 
     return make_spec(dataset_files=[bids_file], pcc_mask=pcc_mask, test_settings=test_settings, event_file=mock_task_events)
+
+
+@pytest.fixture(scope="session")
+def bids_session_test_data(request: pytest.FixtureRequest) -> Iterator[tuple[Path, Path]]:
+    """
+    Create a parallel-safe temporary BIDS hierarchy with optional number of sessions + workdir.
+
+    - Accepts sessions via request.param
+    - Cleans up after the test
+    """
+    sessions = getattr(request, "param", [])
+
+    # Use a unique temporary directory (parallel-safe)
+    base_path = Path(tempfile.mkdtemp(prefix="bids_test_"))
+    bids_label = "multisession-bids"
+    data_path = base_path / bids_label
+    workdir_path = base_path / "workdir"
+    data_path.mkdir(parents=True, exist_ok=True)
+    workdir_path.mkdir(parents=True, exist_ok=True)
+
+    # Example BIDS setup
+    number_of_subjects = 3
+    tasks_conditions_dict = {
+        "anticipation_acq-seq": ["cue_negative", "cue_neutral", "img_negative", "img_neutral"],
+        "workingmemory_acq-seq": ["active_change", "active_nochange", "passive"],
+        "restingstate-mb3": [],
+    }
+
+    create_bids_data(
+        data_path,
+        number_of_subjects=number_of_subjects,
+        tasks_conditions_dict=tasks_conditions_dict,
+        field_maps=True,
+        sessions=sessions,
+    )
+
+    bids_file = FileSchema().load(dict(datatype="bids", path=str(data_path)))
+
+    mock_spec = make_bids_only_spec(dataset_files=[bids_file])
+    preproc_setting = {
+        "space": "standard",
+        "name": "preproc",
+        "filters": [{"type": "tag", "action": "include", "entity": "task", "values": ["workingmemory"]}],
+        "output_image": True,
+    }
+    mock_spec.settings.append(preproc_setting)
+    save_spec(mock_spec, workdir=workdir_path)
+
+    # Yield paths to the test
+    yield data_path, workdir_path
+
+    # Cleanup after the test
+    shutil.rmtree(base_path)

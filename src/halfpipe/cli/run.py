@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import logging
+import sys
 from argparse import Namespace
 from pathlib import Path
 from typing import Any, Mapping
@@ -351,6 +352,8 @@ def main() -> None:
             import pdb
 
             pdb.post_mortem()
+
+        sys.exit(1)
     finally:
         if profile and profiler_instance is not None:
             profiler_instance.disable()

@@ -2,12 +2,13 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import zipfile
+import tarfile
 from datetime import datetime
 from multiprocessing import cpu_count
 from pathlib import Path
 
 import pytest
+import zstandard
 from fmriprep import config
 
 from halfpipe.cli.parser import build_parser
@@ -23,7 +24,7 @@ from .spec import TestSetting, make_spec
 
 settings_list: list[TestSetting] = [
     TestSetting(
-        name="noConfounds",  # was FalseComb0
+        name="baseline",  # was FalseComb0
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
@@ -39,7 +40,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaACompCorCSF",  # was TrueComb1
+        name="icaAromaCCompCor",  # was TrueComb1
         base_setting=dict(
             confounds_removal=["c_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -47,7 +48,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaACompCorCSFWM",
+        name="icaAromaACompCor",
         base_setting=dict(
             confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -55,7 +56,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaMotionParameters",  # was TrueComb2
+        name="icaAromaMotionParameters6",  # was TrueComb2
         base_setting=dict(
             confounds_removal=["(trans|rot)_[xyz]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -63,7 +64,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaSimple",  # was TrueComb3
+        name="icaAromaMotionParameters",  # was TrueComb3
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -76,7 +77,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAromaSimpleGSR",  # was TrueComb4
+        name="icaAromaMotionParametersGSR",  # was TrueComb4
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -92,18 +93,34 @@ settings_list: list[TestSetting] = [
     TestSetting(
         name="icaAromaGSR",  # was TrueComb5
         base_setting=dict(
+            confounds_removal=["global_signal"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="icaAromaScrubbing",
+        base_setting=dict(
+            confounds_removal=["motion_outlier[0-9]+"],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
+    TestSetting(
+        name="icaAromaScrubbingGSR",
+        base_setting=dict(
             confounds_removal=[
+                "motion_outlier[0-9]+",
                 "global_signal",
             ],
             grand_mean_scaling=dict(mean=10000.0),
             ica_aroma=True,
         ),
     ),
-    # we had to change the name of the confounds removal
-    # so we get the CSF only instead of the
-    # combined CSF + White matter.
+    # cCompCor = CSF
+    # aCompCor = CSF + White matter.
     TestSetting(
-        name="aCompCorCSF",  # was FalseComb1
+        name="cCompCor",  # was FalseComb1
         base_setting=dict(
             confounds_removal=["c_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -111,7 +128,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="aCompCorCSFWM",
+        name="aCompCor",
         base_setting=dict(
             confounds_removal=["a_comp_cor_0[0-4]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -119,7 +136,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="motionParameters",  # was FalseComb2
+        name="motionParameters6",  # was FalseComb2
         base_setting=dict(
             confounds_removal=["(trans|rot)_[xyz]"],
             grand_mean_scaling=dict(mean=10000.0),
@@ -127,7 +144,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="simple",  # was FalseComb3
+        name="motionParameters",  # was FalseComb3
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -140,7 +157,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="simpleGSR",  # was FalseComb4
+        name="motionParametersGSR",  # was FalseComb4
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -164,7 +181,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="simpleScrubbing",
+        name="motionParametersScrubbing",
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -178,7 +195,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="simpleScrubbingGSR",
+        name="motionParametersScrubbingGSR",
         base_setting=dict(
             confounds_removal=[
                 "(trans|rot)_[xyz]",
@@ -192,7 +209,117 @@ settings_list: list[TestSetting] = [
             ica_aroma=False,
         ),
     ),
-    # ? Add counterparts with ICA_AROMA not enabled
+    TestSetting(
+        name="Wang2023Simple",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "white_matter",
+                "csf",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023SimpleGSR",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "white_matter",
+                "csf",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023Scrubbing",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "white_matter",
+                "csf",
+                "motion_outlier[0-9]+",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023ScrubbingGSR",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "white_matter",
+                "csf",
+                "motion_outlier[0-9]+",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023ACompCor",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "a_comp_cor_0[0-4]",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="Wang2023ACompCorGSR",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "a_comp_cor_0[0-4]",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=False,
+        ),
+    ),
+    TestSetting(
+        name="everything",
+        base_setting=dict(
+            confounds_removal=[
+                "(trans|rot)_[xyz]",
+                "(trans|rot)_[xyz]_derivative1",
+                "(trans|rot)_[xyz]_power2",
+                "(trans|rot)_[xyz]_derivative1_power2",
+                "motion_outlier[0-9]+",
+                "white_matter",
+                "csf",
+                "c_comp_cor_0[0-4]",
+                "global_signal",
+            ],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+        ),
+    ),
 ]
 
 
@@ -206,6 +333,7 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
 
     dataset_file = dataset.download(tmp_path)
     spec = make_spec(dataset_files=[dataset_file], pcc_mask=pcc_mask, test_settings=settings_list)
+    spec.features = [feature for feature in spec.features if feature.type != "gig_ica"]  # Drop gig-ica feature
     config.nipype.omp_nthreads = cpu_count()
     save_spec(spec, workdir=tmp_path)
 
@@ -261,17 +389,32 @@ def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
         tsnr_fmriprep = index.get(sub=sub, suffix="boldmap", datatype="func", stat="tsnr")
         confounds_sidecar = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".json")
         confounds = index.get(sub=sub, suffix="timeseries", datatype="func", desc="confounds", extension=".tsv")
-        paths_to_zip.extend(list(tsnr_fmriprep or []) + [spec_file] + list(confounds or []) + list(confounds_sidecar or []))
+        reports_folder = tmp_path / "reports" / f"sub-{sub}"
 
-        # Create the zip file in the specified output directory
+        report_figures: list[Path] = []
+        if reports_folder.exists():
+            report_figures = [f for f in reports_folder.rglob("*") if f.is_file()]
+
+        paths_to_zip.extend(list(tsnr_fmriprep or []))
+        paths_to_zip.append(spec_file)
+        paths_to_zip.extend(list(confounds or []))
+        paths_to_zip.extend(list(confounds_sidecar or []))
+        paths_to_zip.extend(report_figures)
+
+        # Create the zstandard-compressed tar file in the specified output directory
         timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-        zip_filename = f"{dataset.openneuro_id}_sub-{sub}_time-{timestamp}.zip"
-        zip_filepath = tmp_path / zip_filename
-        with zipfile.ZipFile(zip_filepath, "w") as zipf:
+        archive_filename = f"{dataset.openneuro_id}_sub-{sub}_time-{timestamp}.tar.zst"
+        archive_filepath = tmp_path / archive_filename
+        compressor = zstandard.ZstdCompressor(level=22, threads=24)
+        with (
+            archive_filepath.open("wb") as file_handle,
+            compressor.stream_writer(file_handle) as compression_handle,
+            tarfile.open(mode="w|", fileobj=compression_handle) as tar_file,
+        ):
             for file in paths_to_zip:
                 # Ensure file is a Path instance and convert it to string if needed
                 if not isinstance(file, Path):
                     raise TypeError(f"Unexpected type for file: {type(file)}")
-                zipf.write(str(file), arcname=str(file.relative_to(tmp_path)))
+                tar_file.add(file, arcname=str(file.relative_to(tmp_path)))
 
-        logger.info(f"Created zip file: {zip_filepath}")
+        logger.info(f"Created archive file: {archive_filepath}")

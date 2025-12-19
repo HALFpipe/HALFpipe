@@ -50,13 +50,15 @@ class ICAAROMAComponentsFactory(Factory):
 
         self.alt_bold_factory = alt_bold_factory
         self.fmriprep_factory = fmriprep_factory
+        self.processing_groups: list | None = None
 
-    def setup(self):
+    def setup(self, processing_groups=None):
         prototype = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir))
         self.wf_name = prototype.name
+        self.processing_groups = processing_groups
 
     def get(self, source_file, **_):
-        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
+        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
         wf = hierarchy[-1]
 
         vwf = wf.get_node(self.wf_name)
@@ -80,7 +82,9 @@ class ICAAROMAComponentsFactory(Factory):
             self.ctx.database.fillmetadata("repetition_time", [source_file])
             inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
             self.alt_bold_factory.connect(hierarchy, inputnode, source_file=source_file)
-            self.fmriprep_factory.connect(hierarchy, inputnode, source_file=source_file)
+            self.fmriprep_factory.connect(
+                hierarchy, inputnode, source_file=source_file, processing_group=self.fmriprep_factory.processing_groups
+            )
 
         outputnode = vwf.get_node("outputnode")
 
@@ -90,6 +94,7 @@ class ICAAROMAComponentsFactory(Factory):
 class LookupFactory(Factory):
     def __init__(self, ctx: FactoryContext, previous_factory: Factory) -> None:
         super(LookupFactory, self).__init__(ctx)
+        self.processing_groups = None
 
         self.wf_names: dict[SettingTuple, str] = dict()
         self.wf_factories: dict[LookupTuple, Callable] = dict()
@@ -97,8 +102,25 @@ class LookupFactory(Factory):
         self.tpl_by_setting_name: dict[str, SettingTuple] = dict()
 
         self.previous_factory = previous_factory
+        logger.debug(
+            "LookupFactory swap:\n"
+            f"  previous={self.previous_factory.__class__.__name__}\n"
+            f"  current={self.__class__.__name__}\n"
+        )
 
-    def setup(self) -> None:
+        # i think this is not needed because all is set up through setup in postprocessing factory
+        # self.processing_groups = self.previous_factory.processing_groups
+        self.processing_groups = None
+
+    def setup(self, processing_groups=None) -> None:
+        self.processing_groups = processing_groups
+        logger.debug(
+            "LookupFactory swap:\n"
+            f"  previous={self.previous_factory.__class__.__name__}\n"
+            f"  current={self.__class__.__name__}\n"
+            f"  processing_group={self.processing_groups}"
+        )
+
         setting_names = [setting["name"] for setting in self.ctx.spec.settings]
 
         previous_tpls: list[SettingTuple] = []
@@ -138,12 +160,24 @@ class LookupFactory(Factory):
         return obj is None
 
     def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple):
+        logger.debug(f"_connect_inputs previous_factory: {self.previous_factory.__class__.__name__} ")
+        logger.debug(f"_connect_inputs current_factory: {self.__class__.__name__} ")
+
         if hasattr(inputnode.inputs, "repetition_time"):
             self.ctx.database.fillmetadata("repetition_time", [source_file])
             inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
         if hasattr(inputnode.inputs, "tags"):
             inputnode.inputs.tags = self.ctx.database.tags(source_file)
-        self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
+        if self.previous_factory.__class__.__name__ == "FmriprepFactory":
+            self.previous_factory.connect(
+                hierarchy,
+                inputnode,
+                source_file=source_file,
+                setting_name=setting_name,
+                processing_group=self.previous_factory.processing_groups,
+            )
+        else:
+            self.previous_factory.connect(hierarchy, inputnode, source_file=source_file, setting_name=setting_name)
 
     def wf_factory(self, lookup_tuple: LookupTuple):
         if lookup_tuple not in self.wf_factories:
@@ -158,7 +192,7 @@ class LookupFactory(Factory):
         return self.wf_factories[lookup_tuple]()
 
     def get(self, source_file, setting_name):
-        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
+        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
         wf = hierarchy[-1]
 
         setting_tuple = self.tpl_by_setting_name[setting_name]
@@ -181,6 +215,10 @@ class LookupFactory(Factory):
         inputnode = vwf.get_node("inputnode")
         hierarchy.append(vwf)
 
+        logger.debug(
+            f"lookup factory get-> hierarchy {hierarchy}, inputnode: {inputnode}, source_file: {source_file}"
+            f", setting_name {setting_name}, lookup_tuple {lookup_tuple}"
+        )
         if connect_inputs:
             self._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
 
@@ -440,21 +478,23 @@ class PostProcessingFactory(Factory):
                     source_files |= self.ctx.database.applyfilters(bold_file_paths, filters)
         return source_files
 
-    def setup(self, raw_sources_dict: dict | None = None) -> None:
+    def setup(self, raw_sources_dict: dict | None = None, processing_groups=None) -> None:
         if raw_sources_dict is None:
             raw_sources_dict = dict()
 
-        self.alt_bold_factory.setup()
-        self.ica_aroma_components_factory.setup()
-        self.fmriprep_adapter_factory.setup()
-        self.smoothing_factory.setup()
-        self.grand_mean_scaling_factory.setup()
-        self.ica_aroma_regression_factory.setup()
-        self.bandpass_filter_factory.setup()
+        # here pass everywhere processing_groups so that when there are multiple sessions, a special string suffix can
+        # be made out of them in order to find correct workflow when a method _get_hierarchy is used
+        self.alt_bold_factory.setup(processing_groups=processing_groups)
+        self.ica_aroma_components_factory.setup(processing_groups=processing_groups)
+        self.fmriprep_adapter_factory.setup(processing_groups=processing_groups)
+        self.smoothing_factory.setup(processing_groups=processing_groups)
+        self.grand_mean_scaling_factory.setup(processing_groups=processing_groups)
+        self.ica_aroma_regression_factory.setup(processing_groups=processing_groups)
+        self.bandpass_filter_factory.setup(processing_groups=processing_groups)
 
-        self.setting_adapter_factory.setup()
-        self.confounds_select_factory.setup()
-        self.confounds_regression_factory.setup()
+        self.setting_adapter_factory.setup(processing_groups=processing_groups)
+        self.confounds_select_factory.setup(processing_groups=processing_groups)
+        self.confounds_regression_factory.setup(processing_groups=processing_groups)
 
         for setting in self.ctx.spec.settings:
             setting_output_wf_factory = deepcopyfactory(
@@ -471,7 +511,10 @@ class PostProcessingFactory(Factory):
                 source_files = self.ctx.database.applyfilters(source_files, filters)
 
             for source_file in source_files:
-                hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file)
+                # also pass processing_groups here
+                hierarchy = self._get_hierarchy(
+                    "post_processing_wf", source_file=source_file, processing_group=processing_groups
+                )
 
                 wf = setting_output_wf_factory()
                 hierarchy[-1].add_nodes([wf])
@@ -514,4 +557,4 @@ class PostProcessingFactory(Factory):
         elif confounds_action is None:
             return self.setting_adapter_factory.get(source_file, setting_name)
         else:
-            raise ValueError(f"Unknown counfounds action '{confounds_action}'")
+            raise ValueError(f"Unknown confounds action '{confounds_action}'")

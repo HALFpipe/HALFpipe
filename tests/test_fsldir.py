@@ -8,6 +8,8 @@ from pathlib import Path
 
 import pytest
 
+from halfpipe.logging import logger
+
 
 def test_fsldir():
     """
@@ -40,4 +42,4 @@ def test_fsldir():
 
     # Assert that the version output is not empty
     assert fsl_version, "FSL version output is empty"
-    print(f"FSL version: {fsl_version}")
+    logger.debug(f"FSL version: {fsl_version}")
