@@ -153,7 +153,7 @@ class Spec:
             return False
 
         # used by stats factory
-        if type == 'model'
+        if type == 'model':
             for model in self.spec.models:
                 if model.name == name:
                     return True

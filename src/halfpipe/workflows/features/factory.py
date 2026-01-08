@@ -40,16 +40,6 @@ class FeatureFactory(Factory):
         self.fmriprep_factory = fmriprep_factory
         self.post_processing_factory = post_processing_factory
 
-        instance = FeatureSchema()
-        settingnames = set()
-        for feature in self.ctx.spec.features:
-            featuredict = instance.dump(feature)
-            assert isinstance(featuredict, dict)
-            for k, v in featuredict.items():
-                if k.endswith("setting"):
-                    settingnames.add(v)
-        self.source_files = self.post_processing_factory.get_source_files(settingnames)
-
         self.workflows: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
 
     def setup(self, raw_sources_dict: dict | None = None, processing_groups=None):

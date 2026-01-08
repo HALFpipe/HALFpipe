@@ -16,6 +16,7 @@ from ...utils.copy import deepcopyfactory
 from ...utils.hash import b32_digest
 from ..bypass import init_bypass_wf
 from ..factory import Factory, FactoryContext
+# TODO check on init/import statements
 from halfpipe.workflows.fmriprep.factory import FmriprepFactory
 from ..memory import MemoryCalculator
 from ..resampling.factory import AltBOLDFactory
@@ -463,21 +464,6 @@ class PostProcessingFactory(Factory):
         self.setting_adapter_factory = SettingAdapterFactory(ctx, self.bandpass_filter_factory)
         self.confounds_select_factory = ConfoundsSelectFactory(ctx, self.setting_adapter_factory)
         self.confounds_regression_factory = ConfoundsRegressionFactory(ctx, self.confounds_select_factory)
-
-        setting_names = set(setting["name"] for setting in self.ctx.spec.settings if setting.get("output_image") is True)
-        self.source_files = self.get_source_files(setting_names)
-
-    def get_source_files(self, setting_names) -> set[str]:
-        bold_file_paths = set(self.ctx.database.get(datatype="func", suffix="bold"))
-        source_files: set[str] = set()
-        for setting in self.ctx.spec.settings:
-            if setting.get("name") in setting_names:
-                filters = setting.get("filters")
-                if filters is None or len(filters) == 0:
-                    return bold_file_paths
-                else:
-                    source_files |= self.ctx.database.applyfilters(bold_file_paths, filters)
-        return source_files
 
     def setup(self, raw_sources_dict: dict | None = None, processing_groups=None) -> None:
         if raw_sources_dict is None:
