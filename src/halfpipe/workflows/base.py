@@ -7,6 +7,7 @@ from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
+from ..collect.bold import collect_bold_files
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
@@ -18,19 +19,18 @@ from ..utils.copy import deepcopyfactory
 from .constants import Constants
 from .convert import convert_all
 from .factory import FactoryContext
+from .features import FeatureFactory
+from .fmriprep import FmriprepFactory
 from .memory import MemoryCalculator
-
-from halfpipe.workflows.features.factory import FeatureFactory
-from halfpipe.workflows.fmriprep.factory import FmriprepFactory
-from halfpipe.workflows.mriqc.factory import MriqcFactory
-from halfpipe.workflows.post_processing.factory import PostProcessingFactory
-from halfpipe.workflows.stats.factory import StatsFactory
+from .mriqc import MriqcFactory
+from .post_processing import PostProcessingFactory
+from .stats import StatsFactory
 
 
 def init_workflow(
-    workdir: Path, 
-    spec: Optional[Spec] = None, 
-    spec_path: Path | None = None, 
+    workdir: Path,
+    spec: Optional[Spec] = None,
+    spec_path: Path | None = None,
     bids_database_dir: Path | None = None,
 ) -> IdentifiableWorkflow:
     """
@@ -38,8 +38,9 @@ def init_workflow(
     :param workdir
     :param spec
     """
-    from ..collect.bold import collect_bold_files
-
+    ##############################
+    # Attempt Load/Init Database #
+    ##############################
     if not spec:
         spec = load_spec(workdir=workdir, path=spec_path)
     assert spec is not None, "A spec file could not be loaded"
@@ -56,9 +57,12 @@ def init_workflow(
 
     # init classes that use the database
     bids_database = BidsDatabase(database)
+    # this init does nearly nothing
+    # should refactor so that 'write out' convert and population of database happens at init time (unless reason im not aware of?)
 
-    # create parent workflow
-
+    ##########################
+    # Create Parent Workflow #
+    ##########################
     uuidstr = str(uuid)[:8]
     logger.info(f"Initializing new workflow {uuidstr}")
 
@@ -79,19 +83,23 @@ def init_workflow(
     if len(spec.features) == 0 and not any(setting.get("output_image") is True for setting in spec.settings):
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
-    # create factories
+    ####################
+    # Create Factories #
+    ####################
     logger.debug("init_workflow->creating factories")
     ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
     fmriprep_factory = FmriprepFactory(ctx)
     post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
     feature_factory = FeatureFactory(ctx, fmriprep_factory, post_processing_factory)
-    # TODO downstream feature factory ?
+    # TODO downstream feature factory
     stats_factory = StatsFactory(ctx, feature_factory)
 
-    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)
+    #############
+    # Write Out #
+    #############
+    # TODO modify for collect_bold_files for downstream_features? will there be additional bold files?
+    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(spec, database)
     logger.debug(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
-
-    # write out
 
     convert_all(database, bids_database, bold_file_paths_dict)
 
@@ -110,8 +118,9 @@ def init_workflow(
     bids_dir = Path(workdir) / "rawdata"
     bids_database.write(bids_dir)
 
-    # setup preprocessing
-
+    #######################
+    # Setup Preprocessing #
+    #######################
     if spec.global_settings.get("run_mriqc") is True:
         logger.debug("init_workflow->going to setup mriqc_factory")
         mriqc_factory = MriqcFactory(ctx)
@@ -146,7 +155,9 @@ def init_workflow(
             logger.debug("init_workflow->going to setup stats_factory")
             stats_factory.setup()
 
-    # patch workflow
+    ##################
+    # Patch Workflow #
+    ##################
     config_factory = deepcopyfactory(workflow.config)
     min_gb = MemoryCalculator.default().min_gb
 

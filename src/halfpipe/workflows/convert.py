@@ -8,7 +8,7 @@ from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
 from ..logging import logger
 
-
+# TODO refactor this to bids.py
 def convert_all(
     database: Database,
     bids_database: BidsDatabase,

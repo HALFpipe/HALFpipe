@@ -220,6 +220,7 @@ class FmriprepFactory(Factory):
         """
         This needs to be documented.
         """
+        # why is bold_file_paths passed to this function? shouldn't it already be in the FactoryContext?
 
         spec = self.ctx.spec
         database = self.ctx.database
