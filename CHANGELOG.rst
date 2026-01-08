@@ -1,6 +1,29 @@
 Changelog
 =========
 
+1.3.2 (January 8th 2026)
+------------------------
+
+New features and enhancements
+-----------------------------
+- Add `--bids-database-dir` and `--spec-file` options for compatibility with `nipoppy` (#879, #919)
+
+Bug fixes
+---------
+- Only resample atlases when needed (#874)
+- Fix crash for zero-variance confounds regressors (#874)
+- Fix new user interface crashes (#876, #878, #883, #886, #887, #889, #890, #892, #891, #894, #898, #899, #900, #901, #902, #910, #911, #905, #913, #915)
+
+Maintenance
+-----------
+- Make more conda packages `noarch` packages (#873)
+- Update `mapca` for compatibility with `nilearn` (#874)
+- Upgrade to `fmriprep` 25.2.3 (#877)
+- Update `README.rst`` to refer to latest released container (#893)
+- Update consistency check code (#906, #918)
+
+With many thanks to @F-Tomas, @lalalavi and @harveyaa for contributions
+
 1.3.1 (October 15th 2025)
 ---------------------------
 
