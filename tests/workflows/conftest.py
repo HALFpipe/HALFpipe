@@ -38,7 +38,7 @@ from .spec import TestSetting, make_bids_only_spec, make_spec
 
 @pytest.fixture(scope="session")
 def bids_data(tmp_path_factory) -> Path:
-    tmp_path = tmp_path_factory.mktemp(basename="bids_data")
+    tmp_path = tmp_path_factory.mktemp(basename="rawdata")  # renamed to match FmriprepFactory set up/get config
 
     os.chdir(str(tmp_path))
 
@@ -48,7 +48,14 @@ def bids_data(tmp_path_factory) -> Path:
     with ZipFile(input_path) as fp:
         fp.extractall(tmp_path)
 
-    bids_data_path = tmp_path / "bids_data"
+    bids_data_path = tmp_path / "rawdata"  # renamed to match FmriprepFactory set up/get config
+
+    os.rename(tmp_path / "bids_data", bids_data_path)  # renamed to match FmriprepFactory set up/get config
+
+    # add dataset description for bids
+    json_data = {"Name": "HALFpipe test data", "BIDSVersion": "1.6.0"}
+    with open(bids_data_path / "dataset_description.json", "w") as f:
+        f.write(json.dumps(json_data))
 
     func_path = bids_data_path / "sub-1012" / "func"
 
