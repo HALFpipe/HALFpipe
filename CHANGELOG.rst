@@ -19,7 +19,7 @@ Maintenance
 - Make more conda packages `noarch` packages (#873)
 - Update `mapca` for compatibility with `nilearn` (#874)
 - Upgrade to `fmriprep` 25.2.3 (#877)
-- Update `README.rst`` to refer to latest released container (#893)
+- Update `README.rst` to refer to latest released container (#893)
 - Update consistency check code (#906, #918)
 
 With many thanks to @F-Tomas, @lalalavi and @harveyaa for contributions
