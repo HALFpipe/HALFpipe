@@ -22,12 +22,11 @@ from marshmallow import (
 
 # this import statement is so cryptic
 from .. import __version__ as halfpipe_version
-
 from ..logging import logger
 from ..utils.hash import hex_digest
 from ..utils.time import timestamp_format
-from .feature import FeatureSchema
 from .downstream_feature import DownstreamFeatureSchema
+from .feature import FeatureSchema
 from .file.base import File
 from .file.schema import FileSchema
 from .global_settings import GlobalSettingsSchema
@@ -180,6 +179,7 @@ def load_spec(
         logger.warning(f'Ignored validation error in "{path}"', exc_info=e)
 
     return None
+
 
 # TODO confirm this is never used & remove
 def readspec(stdin_spec: dict, logger=logger) -> Spec | None:

@@ -9,6 +9,7 @@ from .filter import FilterSchema
 
 # what is a setting?
 
+
 class SmoothingSettingSchema(Schema):
     fwhm = fields.Float(validate=validate.Range(min=0.0), required=True)
 

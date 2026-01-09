@@ -17,6 +17,7 @@ def validate_tags(v):
         return
     raise ValidationError("Need to be either a string or a (nested) list of strings")
 
+
 # TODO still unclear about this format system
 first_level_entities = [
     "feature",
@@ -31,7 +32,6 @@ first_level_entities = [
     # task
     "taskcontrast",
     "condition",
-
     # gradients
     "downstream_feature",
     "reference",

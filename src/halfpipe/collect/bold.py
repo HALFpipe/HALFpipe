@@ -4,20 +4,19 @@
 
 from collections import defaultdict
 
-#from halfpipe.workflows.factory import FactoryContext # this causes a circular import error - why?
+# from halfpipe.workflows.factory import FactoryContext # this causes a circular import error - why?
 from halfpipe.model.feature import FeatureSchema
 
-from ..ingest.database import Database
 from ..ingest.bids import BidsDatabase
 from ..logging import logger
 from ..utils.image import nvol
-#from ..workflows.features.factory import FeatureFactory
-#from ..workflows.post_processing.factory import PostProcessingFactory
+
+# from ..workflows.features.factory import FeatureFactory
+# from ..workflows.post_processing.factory import PostProcessingFactory
 from .fmap import collect_fieldmaps
 
-def get_setting_names(
-    spec
-    ):
+
+def get_setting_names(spec):
     # get post processing setting names (moved from PostProcessingFactory self.source_files)
     post_processing_setting_names = set(setting["name"] for setting in spec.settings if setting.get("output_image") is True)
 
@@ -33,12 +32,13 @@ def get_setting_names(
 
     return post_processing_setting_names | feature_setting_names
 
+
 # moved from PostProcessingFactory
 def get_source_files(
     spec,
     database,
-    setting_names, # set
-    ) -> set[str]:
+    setting_names,  # set
+) -> set[str]:
     bold_file_paths = set(database.get(datatype="func", suffix="bold"))
 
     source_files: set[str] = set()
@@ -51,12 +51,13 @@ def get_source_files(
                 source_files |= database.applyfilters(bold_file_paths, filters)
     return source_files
 
+
 # refactored to depend only on the spec & database
 # TODO modify for collect_bold_files for downstream_features? will there be additional bold files?
 def collect_bold_files(
     spec,
     database,
-    ) -> dict[str, list[str]]:
+) -> dict[str, list[str]]:
     setting_names = get_setting_names(spec)
 
     # Find all bold files

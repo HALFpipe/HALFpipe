@@ -23,7 +23,6 @@ from ..memory import MemoryCalculator
 def init_atlas_based_connectivity_wf(
     workdir: str | Path,
     # harveyaa - in general: why are these optional arguments?
-
     # harveyaa - feature must contain atlas names, sets default min region coverage 0.8
     # harveyaa - Feature constructor must have type (which is a string) as 2nd positional arg
     feature: Feature | None = None,
@@ -54,16 +53,13 @@ def init_atlas_based_connectivity_wf(
                 "tags",  # dictionary keys to values
                 "vals",  # fd_mean, etc.
                 "metadata",  # repetition_time, etc.
-
-                "bold", # corresponds w input spec in_file
-                "mask", # corresponds w input spec mask_file
+                "bold",  # corresponds w input spec in_file
+                "mask",  # corresponds w input spec mask_file
                 "repetition_time",
-                
-                "atlas_names", # corresponds w feature atlases
-                "atlas_files", # corresponds w input spec atlas_file (why plural here? map node possible?)
-                "atlas_spaces", 
+                "atlas_names",  # corresponds w feature atlases
+                "atlas_files",  # corresponds w input spec atlas_file (why plural here? map node possible?)
+                "atlas_spaces",
                 # feel like min_region_coverage belongs here
-
                 # resampling to native space
                 "std2anat_xfm",
                 "bold_ref_anat",

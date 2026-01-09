@@ -2,30 +2,31 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
 import nibabel as nib
 import numpy as np
 
-from nipype.pipeline import engine as pe
-
 from halfpipe.collect.bold import collect_bold_files
 from halfpipe.ingest.database import Database
 from halfpipe.model.file.base import File
 from halfpipe.model.spec import Spec
 
+
 def mock_fillmetadata(key, filepaths) -> bool:
     return True
+
 
 def test_get_setting_names():
     # TODO
     assert True
 
+
 def test_collect_bold_files():
     # TODO
     assert True
+
 
 def test_no_duplicates(tmp_path: Path) -> None:
     image_path_a = str(tmp_path / "a.nii.gz")
@@ -39,7 +40,7 @@ def test_no_duplicates(tmp_path: Path) -> None:
     image = nib.nifti1.Nifti1Image(np.zeros((64, 64, 64)), np.eye(4))
     nib.save(image, image_path_t1w)
 
-    empty_spec = Spec(datetime.now(), list(), settings = [dict(name='foo',output_image=True)])
+    empty_spec = Spec(datetime.now(), list(), settings=[dict(name="foo", output_image=True)])
     database = Database(empty_spec)
     database.fillmetadata = mock_fillmetadata  # type: ignore
 

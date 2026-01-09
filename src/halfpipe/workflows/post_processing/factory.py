@@ -9,6 +9,9 @@ from typing import Any, Callable, Generic, Hashable, TypeVar
 
 from nipype.pipeline import engine as pe
 
+# TODO check on init/import statements
+from halfpipe.workflows.fmriprep.factory import FmriprepFactory
+
 # TODO modify imports to be from top
 from ...collect.metadata import collect_metadata
 from ...logging import logger
@@ -16,8 +19,6 @@ from ...utils.copy import deepcopyfactory
 from ...utils.hash import b32_digest
 from ..bypass import init_bypass_wf
 from ..factory import Factory, FactoryContext
-# TODO check on init/import statements
-from halfpipe.workflows.fmriprep.factory import FmriprepFactory
 from ..memory import MemoryCalculator
 from ..resampling.factory import AltBOLDFactory
 from .bandpass_filter import BandpassFilterTuple, init_bandpass_filter_wf

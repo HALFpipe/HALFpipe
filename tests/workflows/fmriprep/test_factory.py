@@ -1,29 +1,27 @@
-import pytest
 from pathlib import Path
 
-from halfpipe.ingest.database import Database
 from halfpipe.collect.bold import collect_bold_files
+from halfpipe.ingest.database import Database
 from halfpipe.workflows.fmriprep.factory import FmriprepFactory
 
 # TODO test I/O through features/nodes/workflow
 
+
 def test_collect_bold_files(tmp_path, bids_data, mock_spec):
-    """ Check if collected bold files is empty."""
+    """Check if collected bold files is empty."""
     database = Database(mock_spec, bids_database_dir=bids_data)
 
     bold_file_paths_dict = collect_bold_files(mock_spec, database)
     assert len(bold_file_paths_dict) > 0
 
+
 def test_init(mock_fmriprep_factory):
-    """ Check fmriprep_factory fixture creation."""
+    """Check fmriprep_factory fixture creation."""
     assert isinstance(mock_fmriprep_factory, FmriprepFactory)
 
-def test_setup(
-    bids_data, 
-    mock_spec, 
-    mock_fmriprep_factory
-    ):
-    """ Check that setup works with test data."""
+
+def test_setup(bids_data, mock_spec, mock_fmriprep_factory):
+    """Check that setup works with test data."""
     database = Database(mock_spec, bids_database_dir=bids_data)
     bold_file_paths_dict = collect_bold_files(mock_spec, database)
 
