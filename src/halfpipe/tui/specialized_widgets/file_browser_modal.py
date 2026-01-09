@@ -242,6 +242,7 @@ class FileBrowserModal(DraggableModalScreen):
             Horizontal(
                 Button("Ok", id="ok_button", classes="button ok"),
                 Button("Cancel", id="cancel_button", classes="button cancel"),
+                id="button_panel",
             ),
         )
 
