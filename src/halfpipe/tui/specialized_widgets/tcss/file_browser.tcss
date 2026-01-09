@@ -38,13 +38,16 @@ FileBrowserModal {
             }
         }
         .browse_tree {
-            height: 80%;
+            height: 70%;
             width: 100%;
             padding: 0 1 0 1;
             border-bottom: tall $primary;
         }
         #path_input_box2 {
             border: none;
+        }
+        #button_panel {
+            dock: bottom;
         }
 
         InputWithUpDownArrows {
@@ -89,6 +92,9 @@ FileBrowserModal {
             color: red;
             background: transparent;
             content-align: center bottom;
+        }
+        SelectOverlay {
+            height: 8;
         }
     }
     /*
