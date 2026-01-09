@@ -23,25 +23,36 @@ from .reho import init_reho_wf
 from .seed_based_connectivity import init_seed_based_connectivity_wf
 from .task_based import init_task_based_wf
 
+
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
-
+# TODO feels like this belongs elsewhere, probably in model > spec.py
 def _find_setting(setting_name: str, spec: Spec) -> dict[str, Any]:
     (setting,) = [setting for setting in spec.settings if setting["name"] == setting_name]
     return setting
 
 
 class FeatureFactory(Factory):
-    def __init__(self, ctx: FactoryContext, fmriprep_factory: Factory, post_processing_factory: PostProcessingFactory) -> None:
+    def __init__(
+        self, 
+        ctx: FactoryContext, 
+        fmriprep_factory: Factory, 
+        post_processing_factory: PostProcessingFactory,
+        ) -> None:
         super().__init__(ctx)
         self.processing_groups: None | list = None
 
         self.fmriprep_factory = fmriprep_factory
         self.post_processing_factory = post_processing_factory
+        
+        # filled in by .create()
+        self.hierarchies: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
 
-        self.workflows: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
-
-    def setup(self, raw_sources_dict: dict | None = None, processing_groups=None):
+    def setup(
+        self, 
+        raw_sources_dict: dict | None = None, 
+        processing_groups = None
+        ):
         logger.debug(f"FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict},processing_groups: {processing_groups}")
         # pass processing_groups also here so that when later _get_hierarchy is used in create, the processing_groups can
         # there so that the right workflow can be found
@@ -63,7 +74,12 @@ class FeatureFactory(Factory):
                 source_file_raw_sources = raw_sources_dict[source_file]
                 self.create(source_file, feature, raw_sources=source_file_raw_sources)
 
-    def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
+    def create(
+        self, 
+        source_file, 
+        feature, 
+        raw_sources: list | None = None
+        ) -> pe.Workflow | None:
         raw_sources = [] if raw_sources is None else raw_sources
         hierarchy = self._get_hierarchy("features_wf", source_file=source_file, processing_group=self.processing_groups)
         parent_workflow = hierarchy[-1]
@@ -155,7 +171,7 @@ class FeatureFactory(Factory):
         parent_workflow.add_nodes([workflow])
         hierarchy.append(workflow)
 
-        self.workflows[feature.name].append(hierarchy)
+        self.hierarchies[feature.name].append(hierarchy)
 
         for node in workflow._graph.nodes:
             m = inputnode_name.fullmatch(node.name)
@@ -201,10 +217,10 @@ class FeatureFactory(Factory):
     def get(
         self,
         feature_name: str,
-    ):
+        ):
         # *_: Any,
         # ) -> list[list[pe.Workflow]]:
-        hierarchy = self.workflows[feature_name]
+        hierarchy = self.hierarchies[feature_name]
         outputnode = hierarchy[-1].get_node("outputnode")
         return hierarchy, outputnode
 

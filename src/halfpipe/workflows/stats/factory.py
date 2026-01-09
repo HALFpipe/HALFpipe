@@ -21,17 +21,13 @@ class StatsFactory(Factory):
         super().__init__(ctx)
 
         self.feature_factory = feature_factory
-        self.wfs = dict()
-
-    # TODO standardize
-    def connect(self, *args, **kwargs):
-        _, _ = args, kwargs
-        raise NotImplementedError()
-
-    def get(self, model_name):
-        # TODO add check if model_name in wfs
-        return self.wfs[model_name]
-
+        self.hierarchies = dict()
+    
+    # TODO standardize & this should be the only callable function from any factory
+    def setup(self):
+        for model in self.ctx.spec.models:
+            self.create(model)
+    
     # TODO rename to _create
     def create(self, model):
         hierarchy = self._get_hierarchy("stats_wf")
@@ -58,7 +54,7 @@ class StatsFactory(Factory):
 
             # if inputname is another model should have been defined previously
             if inputname in [model.name for model in self.ctx.spec.models]:
-                # TODO problematic bc if true will call get on an empty dict for self.wfs
+                # TODO problematic bc if true will call get on an empty dict for self.hierarchies
                 # will this always be false?
                 inputs.extend(self.get(inputname))
                 logger.debug(f"StatsFactory->extending inputs by self->inputs: {inputs}")
@@ -87,12 +83,12 @@ class StatsFactory(Factory):
         hierarchy.append(vwf)
 
         # here its named a hierarchy
-        if model.name not in self.wfs:
-            # self.wfs[model.name] = []
-            self.wfs[model.name] = [hierarchy]
+        if model.name not in self.hierarchies:
+            # self.hierarchies[model.name] = []
+            self.hierarchies[model.name] = [hierarchy]
             # dont like that this a list of hierarchy where its just hierarchy in other feature factory
-        # self.wfs[model.name].append(hierarchy)
-        # at this self.wfs[model.name] is a list of of a list
+        # self.hierarchies[model.name].append(hierarchy)
+        # at this self.hierarchies[model.name] is a list of of a list
         # [[outer_workflow, stats_wf, vwf]]
 
         # inputs is a list of outputhierarchy??
@@ -108,8 +104,11 @@ class StatsFactory(Factory):
 
         return vwf
 
+    def get(self, model_name):
+        # TODO add check if model_name in wfs
+        return self.hierarchies[model_name]
+    
     # TODO standardize
-    # this should be the only callable function from any factory?
-    def setup(self):
-        for model in self.ctx.spec.models:
-            self.create(model)
+    def connect(self, *args, **kwargs):
+        _, _ = args, kwargs
+        raise NotImplementedError()
