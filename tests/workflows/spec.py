@@ -9,6 +9,7 @@ from typing import Any
 from templateflow.api import get as get_template
 
 from halfpipe.ingest.events import ConditionFile
+from halfpipe.model.downstream_feature import DownstreamFeatureSchema
 from halfpipe.model.feature import FeatureSchema
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
@@ -246,3 +247,15 @@ def add_settings_and_features_to_spec(
         ),
     )
     spec.features.append(falff_feature)
+
+    # Add downstream features
+    downstream_feature_schema = DownstreamFeatureSchema()
+    gradient_feature = downstream_feature_schema.load(
+        dict(
+            dict(
+                name=f"{name}Gradients",
+                type="gradients",
+            )
+        )
+    )
+    spec.downstream_features.append(gradient_feature)
