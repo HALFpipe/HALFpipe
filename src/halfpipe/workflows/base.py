@@ -33,7 +33,7 @@ def init_workflow(
     spec: Optional[Spec] = None,
     spec_path: Path | None = None,
     bids_database_dir: Path | None = None,
-    ) -> IdentifiableWorkflow:
+) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
     :param workdir
@@ -86,7 +86,9 @@ def init_workflow(
     )
 
     # TODO test/validate this (downstream feature addition)
-    if len(spec.features) + len(spec.downstream_features) == 0 and not any(setting.get("output_image") is True for setting in spec.settings):
+    if len(spec.features) + len(spec.downstream_features) == 0 and not any(
+        setting.get("output_image") is True for setting in spec.settings
+    ):
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
     # globally initialize reference resolution and space from the global settings
