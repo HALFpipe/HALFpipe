@@ -14,16 +14,14 @@ inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 class StatsFactory(Factory):
     def __init__(
-        self, 
-        ctx, 
+        self,
+        ctx,
         feature_factory: FeatureFactory,
-        ) -> None:
-
+    ) -> None:
         super().__init__(ctx)
 
         self.feature_factory = feature_factory
         self.wfs = dict()
-
 
     # TODO standardize
     def connect(self, *args, **kwargs):
@@ -35,10 +33,7 @@ class StatsFactory(Factory):
         return self.wfs[model_name]
 
     # TODO rename to _create
-    def create(
-        self, 
-        model
-        ):
+    def create(self, model):
         hierarchy = self._get_hierarchy("stats_wf")
         # (first run of create)
         # this call creates a list of workflows, starting w context workflow
@@ -59,11 +54,18 @@ class StatsFactory(Factory):
             logger.debug(f"StatsFactory->inputname: {inputname}")
             # Check if model is present in spec
             # TODO naming is confusing but this is correct according to code replaced
+            # if self.has(inputname):
+
+            # if inputname is another model should have been defined previously
             if inputname in [model.name for model in self.ctx.spec.models]:
                 # TODO problematic bc if true will call get on an empty dict for self.wfs
                 # will this always be false?
                 inputs.extend(self.get(inputname))
                 logger.debug(f"StatsFactory->extending inputs by self->inputs: {inputs}")
+
+                # case never happens bc model has to be in order
+
+            # elif self.feature_factory.has(inputname):
             elif inputname in [feature.name for feature in self.ctx.spec.features]:
                 inputs.extend(self.feature_factory.get(inputname))
                 logger.debug(f"StatsFactory->extending inputs by feature_factory->inputs: {inputs}")
@@ -86,12 +88,12 @@ class StatsFactory(Factory):
 
         # here its named a hierarchy
         if model.name not in self.wfs:
-            #self.wfs[model.name] = []
+            # self.wfs[model.name] = []
             self.wfs[model.name] = [hierarchy]
             # dont like that this a list of hierarchy where its just hierarchy in other feature factory
-        #self.wfs[model.name].append(hierarchy)
-        # at this self.wfs[model.name] is a list of of a list 
-            # [[outer_workflow, stats_wf, vwf]]
+        # self.wfs[model.name].append(hierarchy)
+        # at this self.wfs[model.name] is a list of of a list
+        # [[outer_workflow, stats_wf, vwf]]
 
         # inputs is a list of outputhierarchy??
         for i, outputhierarchy in enumerate(inputs):

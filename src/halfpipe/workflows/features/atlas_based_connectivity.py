@@ -76,7 +76,7 @@ def init_atlas_based_connectivity_wf(
     min_region_coverage = 1
     if feature is not None:
         inputnode.inputs.atlas_names = feature.atlases
-        # why does min_region_coverage not go through the nodes?
+        # TODO why does min_region_coverage not go through the nodes?
         if hasattr(feature, "min_region_coverage"):
             min_region_coverage = feature.min_region_coverage
 

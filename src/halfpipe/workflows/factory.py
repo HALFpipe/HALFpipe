@@ -260,5 +260,6 @@ class Factory(ABC):
         **kwargs
         ) -> set[str]:
         # get is implemented by subclasses
+        # TODO refactor to fix for no output of node
         outputhierarchy, outputnode = self.get(*args, **kwargs)
         return self.connect_common_attrs(outputhierarchy, outputnode, nodehierarchy, node)
