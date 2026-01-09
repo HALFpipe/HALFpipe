@@ -24,6 +24,8 @@ test_online_resources = {
     "atlases.zip": "https://github.com/HALFpipe/Atlases/releases/download/1.0.5/atlases.zip",
     "bad_quaternion.nii.gz": "https://github.com/spinalcordtoolbox/spinalcordtoolbox/files/8492834/bad_quaternion.nii.gz",
     "Neuromark_fMRI_1.0.nii": "https://github.com/trendscenter/gift/raw/master/GroupICAT/icatb/icatb_templates/Neuromark_fMRI_1.0.nii",
+    # Gradients
+    "Gradients_Margulies2016.zip": "https://www.neuroconnlab.org/downloads/data/Gradients_Margulies2016.zip",
 }
 
 
