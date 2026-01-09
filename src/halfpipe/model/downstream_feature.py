@@ -5,6 +5,8 @@
 from marshmallow import Schema, fields, post_dump, post_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
+from halfpipe.model.feature import Feature
+
 # Following HALFpipe format, creating new class for downstream features that will connect to output from feature workflows
 # TODO I would refactor this into subclasses that do a traits check when created
 
@@ -66,6 +68,6 @@ class DownstreamFeatureSchema(OneOfSchema):
     }
 
     def get_obj_type(self, obj):
-        if isinstance(obj, Feature):
+        if isinstance(obj, DownstreamFeature):
             return obj.type
         raise Exception(f"Cannot get type for {obj}")

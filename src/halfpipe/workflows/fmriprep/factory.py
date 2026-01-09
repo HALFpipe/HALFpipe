@@ -14,16 +14,16 @@ from nipype.interfaces.base.traits_extension import isdefined
 from nipype.pipeline import engine as pe
 from packaging.version import Version
 
-from ..collect.fmap import collect_fieldmaps
-from ..logging import logger
-from ..logging.describe_workflow import describe_workflow
-from ..utils.copy import deepcopyfactory
-from ..utils.format import inflect_engine as p
-from .configurables import configurables
-from .constants import Constants
-from .factory import Factory
-from .memory import MemoryCalculator
-from .reports import init_anat_report_wf, init_func_report_wf
+from ...collect.fmap import collect_fieldmaps
+from ...logging import logger
+from ...logging.describe_workflow import describe_workflow
+from ...utils.copy import deepcopyfactory
+from ...utils.format import inflect_engine as p
+from ..configurables import configurables
+from ..constants import Constants
+from ..factory import Factory
+from ..memory import MemoryCalculator
+from ..reports import init_anat_report_wf, init_func_report_wf
 
 
 def get_fmriprep_wf_name() -> str:
