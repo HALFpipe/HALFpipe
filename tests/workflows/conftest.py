@@ -13,19 +13,29 @@ from math import inf
 from pathlib import Path
 from random import choices, normalvariate, seed
 from typing import Iterator
+from uuid import uuid5
 from zipfile import ZipFile
 
 import nibabel as nib
 import pandas as pd
 import pytest
+from fmriprep import config
 from nilearn.image import new_img_like
 
+from halfpipe import __version__
+from halfpipe.collect.bold import collect_bold_files
+from halfpipe.fixes.workflows import IdentifiableWorkflow
+from halfpipe.ingest.bids import BidsDatabase
 from halfpipe.ingest.database import Database
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
 from halfpipe.model.spec import Spec, SpecSchema, save_spec
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
+from halfpipe.workflows.convert import convert_all
+from halfpipe.workflows.factory import FactoryContext
+from halfpipe.workflows.fmriprep.factory import FmriprepFactory
+from halfpipe.workflows.post_processing.factory import PostProcessingFactory
 
 from ..create_mock_bids_dataset import create_bids_data
 from ..resource import setup as setup_test_resources
@@ -39,6 +49,7 @@ def bids_data(tmp_path_factory) -> Path:
     os.chdir(str(tmp_path))
 
     setup_test_resources()
+    # TODO consider renaming at source
     input_path = get_resource("bids_data.zip")
 
     with ZipFile(input_path) as fp:
@@ -247,3 +258,52 @@ def bids_session_test_data(request: pytest.FixtureRequest) -> Iterator[tuple[Pat
 
     # Cleanup after the test
     shutil.rmtree(base_path)
+
+
+@pytest.fixture(scope="function")
+def mock_ctx(
+    tmp_path,
+    bids_data,  # returns path to bids_data, fixture defined in conftest
+    mock_spec,  # what exactly is in here?
+):
+    # init database
+    database = Database(mock_spec, bids_database_dir=bids_data)
+    # init bids database
+    bids_database = BidsDatabase(database)
+    bold_file_paths_dict = collect_bold_files(mock_spec, database)
+    convert_all(database, bids_database, bold_file_paths_dict)
+
+    # from workflows.base
+    uuid = uuid5(mock_spec.uuid, database.sha1 + __version__)
+    workflow = IdentifiableWorkflow(name="nipype", base_dir=tmp_path, uuid=uuid)
+    workflow.config["execution"].update(
+        dict(
+            create_report=True,  # each node writes a text file with inputs and outputs
+            crashdump_dir=workflow.base_dir,
+            crashfile_format="txt",
+            hash_method="timestamp",
+            poll_sleep_duration=0.5,
+            use_relative_paths=False,
+            check_version=False,
+        )
+    )
+
+    # create a context
+    ctx = FactoryContext(tmp_path, mock_spec, database, bids_database, workflow)
+    return ctx
+
+
+@pytest.fixture(scope="function")
+def mock_fmriprep_factory(
+    mock_ctx,
+):
+    return FmriprepFactory(mock_ctx)
+
+
+# TODO need to call setup on prev fmriprep factory
+@pytest.fixture(scope="function")
+def mock_post_processing_factory(
+    mock_ctx,
+    mock_fmriprep_factory,
+):
+    return PostProcessingFactory(mock_ctx, mock_fmriprep_factory)

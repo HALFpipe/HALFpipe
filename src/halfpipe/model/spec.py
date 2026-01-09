@@ -20,11 +20,14 @@ from marshmallow import (
     validates_schema,
 )
 
+# this import statement is so cryptic
 from .. import __version__ as halfpipe_version
+
 from ..logging import logger
 from ..utils.hash import hex_digest
 from ..utils.time import timestamp_format
 from .feature import FeatureSchema
+from .downstream_feature import DownstreamFeatureSchema
 from .file.base import File
 from .file.schema import FileSchema
 from .global_settings import GlobalSettingsSchema
@@ -34,11 +37,13 @@ from .setting import SettingSchema
 entity_aliases = {"direction": "phase_encoding_direction"}
 namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
 
+# TODO What are these doing?
 schema_version = "3.0"
 compatible_schema_versions = ["3.0"]
 
 
 class SpecSchema(Schema):
+    # TODO what is this class doing?
     class Meta:
         unknown = RAISE
 
@@ -55,6 +60,8 @@ class SpecSchema(Schema):
     files = fields.List(fields.Nested(FileSchema), dump_default=[], required=True)
     settings = fields.List(fields.Nested(SettingSchema), dump_default=[], required=True)
     features = fields.List(fields.Nested(FeatureSchema), dump_default=[], required=True)
+    # TODO test/validate this
+    downstream_features = fields.List(fields.Nested(DownstreamFeatureSchema), dump_default=[], required=True)
     models = fields.List(fields.Nested(ModelSchema), dump_default=[], required=True)
 
     @validates_schema
@@ -114,6 +121,8 @@ class Spec:
         self.files = files
         self.settings: list[dict[str, Any]] = list()
         self.features: list = list()
+        # TODO test/validate this
+        self.downstream_features: list = list()
         self.models: list = list()
         self.global_settings: dict[str, Any] = dict()
         for k, v in kwargs.items():
@@ -135,29 +144,6 @@ class Spec:
             if file.path == fileobj.path:  # path must be unique
                 return
         self.files.append(fileobj)
-
-    # TODO test/validate
-    # potentially get rid of this altogether
-    def has(
-        self, 
-        name: str, 
-        type: str,
-        ) -> bool:
-        """ Checks if context has named attribute of given type. Type must be one of {'feature', 'model'}."""
-
-        # TODO get rid of this? never used
-        if type == 'feature':
-            for feature in self.spec.features:
-                if feature.name == name:
-                    return True
-            return False
-
-        # used by stats factory
-        if type == 'model':
-            for model in self.spec.models:
-                if model.name == name:
-                    return True
-            return False
 
 
 def load_spec(
@@ -195,7 +181,7 @@ def load_spec(
 
     return None
 
-
+# TODO confirm this is never used & remove
 def readspec(stdin_spec: dict, logger=logger) -> Spec | None:
     try:
         logger.info("Loading spec file from STDIN")

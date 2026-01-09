@@ -58,7 +58,14 @@ def init_workflow(
     # init classes that use the database
     bids_database = BidsDatabase(database)
     # this init does nearly nothing
+
     # should refactor so that 'write out' convert and population of database happens at init time (unless reason im not aware of?)
+    # TODO modify for collect_bold_files for downstream_features? will there be additional bold files?
+    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(spec, database)
+    logger.debug(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
+
+    # TODO refactor to be within bids database class
+    convert_all(database, bids_database, bold_file_paths_dict)
 
     ##########################
     # Create Parent Workflow #
@@ -83,26 +90,9 @@ def init_workflow(
     if len(spec.features) == 0 and not any(setting.get("output_image") is True for setting in spec.settings):
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
-    ####################
-    # Create Factories #
-    ####################
-    logger.debug("init_workflow->creating factories")
-    ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
-    fmriprep_factory = FmriprepFactory(ctx)
-    post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
-    feature_factory = FeatureFactory(ctx, fmriprep_factory, post_processing_factory)
-    # TODO downstream feature factory
-    stats_factory = StatsFactory(ctx, feature_factory)
-
     #############
     # Write Out #
     #############
-    # TODO modify for collect_bold_files for downstream_features? will there be additional bold files?
-    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(spec, database)
-    logger.debug(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
-
-    convert_all(database, bids_database, bold_file_paths_dict)
-
     for bold_file_path in bold_file_paths_dict.keys():
         bids_path = bids_database.to_bids(bold_file_path)
         if bids_path is None:
@@ -117,6 +107,18 @@ def init_workflow(
 
     bids_dir = Path(workdir) / "rawdata"
     bids_database.write(bids_dir)
+
+    ####################
+    # Create Factories #
+    ####################
+    logger.debug("init_workflow->creating factories")
+    # TODO refactor: should these inits call setup? move this below 'write out' section & combine
+    ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
+    fmriprep_factory = FmriprepFactory(ctx)
+    post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
+    feature_factory = FeatureFactory(ctx, fmriprep_factory, post_processing_factory)
+    # TODO downstream feature factory
+    stats_factory = StatsFactory(ctx, feature_factory)
 
     #######################
     # Setup Preprocessing #

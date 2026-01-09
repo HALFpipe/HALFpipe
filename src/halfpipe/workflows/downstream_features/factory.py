@@ -8,22 +8,21 @@ from typing import Any
 
 from nipype.pipeline import engine as pe
 
-from ...collect.events import collect_events
-from ...collect.metadata import collect_metadata
-from ...logging import logger
-from ...model.downstream_feature import DownstreamFeatureSchema
-from ...model.spec import Spec
-from ..factory import Factory, FactoryContext
-from ..memory import MemoryCalculator
-from ..features.factory import FeatureFactory
+from halfpipe.collect.events import collect_events
+from halfpipe.collect.metadata import collect_metadata
+from halfpipe.logging import logger
+from halfpipe.model.downstream_feature import DownstreamFeatureSchema
+from halfpipe.model.spec import Spec
+from halfpipe.workflows.factory import Factory, FactoryContext
+from halfpipe.workflows.memory import MemoryCalculator
+from halfpipe.workflows.features.factory import FeatureFactory
 
-from ..downstream_features.gradients import init_gradients_wf
+from halfpipe.workflows.downstream_features.gradients import init_gradients_wf
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 class DownstreamFeatureFactory(Factory):
     """ Class is reponsible for connecting downstream feature workflows up into rest of halfpipe."""
-    # ALL ADAPTED FROM FEATURE FACTORY NOT TESTED
     def __init__(
         self, 
         ctx: FactoryContext, 
