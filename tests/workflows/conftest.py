@@ -181,6 +181,24 @@ def pcc_mask(tmp_path_factory: pytest.TempPathFactory, atlas_harvard_oxford: dic
     return pcc_mask_fname
 
 
+@pytest.fixture(scope="session")
+def margulies2016_gradients(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    tmp_path = tmp_path_factory.mktemp(basename="gradients")
+
+    os.chdir(str(tmp_path))
+
+    os.chdir(str(tmp_path))
+    setup_test_resources()
+
+    zip_path = get_resource("Gradients_Margulies2016.zip")
+    with ZipFile(zip_path) as fp:
+        fp.extractall(tmp_path)
+
+    gradients_path = tmp_path / "Gradients_Margulies2016" / "volumes" / "volume.grad_1.MNI2mm.nii.gz"
+
+    return gradients_path
+
+
 @pytest.fixture(scope="function")
 def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
     bids_file = FileSchema().load(
