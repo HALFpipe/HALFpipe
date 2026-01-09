@@ -12,17 +12,17 @@ from halfpipe.workflows.downstream_features.gradients import init_gradients_wf
 from halfpipe.workflows.factory import Factory, FactoryContext
 from halfpipe.workflows.features.factory import FeatureFactory
 
-
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
 class DownstreamFeatureFactory(Factory):
     """Class is reponsible for connecting downstream feature workflows up into rest of halfpipe."""
+
     def __init__(
         self,
         ctx: FactoryContext,
         feature_factory: FeatureFactory,
-        ) -> None:
+    ) -> None:
         super().__init__(ctx)
 
         self.feature_factory = feature_factory
@@ -33,14 +33,16 @@ class DownstreamFeatureFactory(Factory):
 
         # filled in by .create()
         self.hierarchies: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
-    
+
     def setup(
-        self, 
-        raw_sources_dict: dict | None = None, # TODO ?
-        processing_groups = None, # TODO ?
-        ):
+        self,
+        raw_sources_dict: dict | None = None,  # TODO ?
+        processing_groups=None,  # TODO ?
+    ):
         # TODO ?
-        logger.debug(f"DownstreamFeatureFactory->setup-> raw_sources_dict: {raw_sources_dict},processing_groups: {processing_groups}")
+        logger.debug(
+            f"DownstreamFeatureFactory->setup-> raw_sources_dict: {raw_sources_dict},processing_groups: {processing_groups}"
+        )
         # TODO dont understand this for now
         # pass processing_groups also here so that when later _get_hierarchy is used in create, the processing_groups can
         # there so that the right workflow can be found
@@ -57,7 +59,7 @@ class DownstreamFeatureFactory(Factory):
     def create(
         self,
         downstream_feature,
-        ) -> pe.Workflow | None:
+    ) -> pe.Workflow | None:
         """Creates a downstream_feature workflow and connects it with HALFpipe."""
 
         hierarchy = self._get_hierarchy("downstream_feature_wf")
@@ -97,12 +99,12 @@ class DownstreamFeatureFactory(Factory):
                 self.feature_factory.connect(hierarchy, node)
 
         return workflow
-    
+
     def get(
         self,
         downstream_feature_name: str,
         # ) -> list[list[pe.Workflow]]:
-        ):
+    ):
         # TODO a docstring or logic for why this is here
         # ie what is get supposed to do in other factories & why it shouldnt be implemented
         hierarchy = self.hierarchies[downstream_feature_name]

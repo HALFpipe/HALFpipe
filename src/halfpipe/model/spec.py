@@ -58,7 +58,9 @@ class SpecSchema(Schema):
     files = fields.List(fields.Nested(FileSchema), dump_default=[], required=True)
     settings = fields.List(fields.Nested(SettingSchema), dump_default=[], required=True)
     features = fields.List(fields.Nested(FeatureSchema), dump_default=[], required=True)
-    downstream_features = fields.List(fields.Nested(DownstreamFeatureSchema), dump_default=[], required=True) # TODO test/validate this
+    downstream_features = fields.List(
+        fields.Nested(DownstreamFeatureSchema), dump_default=[], required=True
+    )  # TODO test/validate this
     models = fields.List(fields.Nested(ModelSchema), dump_default=[], required=True)
 
     @validates_schema
@@ -119,7 +121,7 @@ class Spec:
         self.files = files
         self.settings: list[dict[str, Any]] = list()
         self.features: list = list()
-        self.downstream_features: list = list() # TODO test/validate this
+        self.downstream_features: list = list()  # TODO test/validate this
         self.models: list = list()
         self.global_settings: dict[str, Any] = dict()
         for k, v in kwargs.items():
@@ -148,7 +150,7 @@ def load_spec(
     path: str | Path | None = None,
     timestamp: datetime | None = None,
     logger=logger,
-    ) -> Spec | None:
+) -> Spec | None:
     if path is None:
         if workdir is None:
             raise ValueError("Need to provide either `workdir` or `path`")
@@ -198,7 +200,7 @@ def save_spec(
     workdir: Path | str | None = None,
     path: Path | str | None = None,
     logger=logger,
-    ):
+):
     if workdir is not None:
         workdir = Path(workdir)
 

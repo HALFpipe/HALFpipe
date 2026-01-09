@@ -22,12 +22,12 @@ class StatsFactory(Factory):
 
         self.feature_factory = feature_factory
         self.hierarchies = dict()
-    
+
     # TODO standardize & this should be the only callable function from any factory
     def setup(self):
         for model in self.ctx.spec.models:
             self.create(model)
-    
+
     # TODO rename to _create
     def create(self, model):
         hierarchy = self._get_hierarchy("stats_wf")
@@ -107,7 +107,7 @@ class StatsFactory(Factory):
     def get(self, model_name):
         # TODO add check if model_name in wfs
         return self.hierarchies[model_name]
-    
+
     # TODO standardize
     def connect(self, *args, **kwargs):
         _, _ = args, kwargs

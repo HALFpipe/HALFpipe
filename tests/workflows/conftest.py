@@ -32,11 +32,10 @@ from halfpipe.model.spec import Spec, SpecSchema, save_spec
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
 from halfpipe.workflows.convert import convert_all
-
 from halfpipe.workflows.factory import FactoryContext
+from halfpipe.workflows.features.factory import FeatureFactory
 from halfpipe.workflows.fmriprep.factory import FmriprepFactory
 from halfpipe.workflows.post_processing.factory import PostProcessingFactory
-from halfpipe.workflows.features.factory import FeatureFactory
 
 from ..create_mock_bids_dataset import create_bids_data
 from ..resource import setup as setup_test_resources
@@ -182,6 +181,7 @@ def pcc_mask(tmp_path_factory: pytest.TempPathFactory, atlas_harvard_oxford: dic
 
     return pcc_mask_fname
 
+
 # TODO check this & implement tests w gradients
 @pytest.fixture(scope="session")
 def margulies2016_gradients(tmp_path_factory: pytest.TempPathFactory) -> Path:
@@ -284,8 +284,8 @@ def mock_ctx(
     tmp_path,
     bids_data,  # returns path to bids_data, fixture defined in conftest
     mock_spec,  # what exactly is in here?
-    ):
-    """ Create a mock FactoryContext based on the mock_spec fixture. """
+):
+    """Create a mock FactoryContext based on the mock_spec fixture."""
     # init database
     database = Database(mock_spec, bids_database_dir=bids_data)
     # init bids database
@@ -310,6 +310,7 @@ def mock_ctx(
 
     return FactoryContext(tmp_path, mock_spec, database, bids_database, workflow)
 
+
 # Note these fixtures return the factory objects post-setup bc the following factory setup is dependent on it
 # TODO refactor such that each of these fixtures only has to init the factory & rest is internal
 @pytest.fixture(scope="function")
@@ -317,16 +318,15 @@ def mock_fmriprep_factory_tuple(
     bids_data,
     mock_spec,
     mock_ctx,
-    ):
-    """ Outputs a tuple of FmriprepFactory along with the setup outputs for the following factory. """
+):
+    """Outputs a tuple of FmriprepFactory along with the setup outputs for the following factory."""
     database = Database(mock_spec, bids_database_dir=bids_data)
     bold_file_paths_dict = collect_bold_files(mock_spec, database)
 
     fmriprep_factory = FmriprepFactory(mock_ctx)
     fmriprep_bold_file_paths, processing_groups = fmriprep_factory.setup(
-        Path(str(bids_data)[:-8]), 
-        set(bold_file_paths_dict.keys())
-        )
+        Path(str(bids_data)[:-8]), set(bold_file_paths_dict.keys())
+    )
 
     # filter out skipped files
     bold_file_paths_dict = {
@@ -336,11 +336,12 @@ def mock_fmriprep_factory_tuple(
     }
     return fmriprep_factory, bold_file_paths_dict, processing_groups
 
+
 @pytest.fixture(scope="function")
 def mock_post_processing_factory(
     mock_ctx,
     mock_fmriprep_factory_tuple,
-    ):
+):
     mock_fmriprep_factory = mock_fmriprep_factory_tuple[0]
     bold_file_paths_dict = mock_fmriprep_factory_tuple[1]
     processing_groups = mock_fmriprep_factory_tuple[2]
@@ -349,12 +350,13 @@ def mock_post_processing_factory(
     post_processing_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
     return post_processing_factory
 
+
 @pytest.fixture(scope="function")
 def mock_feature_factory(
     mock_ctx,
     mock_fmriprep_factory_tuple,
     mock_post_processing_factory,
-    ):
+):
     mock_fmriprep_factory = mock_fmriprep_factory_tuple[0]
     bold_file_paths_dict = mock_fmriprep_factory_tuple[1]
     processing_groups = mock_fmriprep_factory_tuple[2]
