@@ -53,7 +53,7 @@ class MakeResultdicts(IOBase):
         # tags is a dictionary (tags are bids tags eg subject session task etc)
         if tagkeys is None:
             tagkeys = list()
-        # qc metrics 
+        # qc metrics
         if valkeys is None:
             valkeys = list()
         # files that need to be copied out

@@ -1,22 +1,17 @@
-import pytest
 from pathlib import Path
 
-from halfpipe.ingest.database import Database
 from halfpipe.collect.bold import collect_bold_files
+from halfpipe.ingest.database import Database
 from halfpipe.workflows.post_processing.factory import PostProcessingFactory
 
 
 def test_init(mock_post_processing_factory):
-    """ Check postprocessing_factory fixture creation."""
+    """Check postprocessing_factory fixture creation."""
     assert isinstance(mock_post_processing_factory, PostProcessingFactory)
 
-def test_setup(
-    mock_spec, 
-    bids_data, 
-    mock_fmriprep_factory,
-    mock_post_processing_factory
-    ):
-    """ Check that setup works with test data."""
+
+def test_setup(mock_spec, bids_data, mock_fmriprep_factory, mock_post_processing_factory):
+    """Check that setup works with test data."""
     database = Database(mock_spec, bids_database_dir=bids_data)
     bold_file_paths_dict = collect_bold_files(mock_spec, database)
 

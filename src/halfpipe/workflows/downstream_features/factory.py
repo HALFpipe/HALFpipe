@@ -4,31 +4,24 @@
 
 import re
 from collections import defaultdict
-from typing import Any
 
 from nipype.pipeline import engine as pe
 
-from halfpipe.collect.events import collect_events
-from halfpipe.collect.metadata import collect_metadata
-from halfpipe.logging import logger
-from halfpipe.model.downstream_feature import DownstreamFeatureSchema
-from halfpipe.model.spec import Spec
-from halfpipe.workflows.factory import Factory, FactoryContext
-from halfpipe.workflows.memory import MemoryCalculator
-from halfpipe.workflows.features.factory import FeatureFactory
-
 from halfpipe.workflows.downstream_features.gradients import init_gradients_wf
+from halfpipe.workflows.factory import Factory, FactoryContext
+from halfpipe.workflows.features.factory import FeatureFactory
 
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
-class DownstreamFeatureFactory(Factory):
-    """ Class is reponsible for connecting downstream feature workflows up into rest of halfpipe."""
-    def __init__(
-        self, 
-        ctx: FactoryContext, 
-        feature_factory: FeatureFactory,
-        ) -> None:
 
+class DownstreamFeatureFactory(Factory):
+    """Class is reponsible for connecting downstream feature workflows up into rest of halfpipe."""
+
+    def __init__(
+        self,
+        ctx: FactoryContext,
+        feature_factory: FeatureFactory,
+    ) -> None:
         super().__init__(ctx)
 
         self.feature_factory = feature_factory
@@ -38,12 +31,12 @@ class DownstreamFeatureFactory(Factory):
         # filled in by .create()
         # could be renamed hierarchies
         self.workflows: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
-    
+
     def get(
-        self, 
-        downstream_feature_name: str, 
-        #) -> list[list[pe.Workflow]]:
-        ):
+        self,
+        downstream_feature_name: str,
+        # ) -> list[list[pe.Workflow]]:
+    ):
         # TODO a docstring or logic for why this is here
         # ie what is get supposed to do in other factories & why it shouldnt be implemented
         hierarchy = self.workflows[downstream_feature_name]
@@ -51,10 +44,10 @@ class DownstreamFeatureFactory(Factory):
         return hierarchy, outputnode
 
     def create(
-        self, 
+        self,
         downstream_feature,
-        ) -> pe.Workflow | None:
-        """ Creates a downstream_feature workflow and connects it with HALFpipe."""
+    ) -> pe.Workflow | None:
+        """Creates a downstream_feature workflow and connects it with HALFpipe."""
 
         hierarchy = self._get_hierarchy("downstream_feature_wf")
         # = [outer_workflow, downstream_feature_wf]
@@ -90,13 +83,10 @@ class DownstreamFeatureFactory(Factory):
 
                 # TODO this doesn't make sense bc we need the specific hierarchy from the atlas_based_connectivity_wf
                 # hard code connections like fmriprep factory?
-                self.feature_factory.connect(
-                    hierarchy, 
-                    node
-                )
+                self.feature_factory.connect(hierarchy, node)
 
         return workflow
-    
+
     def setup(self, raw_sources_dict: dict | None = None):
         # TODO do we need any raw sources?
         # gradients ref file?

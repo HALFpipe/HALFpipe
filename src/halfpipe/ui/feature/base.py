@@ -12,7 +12,7 @@ from .rest import (
     AtlasBasedConnectivityStep,
     DualRegressionStep,
     FALFFStep,
-    #GradientsStep,
+    # GradientsStep,
     GroupInformationGuidedICAStep,
     ReHoStep,
     SeedBasedConnectivityStep,
@@ -27,7 +27,7 @@ class FeatureNameStep(Step):
         "dual_regression": "dualReg",
         "gig_ica": "GIGICA",
         "atlas_based_connectivity": "corrMatrix",
-        #"gradients": "gradients",
+        # "gradients": "gradients",
         "reho": "reHo",
         "falff": "fALFF",
     }
@@ -68,7 +68,7 @@ class FeatureNameStep(Step):
             "dual_regression": DualRegressionStep,
             "gig_ica": GroupInformationGuidedICAStep,
             "atlas_based_connectivity": AtlasBasedConnectivityStep,
-            #"gradients": GradientsStep,
+            # "gradients": GradientsStep,
             "reho": ReHoStep,
             "falff": FALFFStep,
         }[ctx.spec.features[-1].type]
@@ -83,7 +83,7 @@ class FeatureTypeStep(Step):
         "Dual regression": "dual_regression",
         "Group-information guided ICA": "gig_ica",
         "Atlas-based connectivity matrix": "atlas_based_connectivity",
-        #"Gradients": "gradients",
+        # "Gradients": "gradients",
         "ReHo": "reho",
         "fALFF": "falff",
     }

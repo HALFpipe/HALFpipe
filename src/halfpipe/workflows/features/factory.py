@@ -11,7 +11,6 @@ from nipype.pipeline import engine as pe
 from ...collect.events import collect_events
 from ...collect.metadata import collect_metadata
 from ...logging import logger
-from ...model.feature import FeatureSchema
 from ...model.spec import Spec
 from ..factory import Factory, FactoryContext
 from ..memory import MemoryCalculator
@@ -200,14 +199,14 @@ class FeatureFactory(Factory):
 
     # TODO modify to return hierarchy, outputnode?
     def get(
-        self, 
+        self,
         feature_name: str,
-        ): 
-        #*_: Any,
+    ):
+        # *_: Any,
         # ) -> list[list[pe.Workflow]]:
         hierarchy = self.workflows[feature_name]
         outputnode = hierarchy[-1].get_node("outputnode")
         return hierarchy, outputnode
 
-    #def connect(self, *args, **kwargs):
+    # def connect(self, *args, **kwargs):
     #    raise NotImplementedError()

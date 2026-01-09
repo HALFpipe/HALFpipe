@@ -5,11 +5,9 @@
 from marshmallow import Schema, fields, post_dump, post_load, validate
 from marshmallow_oneofschema import OneOfSchema
 
-from .contrast import TContrastSchema
-from .setting import SmoothingSettingSchema
-
 # Following HALFpipe format, creating new class for downstream features that will connect to output from feature workflows
 # TODO I would refactor this into subclasses that do a traits check when created
+
 
 class DownstreamFeature:
     def __init__(self, name, type: str, **kwargs) -> None:
@@ -36,6 +34,7 @@ class BaseDownstreamFeatureSchema(Schema):
         assert many is False
         return {key: value for key, value in data.items() if value is not None}
 
+
 class GradientsDownstreamFeatureSchema(BaseDownstreamFeatureSchema):
     type = fields.Str(
         dump_default="gradients",
@@ -47,7 +46,7 @@ class GradientsDownstreamFeatureSchema(BaseDownstreamFeatureSchema):
     # TODO cut these down/consider necessary
     # TODO fix
     n_components = fields.Int(dump_default=10, allow_none=True)
-    approach = fields.Str(dump_default='dm', allow_none=True)
+    approach = fields.Str(dump_default="dm", allow_none=True)
     kernel = fields.Str(dump_default=None, allow_none=True)
     random_state = fields.Int(dump_default=None, allow_none=True)
     alignment = fields.Str(dump_default=None, allow_none=True)
@@ -56,7 +55,8 @@ class GradientsDownstreamFeatureSchema(BaseDownstreamFeatureSchema):
     gamma = fields.Float(dump_default=None, allow_none=True)
     sparsity = fields.Float(dump_default=0.9, allow_none=True)
     n_iter = fields.Int(dump_default=10, allow_none=True)
-    reference = fields.Str(dump_default=None, allow_none=True) # would actually be a File but could be str path
+    reference = fields.Str(dump_default=None, allow_none=True)  # would actually be a File but could be str path
+
 
 class DownstreamFeatureSchema(OneOfSchema):
     type_field = "type"

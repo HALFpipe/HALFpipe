@@ -29,9 +29,9 @@ class FactoryContext:
 
 class Factory(ABC):
     def __init__(
-        self, 
+        self,
         ctx: FactoryContext,
-        ):
+    ):
         self.ctx = ctx
         self.processing_groups: list | None = None
 
@@ -49,7 +49,7 @@ class Factory(ABC):
         subject_id: str | None = None,
         processing_group: tuple | list | None = None,
     ) -> str | None:
-        """ Formats a wf name based on source file and bids & subject id."""
+        """Formats a wf name based on source file and bids & subject id."""
         bids_database = self.ctx.bids_database
 
         logger.debug(
@@ -143,8 +143,8 @@ class Factory(ABC):
         # TODO this function seems unnecessary/refactor
         def require_workflow(
             child_name: str,
-            ):
-            """ Checks if child_name is in workflow, if not it is added."""
+        ):
+            """Checks if child_name is in workflow, if not it is added."""
             # workflow is last in hierarchy list
             workflow = hierarchy[-1]
             child = workflow.get_node(child_name)
@@ -153,7 +153,7 @@ class Factory(ABC):
                 if create_ok is False:
                     # TODO make the error informative
                     raise ValueError()
-                
+
                 # This seems bizarre, just creating any workflow w/ correct name?
                 child = pe.Workflow(name=child_name)
                 # Will this new workflow have any nodes?
@@ -192,15 +192,7 @@ class Factory(ABC):
     def get(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def connect_attr(
-        self, 
-        outputhierarchy, 
-        outputnode, 
-        outattr, 
-        inputhierarchy, 
-        inputnode, 
-        inattr
-        ):
+    def connect_attr(self, outputhierarchy, outputnode, outattr, inputhierarchy, inputnode, inattr):
         inputhierarchy = [*inputhierarchy]  # make copies
         outputhierarchy = [*outputhierarchy]
 
@@ -229,14 +221,8 @@ class Factory(ABC):
         )
         workflow.connect(*outputendpoint, *inputendpoint)
 
-    def connect_common_attrs(
-        self, 
-        outputhierarchy, 
-        outputnode, 
-        inputhierarchy, 
-        inputnode
-        ) -> set[str]:
-        """ Connects workflows together based on commonly named attributes of output & input nodes. """
+    def connect_common_attrs(self, outputhierarchy, outputnode, inputhierarchy, inputnode) -> set[str]:
+        """Connects workflows together based on commonly named attributes of output & input nodes."""
 
         if isinstance(outputnode, str):
             outputnode = outputhierarchy[-1].get_node(outputnode)
@@ -252,13 +238,7 @@ class Factory(ABC):
             self.connect_attr(outputhierarchy, outputnode, attr, inputhierarchy, inputnode, attr)
         return attrs
 
-    def connect(
-        self, 
-        nodehierarchy, 
-        node, 
-        *args, 
-        **kwargs
-        ) -> set[str]:
+    def connect(self, nodehierarchy, node, *args, **kwargs) -> set[str]:
         # get is implemented by subclasses
         # TODO refactor to fix for no output of node
         outputhierarchy, outputnode = self.get(*args, **kwargs)

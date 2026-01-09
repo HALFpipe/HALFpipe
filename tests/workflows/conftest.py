@@ -19,7 +19,6 @@ from zipfile import ZipFile
 import nibabel as nib
 import pandas as pd
 import pytest
-from fmriprep import config
 from nilearn.image import new_img_like
 
 from halfpipe import __version__

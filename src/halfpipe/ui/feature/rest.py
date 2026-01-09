@@ -192,7 +192,7 @@ class AtlasBasedMinRegionCoverageStep(Step):
 
 AtlasBasedConnectivityRefStep = get_ref_steps("atlas", "atlases", "atlas", AtlasBasedMinRegionCoverageStep)
 # TODO how to define this?
-#GradientsRefStep = get_ref_steps("atlas", "atlases", "atlas", next_step_type)
+# GradientsRefStep = get_ref_steps("atlas", "atlases", "atlas", next_step_type)
 
 SeedBasedConnectivitySettingInitStep = get_setting_init_steps(
     SeedBasedConnectivityRefStep,
@@ -216,11 +216,11 @@ AtlasBasedConnectivitySettingInitStep = get_setting_init_steps(
     AtlasBasedConnectivityRefStep,
     settingdict={"smoothing": None, "grand_mean_scaling": {"mean": 10000.0}},
 )
-#GradientsSettingInitStep = get_setting_init_steps(
+# GradientsSettingInitStep = get_setting_init_steps(
 #    GradientsRefStep,
-    # TODO what should be here?
+# TODO what should be here?
 #    settingdict={"n_components": 10},
-#)
+# )
 
 settingdict = {
     "bandpass_filter": {"type": "frequency_based", "low": 0.01, "high": 0.1},
@@ -275,6 +275,6 @@ SeedBasedConnectivityStep = SeedBasedConnectivitySettingInitStep
 DualRegressionStep = DualRegressionSettingInitStep
 GroupInformationGuidedICAStep = GroupInformationGuidedICASettingInitStep
 AtlasBasedConnectivityStep = AtlasBasedConnectivitySettingInitStep
-#GradientsStep = GradientsSettingInitStep
+# GradientsStep = GradientsSettingInitStep
 ReHoStep = ReHoSettingInitStep
 FALFFStep = FALFFSettingInitStep
