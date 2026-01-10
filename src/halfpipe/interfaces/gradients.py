@@ -5,6 +5,7 @@
 from os import path as op
 
 import numpy as np
+import nibabel as nib
 from brainspace.gradient.gradient import GradientMaps
 from nipype.interfaces.base import (
     BaseInterface,
@@ -32,13 +33,13 @@ class GradientsInputSpec(BaseInterfaceInputSpec):
         "dm",
         usedefault=True,
         desc="Embedding approach. Default is ‘dm’. Possible options: {'dm','le','pca'} for diffusion maps, Laplacian eigenmaps, and PCA respectively.",
-    )
+        )
     kernel = traits.Union(
         None,
         traits.Str,
         usedefault=True,
         desc="Possible options: {‘pearson’, ‘spearman’, ‘cosine’, ‘normalized_angle’, ‘gaussian’}. If None, use input matrix. Default is None.",
-    )
+        )
     random_state = traits.Union(None, traits.Int, usedefault=True, desc="Random state. Default is None.")
     alignment = traits.Union(
         None,
@@ -47,7 +48,7 @@ class GradientsInputSpec(BaseInterfaceInputSpec):
         desc="Alignment approach. Only used when two or more datasets are provided. If None, no alignment is performed. Default is None. "
         "If ‘procrustes’, datasets are aligned using generalized procrustes analysis. "
         "If ‘joint’, datasets are embedded simultaneously based on a joint affinity matrix built from the individual datasets. This option is only available for ‘dm’ and ‘le’ approaches.",
-    )
+        )
 
     # .fit params
     correlation_matrix = traits.Union(
@@ -55,47 +56,50 @@ class GradientsInputSpec(BaseInterfaceInputSpec):
         traits.List(trait=traits.File),
         mandatory=True,
         desc="Input matrix or list of matrices, shape = (n_samples, n_feat).",
-    )  # shape of output from atlas_based_connectivity_wf?
+        )  # TODO shape of output from atlas_based_connectivity_wf?
     gamma = traits.Union(
         None,
         traits.Float,
         usedefault=True,
         desc="Inverse kernel width. Only used if kernel == 'gaussian'. If None, gamma=1/n_feat . Default is None.",
-    )
+        )
     sparsity = traits.Float(
         0.9, usedefault=True, desc="Proportion of the smallest elements to zero-out for each row. Default is 0.9."
-    )
+        )
     n_iter = traits.Int(10, usedefault=True, desc="Number of iterations for procrustes alignment. Default is 10.")
     reference = traits.Union(
         None,
         traits.File,
         usedefault=True,
         desc="Initial reference for procrustes alignments, shape = (n_samples, n_feat). Only used when alignment == 'procrustes'. Default is None.",
-    )  # update desc
+        )  # update desc
 
 
 class GradientsOutputSpec(TraitedSpec):
     # Outputs from gradient computation:
     lambdas = traits.Union(
         traits.File, traits.List(trait=traits.File), desc="Eigenvalues for each datatset, shape = (n_components,)."
-    )
+        )
     gradients = traits.Union(
         traits.File, traits.List(trait=traits.File), desc="Gradients (i.e., eigenvectors), shape = (n_samples, n_components)."
-    )
+        )
     aligned = traits.Union(
         None,
         traits.List(trait=traits.File),
         desc="Aligned gradients, shape = (n_samples, n_components). None if alignment is None or only one dataset is used.",
-    )
+        )
 
 
 class Gradients(BaseInterface):
     """Nipype interface to calculate gradients using brainspace."""
-
     input_spec = GradientsInputSpec
     output_spec = GradientsOutputSpec
 
     def _run_interface(self, runtime: Bunch) -> Bunch:
+        reference_img = None
+        if self.inputs.reference is not None:
+            reference_img = nib.nifti1.load(self.inputs.reference)
+
         # TODO update load based on file format output of atlas_based_connectivity_wf
         if isinstance(self.inputs.correlation_matrix, list):
             correlation_matrix = [np.loadtxt(f) for f in self.inputs.correlation_matrix]
@@ -115,7 +119,7 @@ class Gradients(BaseInterface):
             sparsity=self.inputs.sparsity,
             gamma=self.inputs.gamma,
             n_iter=self.inputs.n_iter,
-            reference=self.inputs.reference,
+            reference=self.reference_img,
         )
 
         self._lambdas = gm.lambdas_

@@ -21,22 +21,25 @@ class StatsFactory(Factory):
         super().__init__(ctx)
 
         self.feature_factory = feature_factory
+        # TODO should standardize, here its a dict whereas its a list in other factories
         self.hierarchies = dict()
-
-    # TODO standardize & this should be the only callable function from any factory
+    
+    # TODO rename to _setup and made internal to init
     def setup(self):
         for model in self.ctx.spec.models:
             self.create(model)
 
     # TODO rename to _create
-    def create(self, model):
-        hierarchy = self._get_hierarchy("stats_wf")
+    def create(
+        self, 
+        model
+        ):
+        hierarchy = self._create_hierarchy("stats_wf") # = [self.ctx.workflow, stats_wf]
         # (first run of create)
         # this call creates a list of workflows, starting w context workflow
         # then adds a stats_wf
 
-        # this is just an empty wf called stats_wf
-        wf = hierarchy[-1]
+        parent_workflow = hierarchy[-1] # = stats_wf (empty wf called stats_wf)
 
         variables = None
         if hasattr(model, "spreadsheet"):
@@ -44,68 +47,66 @@ class StatsFactory(Factory):
 
         # inputs is a list of hierarchies (list of workflows)
         # ... list entries get named ouputhierarchy below
-        inputs = []
+        input_hierarchies = []
+        # TODO rename w inputhierarchies = []
         # TODO check what inputname actually is bc here it seems to refer to model inputs whereas in other calls it refers to models & features
         for inputname in model.inputs:
+            # model.inputs must come from spec somehow, I can't find what they are other than a list of string
             logger.debug(f"StatsFactory->inputname: {inputname}")
-            # Check if model is present in spec
-            # TODO naming is confusing but this is correct according to code replaced
-            # if self.has(inputname):
-
-            # if inputname is another model should have been defined previously
+            # Check if inputname is another model is present in spec (if inputname is another model should have been defined previously)
             if inputname in [model.name for model in self.ctx.spec.models]:
                 # TODO problematic bc if true will call get on an empty dict for self.hierarchies
-                # will this always be false?
-                inputs.extend(self.get(inputname))
+                # always bc model has to be in order, still feels messy
+                input_hierarchies.extend(
+                    self.get_hierarchy(inputname)
+                    )
+
                 logger.debug(f"StatsFactory->extending inputs by self->inputs: {inputs}")
-
-                # case never happens bc model has to be in order
-
-            # elif self.feature_factory.has(inputname):
+            # Check if inputname is a feature
             elif inputname in [feature.name for feature in self.ctx.spec.features]:
-                inputs.extend(self.feature_factory.get(inputname))
+                input_hierarchies.extend(
+                    self.feature_factory.get(inputname)
+                    )
                 logger.debug(f"StatsFactory->extending inputs by feature_factory->inputs: {inputs}")
             else:
                 raise ValueError(f'Unknown input name "{inputname}"')
         logger.debug(f"StatsFactory-> all gathered inputs: {inputs}")
 
         # create the actual wf
-        vwf = init_stats_wf(
+        workflow = init_stats_wf(
             self.ctx.workdir,
             model,
-            numinputs=len(inputs),
+            numinputs=len(input_hierarchies),
             variables=variables,
         )
-        # Why do we add the nodes of the worfklow to the current last element of hierarchy "stats_wf"
-        # python pointers question is this modification of the wf gonna be included in the old list
-        wf.add_nodes([vwf])
-        # and then add it again to the hierarchy?
-        hierarchy.append(vwf)
+        # add the nodes of the created worfklow to the "stats_wf" (because its empty)
+        parent_workflow.add_nodes([workflow]) # why is it a list of the workflow?
+        # why add it again to the hierarchy?
+        hierarchy.append(workflow)
+        # hierarchy is now [self.ctx.workflow, stats_wf, workflow]
+        # python question: is the stats_wf in this list filled w the nodes from line 76? if so workflow and stats_wf are the same?
 
-        # here its named a hierarchy
         if model.name not in self.hierarchies:
-            # self.hierarchies[model.name] = []
-            self.hierarchies[model.name] = [hierarchy]
-            # dont like that this a list of hierarchy where its just hierarchy in other feature factory
-        # self.hierarchies[model.name].append(hierarchy)
+            self.hierarchies[model.name] = []
+        self.hierarchies[model.name].append(hierarchy)
         # at this self.hierarchies[model.name] is a list of of a list
-        # [[outer_workflow, stats_wf, vwf]]
+        # [[self.ctx.workflow, stats_wf, workflow]]
 
-        # inputs is a list of outputhierarchy??
-        for i, outputhierarchy in enumerate(inputs):
+        # renaming might be more confusing across Factories, but consistent internally at least
+        for i, input_hierarchy in enumerate(input_hierarchies):
             self.connect_attr(
-                outputhierarchy,
+                input_hierarchy, # should be a hierarchy
                 "outputnode",
                 "resultdicts",
-                hierarchy,
+                hierarchy, # [self.ctx.workflow, stats_wf, workflow]
                 "inputnode",
                 f"in{i + 1:d}",
             )
 
-        return vwf
+        return workflow
 
-    def get(self, model_name):
-        # TODO add check if model_name in wfs
+    def get_hierarchy(self, model_name):
+        """ Returns the hierarchy associated with the given model name. """
         return self.hierarchies[model_name]
 
     # TODO standardize

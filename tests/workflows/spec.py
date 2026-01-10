@@ -248,6 +248,8 @@ def add_settings_and_features_to_spec(
     )
     spec.features.append(falff_feature)
 
+    # there are no stats models?
+
     # Add downstream features
     downstream_feature_schema = DownstreamFeatureSchema()
     gradient_feature = downstream_feature_schema.load(

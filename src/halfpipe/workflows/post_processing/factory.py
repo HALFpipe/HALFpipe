@@ -60,8 +60,8 @@ class ICAAROMAComponentsFactory(Factory):
         self.wf_name = prototype.name
         self.processing_groups = processing_groups
 
-    def get(self, source_file, **_):
-        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
+    def get_hierarchy(self, source_file, **_):
+        hierarchy = self._create_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
         wf = hierarchy[-1]
 
         vwf = wf.get_node(self.wf_name)
@@ -89,9 +89,7 @@ class ICAAROMAComponentsFactory(Factory):
                 hierarchy, inputnode, source_file=source_file, processing_group=self.fmriprep_factory.processing_groups
             )
 
-        outputnode = vwf.get_node("outputnode")
-
-        return hierarchy, outputnode
+        return hierarchy
 
 
 class LookupFactory(Factory):
@@ -194,8 +192,8 @@ class LookupFactory(Factory):
 
         return self.wf_factories[lookup_tuple]()
 
-    def get(self, source_file, setting_name):
-        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
+    def get_hierarchy(self, source_file, setting_name):
+        hierarchy = self._create_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
         wf = hierarchy[-1]
 
         setting_tuple = self.tpl_by_setting_name[setting_name]
@@ -225,9 +223,7 @@ class LookupFactory(Factory):
         if connect_inputs:
             self._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
 
-        outputnode = vwf.get_node("outputnode")
-
-        return hierarchy, outputnode
+        return hierarchy
 
 
 class FmriprepAdapterFactory(LookupFactory):
@@ -471,7 +467,7 @@ class PostProcessingFactory(Factory):
             raw_sources_dict = dict()
 
         # here pass everywhere processing_groups so that when there are multiple sessions, a special string suffix can
-        # be made out of them in order to find correct workflow when a method _get_hierarchy is used
+        # be made out of them in order to find correct workflow when a method _create_hierarchy is used
         self.alt_bold_factory.setup(processing_groups=processing_groups)
         self.ica_aroma_components_factory.setup(processing_groups=processing_groups)
         self.fmriprep_adapter_factory.setup(processing_groups=processing_groups)
@@ -500,7 +496,7 @@ class PostProcessingFactory(Factory):
 
             for source_file in source_files:
                 # also pass processing_groups here
-                hierarchy = self._get_hierarchy(
+                hierarchy = self._create_hierarchy(
                     "post_processing_wf", source_file=source_file, processing_group=processing_groups
                 )
 
@@ -531,18 +527,18 @@ class PostProcessingFactory(Factory):
                     confounds_action="regression",
                 )
 
-    def get(self, source_file, setting_name, confounds_action=None):
+    def get_hierarchy(self, source_file, setting_name, confounds_action=None):
         if self.ctx.spec.global_settings["run_aroma"] is True:
             # Make sure ica aroma components are calculated when enabled
             # The component calculation is independent from the noise components regression application
             # so we generally ran components by default and apply them if the specific settings of spec file
             # shows "ica_aroma=True"
-            self.ica_aroma_components_factory.get(source_file)
+            self.ica_aroma_components_factory.get_hierarchy(source_file)
         if confounds_action == "select":
-            return self.confounds_select_factory.get(source_file, setting_name)
+            return self.confounds_select_factory.get_hierarchy(source_file, setting_name)
         elif confounds_action == "regression":
-            return self.confounds_regression_factory.get(source_file, setting_name)
+            return self.confounds_regression_factory.get_hierarchy(source_file, setting_name)
         elif confounds_action is None:
-            return self.setting_adapter_factory.get(source_file, setting_name)
+            return self.setting_adapter_factory.get_hierarchy(source_file, setting_name)
         else:
             raise ValueError(f"Unknown confounds action '{confounds_action}'")

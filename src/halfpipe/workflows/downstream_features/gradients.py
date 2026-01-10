@@ -16,7 +16,6 @@ from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ...utils.format import format_workflow
 
-# from ..constants import Constants
 from ..memory import MemoryCalculator
 
 ##############
@@ -32,7 +31,7 @@ def init_gradients_wf(
     correlation_matrix,  # TODO remove this & link I/O properly
     downstream_feature: DownstreamFeature | None = None,
     memcalc: MemoryCalculator | None = None,
-) -> pe.Workflow:
+    ) -> pe.Workflow:
     """Create workflow for gradients."""
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
 
@@ -55,6 +54,7 @@ def init_gradients_wf(
                 "tags",
                 "vals",
                 "metadata",
+
                 # gradients params
                 # TODO cut these down/consider necessary
                 "n_components",
@@ -66,7 +66,7 @@ def init_gradients_wf(
                 "gamma",
                 "sparsity",
                 "n_iter",
-                "reference",
+                "reference", # only input to be a file
             ]
         ),
         name="inputnode",
@@ -85,7 +85,7 @@ def init_gradients_wf(
     inputnode.inputs.reference = downstream_feature.reference
 
     # TODO how do I collect x (connectivity matrix) from previous node of halfpipe?
-    # additionally think of multiple atlases case
+    # TODO multiple atlases case
     inputnode.inputs.correlation_matrix = correlation_matrix
 
     # how to know what keys are needed/wanted?
@@ -112,19 +112,17 @@ def init_gradients_wf(
 
     workflow.connect(make_resultdicts, "resultdicts", outputnode, "resultdicts")
 
-    #
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
     #######################################
     # CONNECT I/O NODES W/ GRADIENTS NODE #
     #######################################
-
     gradientsnode = pe.Node(
         Gradients(),
         name="gradients",
         mem_gb=memcalc.series_std_gb,
-    )
+        )
 
     # connect inputnode values
     workflow.connect(inputnode, "n_components", gradientsnode, "n_components")

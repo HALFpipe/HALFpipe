@@ -50,7 +50,7 @@ class FeatureFactory(Factory):
 
     def setup(self, raw_sources_dict: dict | None = None, processing_groups=None):
         logger.debug(f"FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict},processing_groups: {processing_groups}")
-        # pass processing_groups also here so that when later _get_hierarchy is used in create, the processing_groups can
+        # pass processing_groups also here so that when later _create_hierarchy is used in create, the processing_groups can
         # there so that the right workflow can be found
         self.processing_groups = processing_groups
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
@@ -72,7 +72,7 @@ class FeatureFactory(Factory):
 
     def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
         raw_sources = [] if raw_sources is None else raw_sources
-        hierarchy = self._get_hierarchy("features_wf", source_file=source_file, processing_group=self.processing_groups)
+        hierarchy = self._create_hierarchy("features_wf", source_file=source_file, processing_group=self.processing_groups)
         parent_workflow = hierarchy[-1]
 
         database = self.ctx.database
@@ -204,16 +204,12 @@ class FeatureFactory(Factory):
 
         return workflow
 
-    # TODO modify to return hierarchy, outputnode?
-    def get(
+    def get_hierarchy(
         self,
         feature_name: str,
-    ):
-        # *_: Any,
-        # ) -> list[list[pe.Workflow]]:
-        hierarchy = self.hierarchies[feature_name]
-        outputnode = hierarchy[-1].get_node("outputnode")
-        return hierarchy, outputnode
+        ) -> list[list[pe.Workflow]]:
+        """ Returns the hierarchy associated with the given feature name. """
+        return self.hierarchies[feature_name]
 
-    # def connect(self, *args, **kwargs):
-    #    raise NotImplementedError()
+    def connect(self, *args, **kwargs):
+        raise NotImplementedError()
