@@ -15,6 +15,7 @@ class Feature:
     def __init__(self, name, type: str, **kwargs) -> None:
         self.name = name
         self.type = type
+        # Why would contrasts be defined for every feature?
         self.contrasts: list[dict] | None = None
         for k, v in kwargs.items():
             setattr(self, k, v)
@@ -28,10 +29,13 @@ class Feature:
 
 
 class BaseFeatureSchema(Schema):
+    # how is a name different than type?
     name = fields.Str()
 
+    # whats is a setting?
     setting = fields.Str()
 
+    # why should type be one of these options?
     type = fields.Str(validate=validate.OneOf(["falff", "reho"]))
 
     @post_load
@@ -125,7 +129,7 @@ class AtlasBasedConnectivityFeatureSchema(BaseFeatureSchema):
         dump_default="atlas_based_connectivity",
         validate=validate.Equal("atlas_based_connectivity"),
     )
-    atlases = fields.List(fields.Str())
+    atlases = fields.List(fields.Str())  # this gets passed to atlas_names in init wf
     min_region_coverage = fields.Float(dump_default=0.8, validate=validate.Range(min=0.0, max=1.0))
 
 

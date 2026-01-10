@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
 import os
 import shutil
 import tarfile
@@ -12,6 +13,7 @@ from math import inf
 from pathlib import Path
 from random import choices, normalvariate, seed
 from typing import Iterator
+from uuid import uuid5
 from zipfile import ZipFile
 
 import nibabel as nib
@@ -19,12 +21,22 @@ import pandas as pd
 import pytest
 from nilearn.image import new_img_like
 
+from halfpipe import __version__
+from halfpipe.collect.bold import collect_bold_files
+from halfpipe.fixes.workflows import IdentifiableWorkflow
+from halfpipe.ingest.bids import BidsDatabase
 from halfpipe.ingest.database import Database
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
 from halfpipe.model.spec import Spec, SpecSchema, save_spec
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
+from halfpipe.workflows.convert import convert_all
+from halfpipe.workflows.downstream_features.factory import DownstreamFeatureFactory
+from halfpipe.workflows.factory import FactoryContext
+from halfpipe.workflows.features.factory import FeatureFactory
+from halfpipe.workflows.fmriprep.factory import FmriprepFactory
+from halfpipe.workflows.post_processing.factory import PostProcessingFactory
 
 from ..create_mock_bids_dataset import create_bids_data
 from ..resource import setup as setup_test_resources
@@ -33,17 +45,25 @@ from .spec import TestSetting, make_bids_only_spec, make_spec
 
 @pytest.fixture(scope="session")
 def bids_data(tmp_path_factory) -> Path:
-    tmp_path = tmp_path_factory.mktemp(basename="bids_data")
+    tmp_path = tmp_path_factory.mktemp(basename="rawdata")  # renamed to match FmriprepFactory set up/get config
 
     os.chdir(str(tmp_path))
 
     setup_test_resources()
+    # TODO consider renaming at source
     input_path = get_resource("bids_data.zip")
 
     with ZipFile(input_path) as fp:
         fp.extractall(tmp_path)
 
-    bids_data_path = tmp_path / "bids_data"
+    bids_data_path = tmp_path / "rawdata"  # renamed to match FmriprepFactory set up/get config
+
+    os.rename(tmp_path / "bids_data", bids_data_path)  # renamed to match FmriprepFactory set up/get config
+
+    # add dataset description for bids
+    json_data = {"Name": "HALFpipe test data", "BIDSVersion": "1.6.0"}
+    with open(bids_data_path / "dataset_description.json", "w") as f:
+        f.write(json.dumps(json_data))
 
     func_path = bids_data_path / "sub-1012" / "func"
 
@@ -163,6 +183,25 @@ def pcc_mask(tmp_path_factory: pytest.TempPathFactory, atlas_harvard_oxford: dic
     return pcc_mask_fname
 
 
+# TODO check this & implement tests w gradients
+@pytest.fixture(scope="session")
+def margulies2016_gradients(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    tmp_path = tmp_path_factory.mktemp(basename="gradients")
+
+    os.chdir(str(tmp_path))
+
+    os.chdir(str(tmp_path))
+    setup_test_resources()
+
+    zip_path = get_resource("Gradients_Margulies2016.zip")
+    with ZipFile(zip_path) as fp:
+        fp.extractall(tmp_path)
+
+    gradients_path = tmp_path / "Gradients_Margulies2016" / "volumes" / "volume.grad_1.MNI2mm.nii.gz"
+
+    return gradients_path
+
+
 @pytest.fixture(scope="function")
 def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
     bids_file = FileSchema().load(
@@ -239,3 +278,100 @@ def bids_session_test_data(request: pytest.FixtureRequest) -> Iterator[tuple[Pat
 
     # Cleanup after the test
     shutil.rmtree(base_path)
+
+
+@pytest.fixture(scope="function")
+def mock_ctx(
+    tmp_path,
+    bids_data,  # returns path to bids_data, fixture defined in conftest
+    mock_spec,  # what exactly is in here?
+):
+    """Create a mock FactoryContext based on the mock_spec fixture."""
+    # init database
+    database = Database(mock_spec, bids_database_dir=bids_data)
+    # init bids database
+    bids_database = BidsDatabase(database)
+    bold_file_paths_dict = collect_bold_files(mock_spec, database)
+    convert_all(database, bids_database, bold_file_paths_dict)
+
+    # from workflows.base
+    uuid = uuid5(mock_spec.uuid, database.sha1 + __version__)
+    workflow = IdentifiableWorkflow(name="nipype", base_dir=tmp_path, uuid=uuid)
+    workflow.config["execution"].update(
+        dict(
+            create_report=True,  # each node writes a text file with inputs and outputs
+            crashdump_dir=workflow.base_dir,
+            crashfile_format="txt",
+            hash_method="timestamp",
+            poll_sleep_duration=0.5,
+            use_relative_paths=False,
+            check_version=False,
+        )
+    )
+
+    return FactoryContext(tmp_path, mock_spec, database, bids_database, workflow)
+
+
+# Note these fixtures return the factory objects post-setup bc the following factory setup is dependent on it
+# TODO refactor such that each of these fixtures only has to init the factory & rest is internal
+@pytest.fixture(scope="function")
+def mock_fmriprep_factory_tuple(
+    bids_data,
+    mock_spec,
+    mock_ctx,
+):
+    """Outputs a tuple of FmriprepFactory along with the setup outputs for the following factory."""
+    database = Database(mock_spec, bids_database_dir=bids_data)
+    bold_file_paths_dict = collect_bold_files(mock_spec, database)
+
+    fmriprep_factory = FmriprepFactory(mock_ctx)
+    fmriprep_bold_file_paths, processing_groups = fmriprep_factory.setup(
+        Path(str(bids_data)[:-8]), set(bold_file_paths_dict.keys())
+    )
+
+    # filter out skipped files
+    bold_file_paths_dict = {
+        bold_file_path: associated_file_paths
+        for bold_file_path, associated_file_paths in bold_file_paths_dict.items()
+        if bold_file_path in fmriprep_bold_file_paths
+    }
+    return fmriprep_factory, bold_file_paths_dict, processing_groups
+
+
+@pytest.fixture(scope="function")
+def mock_post_processing_factory(
+    mock_ctx,
+    mock_fmriprep_factory_tuple,
+):
+    mock_fmriprep_factory = mock_fmriprep_factory_tuple[0]
+    bold_file_paths_dict = mock_fmriprep_factory_tuple[1]
+    processing_groups = mock_fmriprep_factory_tuple[2]
+
+    post_processing_factory = PostProcessingFactory(mock_ctx, mock_fmriprep_factory)
+    post_processing_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
+    return post_processing_factory
+
+
+@pytest.fixture(scope="function")
+def mock_feature_factory(
+    mock_ctx,
+    mock_fmriprep_factory_tuple,
+    mock_post_processing_factory,
+):
+    mock_fmriprep_factory = mock_fmriprep_factory_tuple[0]
+    bold_file_paths_dict = mock_fmriprep_factory_tuple[1]
+    processing_groups = mock_fmriprep_factory_tuple[2]
+
+    feature_factory = FeatureFactory(mock_ctx, mock_fmriprep_factory, mock_post_processing_factory)
+    feature_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
+    return feature_factory
+
+
+@pytest.fixture(scope="function")
+def mock_downstream_feature_factory(
+    mock_ctx,
+    mock_feature_factory,
+):
+    downstream_feature_factory = DownstreamFeatureFactory(mock_ctx, mock_feature_factory)
+    downstream_feature_factory.setup()
+    return downstream_feature_factory

@@ -22,8 +22,13 @@ from ..memory import MemoryCalculator
 
 def init_atlas_based_connectivity_wf(
     workdir: str | Path,
+    # harveyaa - in general: why are these optional arguments?
+    # harveyaa - feature must contain atlas names, sets default min region coverage 0.8
+    # harveyaa - Feature constructor must have type (which is a string) as 2nd positional arg
     feature: Feature | None = None,
+    # harveyaa - list of same length as names in feature of paths
     atlas_files: Sequence[Path | str] | None = None,
+    # harveyaa - needs either "MNI152NLin6Asym"  "MNI152NLin2009cAsym" (ref: src/halfpipe/interfaces/image_maths/resample.py)
     atlas_spaces: Sequence[str] | None = None,
     space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
@@ -38,18 +43,23 @@ def init_atlas_based_connectivity_wf(
         name = "atlas_based_connectivity_wf"
     workflow = pe.Workflow(name=name)
 
+    # harveyaa - actual necessary inputs
     inputnode = pe.Node(
         niu.IdentityInterface(
+            # TODO very confused as to why some and not other values are included in feature
+            # feels like feature should take everything validated from input spec
+            # everything else runtime generated, ie from previous node
             fields=[
                 "tags",  # dictionary keys to values
                 "vals",  # fd_mean, etc.
                 "metadata",  # repetition_time, etc.
-                "bold",
-                "mask",
+                "bold",  # corresponds w input spec in_file
+                "mask",  # corresponds w input spec mask_file
                 "repetition_time",
-                "atlas_names",
-                "atlas_files",
+                "atlas_names",  # corresponds w feature atlases
+                "atlas_files",  # corresponds w input spec atlas_file (why plural here? map node possible?)
                 "atlas_spaces",
+                # feel like min_region_coverage belongs here
                 # resampling to native space
                 "std2anat_xfm",
                 "bold_ref_anat",
@@ -62,6 +72,7 @@ def init_atlas_based_connectivity_wf(
     min_region_coverage = 1
     if feature is not None:
         inputnode.inputs.atlas_names = feature.atlases
+        # TODO why does min_region_coverage not go through the nodes?
         if hasattr(feature, "min_region_coverage"):
             min_region_coverage = feature.min_region_coverage
 

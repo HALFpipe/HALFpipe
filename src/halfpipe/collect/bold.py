@@ -4,20 +4,64 @@
 
 from collections import defaultdict
 
+# from halfpipe.workflows.factory import FactoryContext # this causes a circular import error - why?
+from halfpipe.model.feature import FeatureSchema
+
 from ..ingest.bids import BidsDatabase
-from ..ingest.database import Database
 from ..logging import logger
 from ..utils.image import nvol
-from ..workflows.features.factory import FeatureFactory
-from ..workflows.post_processing.factory import PostProcessingFactory
+
+# from ..workflows.features.factory import FeatureFactory
+# from ..workflows.post_processing.factory import PostProcessingFactory
 from .fmap import collect_fieldmaps
 
 
+def get_setting_names(spec):
+    # get post processing setting names (moved from PostProcessingFactory self.source_files)
+    post_processing_setting_names = set(setting["name"] for setting in spec.settings if setting.get("output_image") is True)
+
+    # get feature setting names (moved from FeatureFactory self.source_files)
+    instance = FeatureSchema()
+    feature_setting_names = set()
+    for feature in spec.features:
+        featuredict = instance.dump(feature)
+        assert isinstance(featuredict, dict)
+        for k, v in featuredict.items():
+            if k.endswith("setting"):
+                feature_setting_names.add(v)
+
+    return post_processing_setting_names | feature_setting_names
+
+
+# moved from PostProcessingFactory
+def get_source_files(
+    spec,
+    database,
+    setting_names,  # set
+) -> set[str]:
+    bold_file_paths = set(database.get(datatype="func", suffix="bold"))
+
+    source_files: set[str] = set()
+    for setting in spec.settings:
+        if setting.get("name") in setting_names:
+            filters = setting.get("filters")
+            if filters is None or len(filters) == 0:
+                return bold_file_paths
+            else:
+                source_files |= database.applyfilters(bold_file_paths, filters)
+    return source_files
+
+
+# refactored to depend only on the spec & database
+# TODO modify for collect_bold_files for downstream_features? will there be additional bold files?
 def collect_bold_files(
-    database: Database, post_processing_factory: PostProcessingFactory, feature_factory: FeatureFactory
+    spec,
+    database,
 ) -> dict[str, list[str]]:
+    setting_names = get_setting_names(spec)
+
     # Find all bold files
-    bold_file_paths: set[str] = post_processing_factory.source_files | feature_factory.source_files
+    bold_file_paths: set[str] = get_source_files(spec, database, setting_names)
     bold_file_paths_dict: dict[str, list[str]] = dict()
 
     # Find associated files
