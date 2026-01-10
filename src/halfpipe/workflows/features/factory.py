@@ -207,8 +207,8 @@ class FeatureFactory(Factory):
     def get_hierarchy(
         self,
         feature_name: str,
-        ) -> list[list[pe.Workflow]]:
-        """ Returns the hierarchy associated with the given feature name. """
+    ) -> list[list[pe.Workflow]]:
+        """Returns the hierarchy associated with the given feature name."""
         return self.hierarchies[feature_name]
 
     def connect(self, *args, **kwargs):

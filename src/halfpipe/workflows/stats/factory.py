@@ -23,23 +23,20 @@ class StatsFactory(Factory):
         self.feature_factory = feature_factory
         # TODO should standardize, here its a dict whereas its a list in other factories
         self.hierarchies = dict()
-    
+
     # TODO rename to _setup and made internal to init
     def setup(self):
         for model in self.ctx.spec.models:
             self.create(model)
 
     # TODO rename to _create
-    def create(
-        self, 
-        model
-        ):
-        hierarchy = self._create_hierarchy("stats_wf") # = [self.ctx.workflow, stats_wf]
+    def create(self, model):
+        hierarchy = self._create_hierarchy("stats_wf")  # = [self.ctx.workflow, stats_wf]
         # (first run of create)
         # this call creates a list of workflows, starting w context workflow
         # then adds a stats_wf
 
-        parent_workflow = hierarchy[-1] # = stats_wf (empty wf called stats_wf)
+        parent_workflow = hierarchy[-1]  # = stats_wf (empty wf called stats_wf)
 
         variables = None
         if hasattr(model, "spreadsheet"):
@@ -57,16 +54,12 @@ class StatsFactory(Factory):
             if inputname in [model.name for model in self.ctx.spec.models]:
                 # TODO problematic bc if true will call get on an empty dict for self.hierarchies
                 # always bc model has to be in order, still feels messy
-                input_hierarchies.extend(
-                    self.get_hierarchy(inputname)
-                    )
+                input_hierarchies.extend(self.get_hierarchy(inputname))
 
                 logger.debug(f"StatsFactory->extending inputs by self->inputs: {inputs}")
             # Check if inputname is a feature
             elif inputname in [feature.name for feature in self.ctx.spec.features]:
-                input_hierarchies.extend(
-                    self.feature_factory.get(inputname)
-                    )
+                input_hierarchies.extend(self.feature_factory.get(inputname))
                 logger.debug(f"StatsFactory->extending inputs by feature_factory->inputs: {inputs}")
             else:
                 raise ValueError(f'Unknown input name "{inputname}"')
@@ -80,7 +73,7 @@ class StatsFactory(Factory):
             variables=variables,
         )
         # add the nodes of the created worfklow to the "stats_wf" (because its empty)
-        parent_workflow.add_nodes([workflow]) # why is it a list of the workflow?
+        parent_workflow.add_nodes([workflow])  # why is it a list of the workflow?
         # why add it again to the hierarchy?
         hierarchy.append(workflow)
         # hierarchy is now [self.ctx.workflow, stats_wf, workflow]
@@ -95,10 +88,10 @@ class StatsFactory(Factory):
         # renaming might be more confusing across Factories, but consistent internally at least
         for i, input_hierarchy in enumerate(input_hierarchies):
             self.connect_attr(
-                input_hierarchy, # should be a hierarchy
+                input_hierarchy,  # should be a hierarchy
                 "outputnode",
                 "resultdicts",
-                hierarchy, # [self.ctx.workflow, stats_wf, workflow]
+                hierarchy,  # [self.ctx.workflow, stats_wf, workflow]
                 "inputnode",
                 f"in{i + 1:d}",
             )
@@ -106,7 +99,7 @@ class StatsFactory(Factory):
         return workflow
 
     def get_hierarchy(self, model_name):
-        """ Returns the hierarchy associated with the given model name. """
+        """Returns the hierarchy associated with the given model name."""
         return self.hierarchies[model_name]
 
     # TODO standardize

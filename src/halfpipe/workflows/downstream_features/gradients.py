@@ -15,7 +15,6 @@ from halfpipe.model.downstream_feature import DownstreamFeature
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ...utils.format import format_workflow
-
 from ..memory import MemoryCalculator
 
 ##############
@@ -31,7 +30,7 @@ def init_gradients_wf(
     correlation_matrix,  # TODO remove this & link I/O properly
     downstream_feature: DownstreamFeature | None = None,
     memcalc: MemoryCalculator | None = None,
-    ) -> pe.Workflow:
+) -> pe.Workflow:
     """Create workflow for gradients."""
     memcalc = MemoryCalculator.default() if memcalc is None else memcalc
 
@@ -54,7 +53,6 @@ def init_gradients_wf(
                 "tags",
                 "vals",
                 "metadata",
-
                 # gradients params
                 # TODO cut these down/consider necessary
                 "n_components",
@@ -66,7 +64,7 @@ def init_gradients_wf(
                 "gamma",
                 "sparsity",
                 "n_iter",
-                "reference", # only input to be a file
+                "reference",  # only input to be a file
             ]
         ),
         name="inputnode",
@@ -122,7 +120,7 @@ def init_gradients_wf(
         Gradients(),
         name="gradients",
         mem_gb=memcalc.series_std_gb,
-        )
+    )
 
     # connect inputnode values
     workflow.connect(inputnode, "n_components", gradientsnode, "n_components")

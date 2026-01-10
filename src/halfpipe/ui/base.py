@@ -8,7 +8,7 @@ from pathlib import Path
 from .. import __version__
 from ..logging import logger
 from ..logging.base import LoggingContext
-from ..model.spec import load_spec, save_spec # TODO this is super confusing double naming
+from ..model.spec import load_spec, save_spec  # TODO this is super confusing double naming
 from ..workdir import init_workdir
 from .components import (
     App,
@@ -21,7 +21,7 @@ from .components import (
 from .components.config import Config as UIConfig
 from .feature import FeaturesStep
 from .file import BidsStep
-from .model import ModelsStep # TODO this is super confusing double naming
+from .model import ModelsStep  # TODO this is super confusing double naming
 from .step import Context, Step
 
 

@@ -121,9 +121,9 @@ class Factory(ABC):
         source_file: Path | str | None = None,
         subject_id: str | None = None,
         childname: str | None = None,
-        create_ok: bool = True, # when would this be false?
+        create_ok: bool = True,  # when would this be false?
         processing_group=None,
-        ):
+    ):
         """
         Retrieve or create a hierarchy of workflows.
         This method builds a list of workflows starting from the main workflow in
@@ -141,7 +141,7 @@ class Factory(ABC):
         # TODO this function seems unnecessary/refactor
         def require_workflow(
             child_name: str,
-            ):
+        ):
             """Checks if child_name is in workflow, if not it is added."""
             # workflow is last in hierarchy list
             workflow = hierarchy[-1]
@@ -168,7 +168,7 @@ class Factory(ABC):
         # will be None for stats and downstream feature factory (not based on per subject workflows)
         single_subject_wf_name = self._single_subject_wf_name(
             source_file=source_file, subject_id=subject_id, processing_group=processing_group
-            )
+        )
 
         if single_subject_wf_name is not None:
             # adds a blank wf called single subject wf name to hierarchy
@@ -194,14 +194,14 @@ class Factory(ABC):
 
     # TODO investigate this function
     def connect_attr(
-        self, 
-        outputhierarchy, # what is this? seems like it should be a list of workflow, but stats factory passes what looks like a string
-        outputnode, 
-        outattr, 
-        inputhierarchy, 
-        inputnode, 
-        inattr
-        ):
+        self,
+        outputhierarchy,  # what is this? seems like it should be a list of workflow, but stats factory passes what looks like a string
+        outputnode,
+        outattr,
+        inputhierarchy,
+        inputnode,
+        inattr,
+    ):
         inputhierarchy = [*inputhierarchy]  # make copies
         outputhierarchy = [*outputhierarchy]
 

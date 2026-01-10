@@ -32,12 +32,11 @@ from halfpipe.model.spec import Spec, SpecSchema, save_spec
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
 from halfpipe.workflows.convert import convert_all
+from halfpipe.workflows.downstream_features.factory import DownstreamFeatureFactory
 from halfpipe.workflows.factory import FactoryContext
 from halfpipe.workflows.features.factory import FeatureFactory
 from halfpipe.workflows.fmriprep.factory import FmriprepFactory
 from halfpipe.workflows.post_processing.factory import PostProcessingFactory
-from halfpipe.workflows.features.factory import FeatureFactory
-from halfpipe.workflows.downstream_features.factory import DownstreamFeatureFactory
 
 from ..create_mock_bids_dataset import create_bids_data
 from ..resource import setup as setup_test_resources
@@ -367,12 +366,12 @@ def mock_feature_factory(
     feature_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
     return feature_factory
 
+
 @pytest.fixture(scope="function")
 def mock_downstream_feature_factory(
     mock_ctx,
     mock_feature_factory,
-    ):
-
+):
     downstream_feature_factory = DownstreamFeatureFactory(mock_ctx, mock_feature_factory)
     downstream_feature_factory.setup()
     return downstream_feature_factory
