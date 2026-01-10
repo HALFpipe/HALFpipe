@@ -61,7 +61,9 @@ class ICAAROMAComponentsFactory(Factory):
         self.processing_groups = processing_groups
 
     def get_hierarchy(self, source_file, **_):
-        hierarchy = self._create_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
+        hierarchy = self._create_hierarchy(
+            "post_processing_wf", source_file=source_file, processing_group=self.processing_groups
+        )
         wf = hierarchy[-1]
 
         vwf = wf.get_node(self.wf_name)
@@ -193,7 +195,9 @@ class LookupFactory(Factory):
         return self.wf_factories[lookup_tuple]()
 
     def get_hierarchy(self, source_file, setting_name):
-        hierarchy = self._create_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
+        hierarchy = self._create_hierarchy(
+            "post_processing_wf", source_file=source_file, processing_group=self.processing_groups
+        )
         wf = hierarchy[-1]
 
         setting_tuple = self.tpl_by_setting_name[setting_name]
