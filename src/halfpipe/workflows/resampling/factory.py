@@ -27,8 +27,8 @@ class AltBOLDFactory(Factory):
         self.wf_name = prototype.name
         self.processing_groups = processing_groups
 
-    def get(self, source_file, **_):
-        hierarchy = self._get_hierarchy("settings_wf", source_file=source_file, processing_group=self.processing_groups)
+    def get_hierarchy(self, source_file, **_):
+        hierarchy = self._create_hierarchy("settings_wf", source_file=source_file, processing_group=self.processing_groups)
         wf = hierarchy[-1]
 
         vwf = wf.get_node(self.wf_name)
@@ -59,6 +59,4 @@ class AltBOLDFactory(Factory):
                 logger.debug("AltBOLDFactory-> connect NOT with fmriprep factory")
                 self.previous_factory.connect(hierarchy, inputnode, source_file=source_file)
 
-        outputnode = vwf.get_node("outputnode")
-
-        return hierarchy, outputnode
+        return hierarchy
