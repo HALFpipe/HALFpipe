@@ -66,8 +66,12 @@ class SpecSchema(Schema):
     @validates_schema
     def validate_analyses(self, data, **kwargs):
         names = []
-        # TODO validate this
-        for field in ["settings", "features", "downstream_features", "models"]:
+        for field in [
+            "settings", 
+            "features", 
+            # "downstream_features", # TODO
+            "models"
+            ]:
             if field not in data:
                 continue  # validation error will be raised independently
             names.extend([a["name"] if isinstance(a, dict) else a.name for a in data[field]])
