@@ -107,10 +107,10 @@ def init_ica_aroma_components_wf(
 
     #  fmripost-aroma config settings
     #  Set the dimensionality of the MELODIC PCA component estimation.
-    aroma_melodic_dim = -200    # (default: -200, i.e., estimate <=200 components)
+    aroma_melodic_dim = -200  # (default: -200, i.e., estimate <=200 components)
     config.workflow.melodic_dim = aroma_melodic_dim  # type: ignore[assignment]
     config.workflow.denoise_method = None  # disable denoising data
-    config.seeds.melodic_seed = aroma_melodic_seed # Seed for ICA part of algorithm
+    config.seeds.melodic_seed = aroma_melodic_seed  # Seed for ICA part of algorithm
     if workdir is None:
         raise ValueError("`workdir` must be provided and cannot be None.")
     config.execution.output_dir = Path(workdir) / "derivatives" / "fmripost_aroma"  # type: ignore[assignment]

@@ -179,6 +179,7 @@ class LookupFactory(Factory):
 
         return hierarchy, outputnode
 
+
 # Now it is a lookupfactory, because we want to allow the seed to change per setting.
 class ICAAROMAComponentsFactory(LookupFactory):
     def __init__(self, ctx, fmriprep_factory: Factory, alt_bold_factory: AltBOLDFactory):
@@ -191,7 +192,7 @@ class ICAAROMAComponentsFactory(LookupFactory):
         if seed is None:
             name = "ica_aroma_components_wf"
         else:
-            name = f"ica_aroma_components_wf_seed_{seed}" #instead of suffix because it reads nicer
+            name = f"ica_aroma_components_wf_seed_{seed}"  # instead of suffix because it reads nicer
         workflow = init_ica_aroma_components_wf(
             workdir=str(self.ctx.workdir),
             memcalc=lookup_tuple.memcalc,
