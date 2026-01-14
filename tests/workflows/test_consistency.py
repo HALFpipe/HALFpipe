@@ -40,6 +40,15 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
+        name="icaAroma_fixedseed",
+        base_setting=dict(
+            confounds_removal=[],
+            grand_mean_scaling=dict(mean=10000.0),
+            ica_aroma=True,
+            aroma_melodic_seed=232323,
+        ),
+    ),
+    TestSetting(
         name="icaAromaCCompCor",  # was TrueComb1
         base_setting=dict(
             confounds_removal=["c_comp_cor_0[0-4]"],

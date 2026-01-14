@@ -68,6 +68,7 @@ def init_ica_aroma_components_wf(
     workdir: str | None = None,
     name: str = "ica_aroma_components_wf",
     memcalc: MemoryCalculator | None = None,
+    aroma_melodic_seed: int | None = None,
 ):
     """
     Get a workflow to calculate ICA-AROMA components
@@ -104,18 +105,14 @@ def init_ica_aroma_components_wf(
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
 
-    # Set the dimensionality of the MELODIC ICA decomposition.
-    # (default: -200, i.e., estimate <=200 components)
-    aroma_melodic_dim = -200
-    if config.workflow.melodic_dim is not None:
-        aroma_melodic_dim = config.workflow.melodic_dim
-
-    #! There is a new config for fmripost_aroma:
-    # config needs to come from fmripost_aroma, not fmriprep
-    if workdir is None:
-        raise ValueError("`workdir` must be provided and cannot be None.")
+    #  fmripost-aroma config settings
+    #  Set the dimensionality of the MELODIC PCA component estimation.
+    aroma_melodic_dim = -200    # (default: -200, i.e., estimate <=200 components)
     config.workflow.melodic_dim = aroma_melodic_dim  # type: ignore[assignment]
     config.workflow.denoise_method = None  # disable denoising data
+    config.seeds.melodic_seed = aroma_melodic_seed # Seed for ICA part of algorithm
+    if workdir is None:
+        raise ValueError("`workdir` must be provided and cannot be None.")
     config.execution.output_dir = Path(workdir) / "derivatives" / "fmripost_aroma"  # type: ignore[assignment]
 
     # create ICA-AROMA workflow

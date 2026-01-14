@@ -44,53 +44,6 @@ class LookupTuple(Generic[T]):
     memcalc: MemoryCalculator
 
 
-class ICAAROMAComponentsFactory(Factory):
-    def __init__(self, ctx, fmriprep_factory: Factory, alt_bold_factory: AltBOLDFactory):
-        super(ICAAROMAComponentsFactory, self).__init__(ctx)
-
-        self.alt_bold_factory = alt_bold_factory
-        self.fmriprep_factory = fmriprep_factory
-        self.processing_groups: list | None = None
-
-    def setup(self, processing_groups=None):
-        prototype = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir))
-        self.wf_name = prototype.name
-        self.processing_groups = processing_groups
-
-    def get(self, source_file, **_):
-        hierarchy = self._get_hierarchy("post_processing_wf", source_file=source_file, processing_group=self.processing_groups)
-        wf = hierarchy[-1]
-
-        vwf = wf.get_node(self.wf_name)
-        connect = False
-
-        if vwf is None:
-            connect = True
-
-            memcalc = MemoryCalculator.from_bold_file(source_file)
-            vwf = init_ica_aroma_components_wf(workdir=str(self.ctx.workdir), memcalc=memcalc)
-
-            wf.add_nodes([vwf])
-
-        assert isinstance(vwf, pe.Workflow)
-        inputnode = vwf.get_node("inputnode")
-        assert isinstance(inputnode, pe.Node)
-        hierarchy.append(vwf)
-
-        if connect:
-            inputnode.inputs.tags = self.ctx.database.tags(source_file)
-            self.ctx.database.fillmetadata("repetition_time", [source_file])
-            inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
-            self.alt_bold_factory.connect(hierarchy, inputnode, source_file=source_file)
-            self.fmriprep_factory.connect(
-                hierarchy, inputnode, source_file=source_file, processing_group=self.fmriprep_factory.processing_groups
-            )
-
-        outputnode = vwf.get_node("outputnode")
-
-        return hierarchy, outputnode
-
-
 class LookupFactory(Factory):
     def __init__(self, ctx: FactoryContext, previous_factory: Factory) -> None:
         super(LookupFactory, self).__init__(ctx)
@@ -225,6 +178,39 @@ class LookupFactory(Factory):
         outputnode = vwf.get_node("outputnode")
 
         return hierarchy, outputnode
+
+# Now it is a lookupfactory, because we want to allow the seed to change per setting.
+class ICAAROMAComponentsFactory(LookupFactory):
+    def __init__(self, ctx, fmriprep_factory: Factory, alt_bold_factory: AltBOLDFactory):
+        super(ICAAROMAComponentsFactory, self).__init__(ctx, fmriprep_factory)
+        self.alt_bold_factory = alt_bold_factory
+        self.fmriprep_factory = fmriprep_factory
+
+    def _prototype(self, lookup_tuple: LookupTuple[int | None]) -> pe.Workflow:
+        seed = lookup_tuple.setting_tuple.value
+        if seed is None:
+            name = "ica_aroma_components_wf"
+        else:
+            name = f"ica_aroma_components_wf_seed_{seed}" #instead of suffix because it reads nicer
+        workflow = init_ica_aroma_components_wf(
+            workdir=str(self.ctx.workdir),
+            memcalc=lookup_tuple.memcalc,
+            aroma_melodic_seed=seed,
+            name=name,
+        )
+        return workflow
+
+    def _tpl(self, setting) -> Hashable:
+        return setting.get("aroma_melodic_seed")
+
+    def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple):
+        inputnode.inputs.tags = self.ctx.database.tags(source_file)
+        self.ctx.database.fillmetadata("repetition_time", [source_file])
+        inputnode.inputs.repetition_time = self.ctx.database.metadata(source_file, "repetition_time")
+        self.alt_bold_factory.connect(hierarchy, inputnode, source_file=source_file)
+        self.fmriprep_factory.connect(
+            hierarchy, inputnode, source_file=source_file, processing_group=self.fmriprep_factory.processing_groups
+        )
 
 
 class FmriprepAdapterFactory(LookupFactory):
@@ -549,7 +535,7 @@ class PostProcessingFactory(Factory):
             # The component calculation is independent from the noise components regression application
             # so we generally ran components by default and apply them if the specific settings of spec file
             # shows "ica_aroma=True"
-            self.ica_aroma_components_factory.get(source_file)
+            self.ica_aroma_components_factory.get(source_file, setting_name)
         if confounds_action == "select":
             return self.confounds_select_factory.get(source_file, setting_name)
         elif confounds_action == "regression":
