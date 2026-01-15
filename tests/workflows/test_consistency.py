@@ -40,7 +40,7 @@ settings_list: list[TestSetting] = [
         ),
     ),
     TestSetting(
-        name="icaAroma_fixedseed",
+        name="icaAromaFixedSeed",
         base_setting=dict(
             confounds_removal=[],
             grand_mean_scaling=dict(mean=10000.0),
