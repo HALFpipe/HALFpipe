@@ -1,5 +1,5 @@
 # Dependencies derived from:
-# https://github.com/nipreps/fmripost-aroma/blob/0.0.12/pyproject.toml
+# https://github.com/nipreps/fmripost-aroma/blob/main/pyproject.toml
 
 package:
   name: "fmripost_aroma"
@@ -7,10 +7,7 @@ package:
 
 source:
   git_url: https://github.com/nipreps/fmripost-aroma.git
-  git_rev: "0.0.12"
-  patches:
-    - 001-compat-nilearn-0-12-1.patch
-    - 002-add-mem-gb.patch
+  git_rev: "92d02283a213e45d03f3e342f3072b93c0be75c8"
 
 build:
   noarch: python
