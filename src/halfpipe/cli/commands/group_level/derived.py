@@ -173,7 +173,7 @@ class ImagingVariables:
         brain_mask_paths = index.get(
             datatype="anat",
             sub=subject,
-            space=Constants.reference_space,
+            space=configurables.reference_space,
             res=str(configurables.reference_res),
             desc="brain",
             suffix="mask",
