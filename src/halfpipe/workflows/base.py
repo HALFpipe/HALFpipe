@@ -12,6 +12,7 @@ from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
 from ..logging import logger
+from ..logging.describe_workflow import describe_workflow
 from ..model.spec import Spec, load_spec
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
@@ -79,7 +80,7 @@ def init_workflow(
     configurables.reference_space = spec.global_settings.get("reference_space")
 
     # create factories
-
+    logger.debug("init_workflow->creating factories")
     ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
     fmriprep_factory = FmriprepFactory(ctx)
     post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
@@ -87,6 +88,7 @@ def init_workflow(
     stats_factory = StatsFactory(ctx, feature_factory)
 
     bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)
+    logger.debug(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
 
     # write out
 
@@ -110,6 +112,7 @@ def init_workflow(
     # setup preprocessing
 
     if spec.global_settings.get("run_mriqc") is True:
+        logger.debug("init_workflow->going to setup mriqc_factory")
         mriqc_factory = MriqcFactory(ctx)
         mriqc_factory.setup(
             workdir,
@@ -117,10 +120,12 @@ def init_workflow(
         )
 
     if spec.global_settings.get("run_fmriprep") is True:
-        fmriprep_bold_file_paths = fmriprep_factory.setup(
+        logger.debug("init_workflow->going to setup fmriprep_factory")
+        fmriprep_bold_file_paths, processing_groups = fmriprep_factory.setup(
             workdir,
             set(bold_file_paths_dict.keys()),
         )
+        logger.debug(f"init_workflow->fmriprep_bold_file_paths: {fmriprep_bold_file_paths}")
 
         # filter out skipped files
         bold_file_paths_dict = {
@@ -128,10 +133,14 @@ def init_workflow(
             for bold_file_path, associated_file_paths in bold_file_paths_dict.items()
             if bold_file_path in fmriprep_bold_file_paths
         }
+        logger.debug(f"init_workflow->bold_file_paths_dict after filtering: {bold_file_paths_dict}")
 
         if spec.global_settings.get("run_halfpipe") is True:
-            post_processing_factory.setup(bold_file_paths_dict)
-            feature_factory.setup(bold_file_paths_dict)
+            logger.debug("init_workflow->going to setup post_processing_factory")
+            post_processing_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
+            logger.debug("init_workflow->going to setup feature_factory")
+            feature_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
+            logger.debug("init_workflow->going to setup stats_factory")
             stats_factory.setup()
 
     # patch workflow
@@ -151,5 +160,8 @@ def init_workflow(
 
     logger.info(f"Finished workflow {uuidstr}")
     cache_obj(workdir, ".workflow", workflow)
+
+    logger.debug(f"Printing final workflow {uuidstr}")
+    describe_workflow(workflow)
 
     return workflow

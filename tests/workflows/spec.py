@@ -24,12 +24,7 @@ class TestSetting:
     image_output: bool = True
 
 
-def make_spec(
-    dataset_files: list[File],
-    pcc_mask: Path,
-    test_settings: list[TestSetting],
-    event_file: File | None = None,
-) -> Spec:
+def make_bids_only_spec(dataset_files: list[File]):
     spec_schema = SpecSchema()
     spec = spec_schema.load(spec_schema.dump(dict()), partial=True)  # get defaults
     assert isinstance(spec, Spec)
@@ -38,6 +33,17 @@ def make_spec(
 
     # Set up files
     spec.files.extend(dataset_files)
+    return spec
+
+
+def make_spec(
+    dataset_files: list[File],
+    pcc_mask: Path,
+    test_settings: list[TestSetting],
+    event_file: File | None = None,
+) -> Spec:
+    spec = make_bids_only_spec(dataset_files)
+
     if event_file is not None:
         spec.files.append(event_file)
 

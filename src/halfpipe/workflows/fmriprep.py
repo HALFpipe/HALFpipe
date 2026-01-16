@@ -5,7 +5,7 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, Tuple
 from unittest.mock import patch
 
 from fmriprep import config
@@ -16,6 +16,7 @@ from packaging.version import Version
 
 from ..collect.fmap import collect_fieldmaps
 from ..logging import logger
+from ..logging.describe_workflow import describe_workflow
 from ..utils.copy import deepcopyfactory
 from ..utils.format import inflect_engine as p
 from .configurables import configurables
@@ -211,8 +212,9 @@ connections = {
 class FmriprepFactory(Factory):
     def __init__(self, ctx):
         super(FmriprepFactory, self).__init__(ctx)
+        self.processing_groups: list | None = None
 
-    def setup(self, workdir: Path, bold_file_paths: set[str]) -> set[str]:
+    def setup(self, workdir: Path, bold_file_paths: set[str]) -> Tuple[set[str], list]:
         """
         This needs to be documented.
         """
@@ -249,9 +251,12 @@ class FmriprepFactory(Factory):
             (bids_subject, list(bids_subject_sessions[bids_subject]) if bids_subject_sessions[bids_subject] else None)
             for bids_subject in bids_subjects
         ]
+        self.processing_groups = processing_groups
 
         spec = self.ctx.spec
         global_settings = spec.global_settings
+
+        logger.debug(f"Processing groups are {processing_groups}")
 
         config_file = self.get_config(workdir, bids_subjects, processing_groups)
 
@@ -268,8 +273,17 @@ class FmriprepFactory(Factory):
         # check and patch workflow
         skipped = set()
         for bold_file_path in bold_file_paths:
-            func_preproc_wf = self._get_hierarchy(get_fmriprep_wf_name(), source_file=bold_file_path)[-1]
+            func_preproc_wf = self._get_hierarchy(
+                get_fmriprep_wf_name(), source_file=bold_file_path, processing_group=processing_groups
+            )[-1]
 
+            func_preproc_wf_hierarchy = describe_workflow(func_preproc_wf)
+            logger.debug(f"func_preproc_wf_hierarchy: {func_preproc_wf_hierarchy}")
+            # this is a good debug because thanks to it we see why it was skipped, either 0 graphs or not a workflow
+            logger.debug(
+                f"FmriPrepFactory->setup-> func_preproc_wf: {func_preproc_wf} and bold_file_path: {bold_file_path} "
+                f"and len(func_preproc_wf._graph: {len(func_preproc_wf._graph)}"
+            )
             if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
                 logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
                 skipped.add(bold_file_path)
@@ -304,20 +318,21 @@ class FmriprepFactory(Factory):
 
         # halfpipe-specific report workflows
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
-        for subject_id in subjects:
-            hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id)
-
+        for processing_group in processing_groups:
+            subject_id, sessions = processing_group
+            hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id, processing_group=processing_group)
             wf = anat_report_wf_factory()
             hierarchy[-1].add_nodes([wf])
+
             hierarchy.append(wf)
 
             inputnode = wf.get_node("inputnode")
             inputnode.inputs.tags = {"sub": subject_id}
 
-            self.connect(hierarchy, inputnode, subject_id=subject_id)
+            self.connect(hierarchy, inputnode, subject_id=subject_id, processing_group=processing_group)
 
         for bold_file_path in bold_file_paths:
-            hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path)
+            hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path, processing_group=processing_groups)
 
             wf = init_func_report_wf(
                 workdir=str(workdir),
@@ -334,9 +349,10 @@ class FmriprepFactory(Factory):
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
 
-            self.connect(hierarchy, inputnode, source_file=bold_file_path)
+            logger.debug("FMRIprep connecting on init_func_report_wf")
+            self.connect(hierarchy, inputnode, source_file=bold_file_path, processing_group=processing_groups)
 
-        return bold_file_paths
+        return bold_file_paths, processing_groups
 
     def get_config(
         self, workdir: Path, bids_subjects: set[str], processing_groups: list[tuple[str, list[str] | None]]
@@ -445,6 +461,7 @@ class FmriprepFactory(Factory):
         source_file: Path | str | None = None,
         subject_id: str | None = None,
         ignore_attrs: frozenset[str] = frozenset({"alt_bold_file_std", "alt_bold_mask_std"}),
+        processing_group=None,
         **_: Any,
     ) -> set[str]:
         """
@@ -456,16 +473,30 @@ class FmriprepFactory(Factory):
 
         hierarchies: dict[Literal["anat_fit_wf", "bold_wf", "reports_wf"], list[pe.Workflow]] = dict()
 
-        bold_wf_hierarchy = self._get_hierarchy(get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id)
+        bold_wf_hierarchy = self._get_hierarchy(
+            get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id, processing_group=processing_group
+        )
         hierarchies["bold_wf"] = bold_wf_hierarchy
 
         anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
+
+        for wf in anat_fit_wf_hierarchy:
+            describe_workflow(wf)
+
+        logger.debug(
+            f"{self.__class__.__name__} -> connect: "
+            f"anat_fit_wf_hierarchy={anat_fit_wf_hierarchy}, "
+            f"processing_group={processing_group}"
+        )
+
         while (anat_fit_wf := anat_fit_wf_hierarchy[-1].get_node("anat_fit_wf")) is None:
             anat_fit_wf_hierarchy.pop(-1)
         anat_fit_wf_hierarchy.append(anat_fit_wf)
         hierarchies["anat_fit_wf"] = anat_fit_wf_hierarchy
 
-        report_wf_hierarchy = self._get_hierarchy("reports_wf", source_file=source_file, subject_id=subject_id)
+        report_wf_hierarchy = self._get_hierarchy(
+            "reports_wf", source_file=source_file, subject_id=subject_id, processing_group=processing_group
+        )
         hierarchies["reports_wf"] = report_wf_hierarchy
 
         connected_attrs: set[str] = set()
