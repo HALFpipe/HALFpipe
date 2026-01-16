@@ -17,7 +17,6 @@ from ...interfaces.result.make import MakeResultdicts
 from ...model.feature import Feature
 from ...utils.format import format_workflow
 from ..configurables import configurables
-from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
