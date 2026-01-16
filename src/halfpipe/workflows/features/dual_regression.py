@@ -161,7 +161,7 @@ def init_dualregression_wf(
         mem_gb=memcalc.series_std_gb,
     )
     if space == "standard":
-        resample.inputs.reference_space = Constants.reference_space
+        resample.inputs.reference_space = configurables.reference_space
         resample.inputs.reference_res = configurables.reference_res
     elif space == "native":
         workflow.connect(inputnode, "std2anat_xfm", resample, "transforms")
