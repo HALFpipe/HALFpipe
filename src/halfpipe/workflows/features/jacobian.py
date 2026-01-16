@@ -55,7 +55,7 @@ def init_jacobian_wf(
             output_image="composite_transform.nii.gz",
             interpolation="LanczosWindowedSinc",
             print_out_composite_warp_file=True,
-            reference_space=Constants.reference_space,
+            reference_space=configurables.reference_space,
             reference_res=configurables.reference_res,
         ),
         name="create_composite_transform",
