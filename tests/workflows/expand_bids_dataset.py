@@ -2,26 +2,6 @@ import re
 import shutil
 from pathlib import Path
 
-# from datasets import Dataset
-
-# # this downloads a small fragment of the whole dataset
-# dataset = Dataset(
-#     name="fibromyalgia",
-#     openneuro_id="ds004144",
-#     openneuro_url="https://openneuro.org/datasets/ds004144/versions/1.0.2",
-#     url="https://github.com/OpenNeuroDatasets/ds004144.git",
-#     paths=[
-#         "sub-002/anat/sub-002_T1w.nii.gz",
-#         "sub-002/anat/sub-002_T1w.json",
-#         "sub-002/func/sub-002_task-epr_bold.nii.gz",
-#         "sub-002/func/sub-002_task-epr_bold.json",
-#         "sub-002/func/sub-002_task-epr_events.tsv",
-#         "sub-002/func/sub-002_task-rest_bold.nii.gz",
-#         "sub-002/func/sub-002_task-rest_bold.json",
-#     ],
-# )
-
-
 def expand_bids_dataset(
     base_dataset_dir: Path,
     output_dataset_dir: Path,
@@ -34,6 +14,35 @@ def expand_bids_dataset(
     keeping:
       - ALL functional data
       - ONLY T1w anatomical data
+    Example use:
+    1) First download a small part from some dataset, e.g.:
+    from datasets import Dataset
+    dataset = Dataset(
+        name="fibromyalgia",
+        openneuro_id="ds004144",
+        openneuro_url="https://openneuro.org/datasets/ds004144/versions/1.0.2",
+        url="https://github.com/OpenNeuroDatasets/ds004144.git",
+        paths=[
+            "sub-002/anat/sub-002_T1w.nii.gz",
+            "sub-002/anat/sub-002_T1w.json",
+            "sub-002/func/sub-002_task-epr_bold.nii.gz",
+            "sub-002/func/sub-002_task-epr_bold.json",
+            "sub-002/func/sub-002_task-epr_events.tsv",
+            "sub-002/func/sub-002_task-rest_bold.nii.gz",
+            "sub-002/func/sub-002_task-rest_bold.json",
+        ],
+    )
+    2) then set a new directory and expand
+    tmp_path='./test'
+    # dataset.download(tmp_path)
+    
+    expand_bids_dataset(
+        base_dataset_dir=Path(tmp_path),
+        output_dataset_dir=Path('./modified'),
+        base_subject="sub-002",
+        n_subjects=3,
+        n_sessions=3,
+    )
     """
 
     base_subject_dir = base_dataset_dir / base_subject
@@ -88,16 +97,4 @@ def expand_bids_dataset(
                 shutil.copy(src_file, out_dir / new_fname)
 
 
-#
-# tmp_path='./tessst'
-# # dataset.download(tmp_path)
-#
-# expand_bids_dataset(
-#     base_dataset_dir=Path(tmp_path),
-#     output_dataset_dir=Path('./modified'),
-#     base_subject="sub-002",
-#     n_subjects=3,
-#     n_sessions=3,
-# )
-#
-#
+
