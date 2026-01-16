@@ -29,7 +29,7 @@ class MemoryCalculator(NamedTuple):
         volume_gb, series_gb = cls.calc_bold_gb((x, y, z, t))
 
         reference_file = get_template(
-            Constants.reference_space,
+            configurables.reference_space,
             resolution=configurables.reference_res,
             desc="brain",
             suffix="mask",
