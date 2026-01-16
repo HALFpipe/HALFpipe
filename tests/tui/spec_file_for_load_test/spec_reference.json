@@ -412,10 +412,12 @@
             "name": "taskBased_1",
             "setting": "taskBased1Setting",
             "type": "task_based",
+            "model_serial_correlations": true,
             "conditions": [
                 "cue_negative",
                 "img_neutral"
             ],
+            "estimation": "multiple_trial",
             "contrasts": [
                 {
                     "type": "t",
@@ -445,6 +447,7 @@
             "smoothing": {
                 "fwhm": 96.0
             },
+            "zscore": true,
             "unfiltered_setting": "fALFF_1UnfilteredSetting"
         },
         {
@@ -468,16 +471,19 @@
         {
             "name": "reHo_1",
             "setting": "reHo1Setting",
-            "type": "reho"
+            "type": "reho",
+            "zscore": true
         },
         {
             "name": "taskBased_2",
             "setting": "taskBased2Setting",
             "type": "task_based",
+            "model_serial_correlations": true,
             "conditions": [
                 "active_nochange",
                 "passive"
             ],
+            "estimation": "multiple_trial",
             "contrasts": [
                 {
                     "type": "t",
@@ -495,6 +501,7 @@
             "name": "fALFF_2",
             "setting": "fAlff2Setting",
             "type": "falff",
+            "zscore": true,
             "unfiltered_setting": "fALFF_2UnfilteredSetting"
         }
     ],
