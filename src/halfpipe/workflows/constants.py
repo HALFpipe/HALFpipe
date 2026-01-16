@@ -6,8 +6,6 @@ from typing import Final
 
 
 class Constants:
-    reference_space: Final[str] = "MNI152NLin2009cAsym"
 
     workflow_directory: Final[str] = "nipype"
-
     grayord_density: Final[str] = "91k"
