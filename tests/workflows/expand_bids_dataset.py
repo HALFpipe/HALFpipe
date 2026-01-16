@@ -2,6 +2,7 @@ import re
 import shutil
 from pathlib import Path
 
+
 def expand_bids_dataset(
     base_dataset_dir: Path,
     output_dataset_dir: Path,
@@ -35,7 +36,7 @@ def expand_bids_dataset(
     2) then set a new directory and expand
     tmp_path='./test'
     # dataset.download(tmp_path)
-    
+
     expand_bids_dataset(
         base_dataset_dir=Path(tmp_path),
         output_dataset_dir=Path('./modified'),
@@ -95,6 +96,3 @@ def expand_bids_dataset(
                     )
 
                 shutil.copy(src_file, out_dir / new_fname)
-
-
-
