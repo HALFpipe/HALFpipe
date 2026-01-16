@@ -6,12 +6,12 @@ from halfpipe.workflows.base import init_workflow
 
 
 @pytest.mark.parametrize(
-    "bids_session_test_data",
-    [[], ["01", "02"], ["01", "02", "03", "04"]],
+    "bids_session_expanded_real_test_data",
+    [1, 4],
     indirect=True,
-    ids=["no_sessions", "two_sessions", "four_sessions"],
+    ids=["no_sessions", "four_sessions"],
 )
-def test_init_workflow_parallel_safe(bids_session_test_data):
-    data_path, workdir_path = bids_session_test_data
+def test_init_workflow_parallel_safe(bids_session_expanded_real_test_data):
+    data_path, workdir_path = bids_session_expanded_real_test_data
     # Just check workflow runs
     init_workflow(workdir_path)
