@@ -6,6 +6,5 @@ from typing import Final
 
 
 class Constants:
-
     workflow_directory: Final[str] = "nipype"
     grayord_density: Final[str] = "91k"
