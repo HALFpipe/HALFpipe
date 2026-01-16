@@ -149,7 +149,7 @@ class ItemSelectionModal(DraggableModalScreen):
                 The name provided by the user, or None if the user
                 canceled the name input.
             """
-            if feature_name is not None:
+            if feature_name:
                 self.dismiss((message.option.id, feature_name))
 
         self.app.push_screen(

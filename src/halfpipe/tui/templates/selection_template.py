@@ -2,6 +2,7 @@
 
 
 import copy
+from abc import abstractmethod
 
 import inflect
 from textual import on
@@ -223,6 +224,10 @@ class SelectionTemplate(Widget):
                 lambda respond: self._delete_item(respond, check_aggregate=False),
             )
 
+    @abstractmethod
+    def action_add_item(self) -> None:
+        raise NotImplementedError()
+
     async def add_new_item(self, new_item: tuple | bool) -> None:
         """
         Adds a new item to the widget.
@@ -313,7 +318,7 @@ content_switcher_item_new_id:{content_switcher_item_new_id}, collapsible_item_ne
         """
 
         async def duplicate_item(item_name_copy):
-            if item_name_copy is not None and self.ITEM_KEY is not None:
+            if item_name_copy and self.ITEM_KEY is not None:
                 # Deep copy existing data
                 ctx.cache[item_name_copy] = copy.deepcopy(ctx.cache[item_name])
 
@@ -374,7 +379,7 @@ content_switcher_item_new_id:{content_switcher_item_new_id}, collapsible_item_ne
 
         def rename_item(new_item_name: str) -> None:
             content_switcher_item_current_id = self.get_widget_by_id("content_switcher").current
-            if new_item_name is not None:
+            if new_item_name:
                 collapsible_item_current_id = content_switcher_item_current_id + "_flabel"
 
                 old_item_name = self.feature_items[content_switcher_item_current_id].name
