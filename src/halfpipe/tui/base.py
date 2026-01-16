@@ -408,7 +408,21 @@ class MainApp(App):
         self.opts = opts
         self._global_settings_defaults = deepcopy(global_settings_defaults)
         self.tab_manager = TabbedContent2(id="tab_manager")
-        self.tabs_are_visible = False
+        self.app.tabs_are_visible = False
+        self.confirm_success_modal = Confirm(
+            "All set successfully! Proceed to the next tabs:\n\n\
+➡️  General preprocessing settings ⬅️\n\
+➡️             Features            ⬅️\n\
+➡️        Group level models       ⬅️\n\
+➡️           Check and run         ⬅️\n\
+The working tab and data tab are now read only! Do not change entries here!",
+            left_button_text=False,
+            right_button_text="OK",
+            right_button_variant="default",
+            title="Input successful",
+            id="confirm_success",
+            classes="confirm_success",
+        )
 
     def compose(self) -> ComposeResult:
         """
@@ -477,10 +491,12 @@ class MainApp(App):
         """
         # show hidden tabs, when we have working and data folder, now for development just one of these is sufficient
         tab_manager = self.tab_manager
+
         if (
             self.flags_to_show_tabs["from_working_dir_tab"]
             and self.flags_to_show_tabs["from_input_data_tab"]
-            and not self.tabs_are_visible
+            and not self.app.tabs_are_visible
+            and not self.confirm_success_modal.is_attached
         ):
             tab_manager.show_tab("preprocessing_tab")
             tab_manager.show_tab("feature_selection_tab")
@@ -489,22 +505,8 @@ class MainApp(App):
             tab_manager.get_widget_by_id("input_data_tab").styles.opacity = 0.7
             tab_manager.get_widget_by_id("work_dir_tab").query_one(FileBrowser).read_only_mode(True)
             tab_manager.get_widget_by_id("input_data_content").read_only_mode(True)
-            await self.app.push_screen_wait(
-                Confirm(
-                    "All set successfully! Proceed to the next tabs:\n\n\
-➡️  General preprocessing settings ⬅️\n\
-➡️             Features            ⬅️\n\
-➡️        Group level models       ⬅️\n\
-➡️           Check and run         ⬅️\n\
-The working tab and data tab are now read only! Do not change entries here!",
-                    left_button_text=False,
-                    right_button_text="OK",
-                    right_button_variant="default",
-                    title="Input successful",
-                    classes="confirm_success",
-                )
-            )
-            self.tabs_are_visible = True
+
+            self.app.tabs_are_visible = await self.app.push_screen_wait(self.confirm_success_modal)
 
     def hide_tabs(self) -> None:
         """

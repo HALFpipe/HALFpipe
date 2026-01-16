@@ -190,4 +190,4 @@ class NameInput(DraggableModalScreen):
         This method is called to close the modal without confirming the
         input name. It dismisses the modal with a value of None.
         """
-        self.dismiss(None)
+        self.dismiss(False)

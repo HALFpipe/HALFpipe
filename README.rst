@@ -161,20 +161,20 @@ requires approximately 5 gigabytes of storage.
 
    -  -  Singularity
       -  3.x
-      -  https://download.fmri.science/singularity/halfpipe-1.3.1.sif
+      -  https://download.fmri.science/singularity/halfpipe-1.3.2.sif
 
    -  -  Singularity
       -  2.x
-      -  https://download.fmri.science/singularity/halfpipe-1.3.1.simg
+      -  https://download.fmri.science/singularity/halfpipe-1.3.2.simg
 
    -  -  Docker
       -  ..
-      -  ``docker pull halfpipe/halfpipe:1.3.1``
+      -  ``docker pull halfpipe/halfpipe:1.3.2``
 
 ``Singularity`` version ``3.x`` creates a container image file called
 ``HALFpipe_{version}.sif`` in the directory where you run the ``pull``
 command. For ``Singularity`` version ``2.x`` the file is named
-``halfpipe-halfpipe-master-1.3.1.simg``. Whenever you want to use the
+``halfpipe-halfpipe-master-1.3.2.simg``. Whenever you want to use the
 container, you need pass ``Singularity`` the path to this file.
 
    **NOTE:** ``Singularity`` may store a copy of the container in its
@@ -197,7 +197,7 @@ Running
 =======
 
 The third step is to run the downloaded container. You may need to
-replace ``halfpipe-halfpipe-1.3.1.simg`` with the actual path and
+replace ``halfpipe-halfpipe-1.3.2.simg`` with the actual path and
 filename where ``Singularity`` downloaded your container.
 
 .. list-table::
@@ -208,11 +208,11 @@ filename where ``Singularity`` downloaded your container.
 
    -  -  Singularity
       -  ``singularity run --containall --bind /:/ext
-         halfpipe-halfpipe-1.3.1.simg``
+         halfpipe-halfpipe-1.3.2.simg``
 
    -  -  Docker
       -  ``docker run --interactive --tty --volume /:/ext
-         halfpipe/halfpipe:1.3.1``
+         halfpipe/halfpipe:1.3.2``
 
 You should now see the user interface.
 
@@ -516,7 +516,7 @@ Models are statistical analyses that are carried out on the features.
 #. |  In the interactive job, run the ``HALFpipe`` user interface, but
       add the flag ``--use-cluster`` to the end of the command.
    |  For example, ``singularity run --containall --bind /:/ext
-      halfpipe-halfpipe-1.3.1.sif --use-cluster``
+      halfpipe-halfpipe-1.3.2.sif --use-cluster``
 
 #. As soon as you finish specifying all your data, features and models
    in the user interface, ``HALFpipe`` will now generate everything
@@ -531,7 +531,7 @@ Models are statistical analyses that are carried out on the features.
 #. As soon as all processing has been completed, you can run group
    statistics. This is usually very fast, so you can do this in an
    interactive session. Run ``singularity run --containall --bind /:/ext
-   halfpipe-halfpipe-1.3.1.sif --only-model-chunk`` and then select
+   halfpipe-halfpipe-1.3.2.sif --only-model-chunk`` and then select
    ``Run without modification`` in the user interface.
 
 ..
