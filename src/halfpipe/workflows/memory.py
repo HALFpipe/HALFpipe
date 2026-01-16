@@ -10,7 +10,6 @@ from templateflow.api import get as get_template
 
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
 from .configurables import configurables
-from .constants import Constants
 
 ureg = pint.UnitRegistry()
 

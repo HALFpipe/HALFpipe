@@ -10,7 +10,6 @@ from nipype.interfaces import ants, fsl
 
 from ...interfaces.image_maths.resample import Resample
 from ..configurables import configurables
-from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
