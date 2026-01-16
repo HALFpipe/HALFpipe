@@ -370,7 +370,7 @@ class FmriprepFactory(Factory):
         config.execution._layout = None
         config.execution.layout = None
 
-        output_spaces = ["anat", f"{Constants.reference_space}:res-{configurables.reference_res}"]
+        output_spaces = ["anat", f"{configurables.reference_space}:res-{configurables.reference_res}"]
 
         if global_settings["run_reconall"]:
             output_spaces.append("fsaverage:den-164k")
