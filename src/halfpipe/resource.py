@@ -7,7 +7,8 @@ from dataclasses import dataclass, field
 from os import getenv
 from pathlib import Path
 from types import TracebackType
-from typing import IO
+from typing import BinaryIO
+from urllib.request import urlretrieve
 
 import requests
 import requests.adapters
@@ -50,63 +51,62 @@ class Session(AbstractContextManager):
         self.session.close()
 
 
-def urllib_download(url: str, target: str):
-    from urllib.request import urlretrieve
-
-    from tqdm import tqdm
-
-    class TqdmUpTo(tqdm):
-        def update_to(self, b: int, bsize: int, tsize: int):
-            self.total = tsize
-            self.update(b * bsize - self.n)  # also sets self.n = b * bsize
-
-    with TqdmUpTo(
-        unit="B",
-        unit_scale=True,
-        unit_divisor=1024,
-        miniters=1,
-        desc=url.split("/")[-1],
-    ) as t:
-        urlretrieve(url, filename=target, reporthook=t.update_to)
-
-
 def download(url: str, target: str | Path | None = None) -> str | None:
     import io
+    from pathlib import Path
 
     from tqdm import tqdm
 
     if not url.startswith("http"):
         if not isinstance(target, (str, Path)):
             raise ValueError(f'Expected a string or Path, received "{target}"')
-        return urllib_download(url, str(target))
+        urlretrieve(url, str(target))
+        return None
 
+    file_handle: BinaryIO
     if target is not None:
-        file_handle: IO = open(target, "wb")
+        file_handle = open(target, "wb")
     else:
         file_handle = io.BytesIO()
 
     print(f"Downloading {url}")
 
-    with Session() as session, session.get(url, stream=True) as response:
-        response.raise_for_status()
+    headers = {
+        "User-Agent": "Mozilla/5.0",
+        "Referer": "https://figshare.com/",
+        "Accept": "*/*",
+    }
 
-        total_size = int(response.headers.get("content-length", 0))
-        block_size = 1024
+    with Session() as session:
+        # 1️⃣ resolve redirects FIRST (no streaming)
+        r = session.get(url, headers=headers, allow_redirects=True)
+        r.raise_for_status()
 
-        t = tqdm(total=total_size, unit="B", unit_scale=True)
+        final_url = r.url
 
-        for block in response.iter_content(block_size):
-            if block:  # Filter out keep-alive new chunks
-                t.update(len(block))
-                file_handle.write(block)
+        # 2️⃣ now stream the real file
+        with session.get(final_url, stream=True, headers=headers) as response:
+            response.raise_for_status()
+            total_size = int(response.headers.get("content-length", 0))
+
+            t = tqdm(
+                total=total_size if total_size > 0 else None,
+                unit="B",
+                unit_scale=True,
+            )
+
+            for block in response.iter_content(chunk_size=8192):
+                if block:
+                    file_handle.write(block)
+                    t.update(len(block))
+
+            t.close()
 
     return_value = None
     if isinstance(file_handle, io.BytesIO):
-        return_value = file_handle.getvalue().decode()
+        return_value = file_handle.getvalue().decode(errors="ignore")
 
-    t.close()
     file_handle.close()
-
     return return_value
 
 
