@@ -45,22 +45,33 @@ class MakeResultdicts(IOBase):
     ):
         super(MakeResultdicts, self).__init__(**inputs)
 
+        # All these default assignments can be done above instead of assigning None as default then changing it here?
+
+        # keys of the resulting dictionary (nested)
         if dictkeys is None:
             dictkeys = ["tags", "metadata", "vals"]
+        # tags is a dictionary (tags are bids tags eg subject session task etc)
         if tagkeys is None:
             tagkeys = list()
+        # qc metrics
         if valkeys is None:
             valkeys = list()
+        # files that need to be copied out
         if imagekeys is None:
             imagekeys = list()
+        # things that go into reports viewers (html reports wc related) routes not just to output folder but also to reports folder
         if reportkeys is None:
             reportkeys = list()
+        # metadata of input data (eg TR) what fmri prep gets from bids data
         if metadatakeys is None:
             metadatakeys = list()
+        # e.g. 3 atlases one val for sub, how to create result dicts (map node)
         if nobroadcastkeys is None:
             nobroadcastkeys = list()
+        # some things need to be removed (look for example in code)
         if deletekeys is None:
             deletekeys = list()
+        # ? search (which values get mapped to missing eg -1, NaN)
         if missingvalues is None:
             missingvalues = [None]
 

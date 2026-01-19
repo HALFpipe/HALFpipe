@@ -7,6 +7,7 @@ from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
+from ..collect.bold import collect_bold_files
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
@@ -27,34 +28,46 @@ from .stats import StatsFactory
 
 
 def init_workflow(
-    workdir: Path, spec: Optional[Spec] = None, spec_path: Path | None = None, bids_database_dir: Path | None = None
+    workdir: Path,
+    spec: Optional[Spec] = None,
+    spec_path: Path | None = None,
+    bids_database_dir: Path | None = None,
 ) -> IdentifiableWorkflow:
     """
     initialize nipype workflow
     :param workdir
     :param spec
     """
-    from ..collect.bold import collect_bold_files
-
+    ##############################
+    # Attempt Load/Init Database #
+    ##############################
     if not spec:
         spec = load_spec(workdir=workdir, path=spec_path)
-
     assert spec is not None, "A spec file could not be loaded"
+
     logger.info("Initializing file database")
     database = Database(spec, bids_database_dir=bids_database_dir)
+
     # uuid depends on the spec file, the files found and the version of the program
     uuid = uuid5(spec.uuid, database.sha1 + __version__)
-
     workflow = uncache_obj(workdir, ".workflow", uuid, display_str="workflow")
     if workflow is not None:
         assert isinstance(workflow, IdentifiableWorkflow)
         return workflow
 
     # init classes that use the database
+    # TODO refactor so that this init populates the bids database (ie runs convert_all internally)
     bids_database = BidsDatabase(database)
 
-    # create parent workflow
+    # TODO modify for collect_bold_files for downstream_features? will there be additional bold files?
+    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(spec, database)
+    logger.debug(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
 
+    convert_all(database, bids_database, bold_file_paths_dict)
+
+    ##########################
+    # Create Parent Workflow #
+    ##########################
     uuidstr = str(uuid)[:8]
     logger.info(f"Initializing new workflow {uuidstr}")
 
@@ -71,24 +84,16 @@ def init_workflow(
         )
     )
 
-    if len(spec.features) == 0 and not any(setting.get("output_image") is True for setting in spec.settings):
+    # TODO test/validate this (downstream feature addition)
+    if len(spec.features) + len(spec.downstream_features) == 0 and not any(
+        setting.get("output_image") is True for setting in spec.settings
+    ):
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
-    # create factories
-    logger.debug("init_workflow->creating factories")
-    ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
-    fmriprep_factory = FmriprepFactory(ctx)
-    post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
-    feature_factory = FeatureFactory(ctx, fmriprep_factory, post_processing_factory)
-    stats_factory = StatsFactory(ctx, feature_factory)
-
-    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)
-    logger.debug(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
-
-    # write out
-
-    convert_all(database, bids_database, bold_file_paths_dict)
-
+    #############
+    # Write Out #
+    #############
+    # Add processing for each bold file to workflow
     for bold_file_path in bold_file_paths_dict.keys():
         bids_path = bids_database.to_bids(bold_file_path)
         if bids_path is None:
@@ -104,18 +109,17 @@ def init_workflow(
     bids_dir = Path(workdir) / "rawdata"
     bids_database.write(bids_dir)
 
-    # setup preprocessing
+    ####################
+    # Setup Processing #
+    ####################
+    ctx = FactoryContext(workdir, spec, database, bids_database, workflow)
 
-    if spec.global_settings.get("run_mriqc") is True:
-        logger.debug("init_workflow->going to setup mriqc_factory")
-        mriqc_factory = MriqcFactory(ctx)
-        mriqc_factory.setup(
-            workdir,
-            list(bold_file_paths_dict.keys()),
-        )
-
+    # TODO refactor such that factory inits call setup internally
+    # TODO refactoring could also simplify with each setup creating a modified context and passing it out to the next
     if spec.global_settings.get("run_fmriprep") is True:
+        # fMRIprep
         logger.debug("init_workflow->going to setup fmriprep_factory")
+        fmriprep_factory = FmriprepFactory(ctx)
         fmriprep_bold_file_paths, processing_groups = fmriprep_factory.setup(
             workdir,
             set(bold_file_paths_dict.keys()),
@@ -123,6 +127,7 @@ def init_workflow(
         logger.debug(f"init_workflow->fmriprep_bold_file_paths: {fmriprep_bold_file_paths}")
 
         # filter out skipped files
+        # TODO move this inside fmriprep init/setup call
         bold_file_paths_dict = {
             bold_file_path: associated_file_paths
             for bold_file_path, associated_file_paths in bold_file_paths_dict.items()
@@ -130,15 +135,37 @@ def init_workflow(
         }
         logger.debug(f"init_workflow->bold_file_paths_dict after filtering: {bold_file_paths_dict}")
 
+        # TODO does this half to be dependent on running fmriprep? cant we check & reuse outputs and do quick halfpipe on top?
         if spec.global_settings.get("run_halfpipe") is True:
+            # Post Processing
             logger.debug("init_workflow->going to setup post_processing_factory")
+            post_processing_factory = PostProcessingFactory(ctx, fmriprep_factory)
             post_processing_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
+
+            # Feature
             logger.debug("init_workflow->going to setup feature_factory")
+            feature_factory = FeatureFactory(ctx, fmriprep_factory, post_processing_factory)
             feature_factory.setup(bold_file_paths_dict, processing_groups=processing_groups)
+
+            # TODO Downstream Feature
+
+            # Stats
             logger.debug("init_workflow->going to setup stats_factory")
+            stats_factory = StatsFactory(ctx, feature_factory)
             stats_factory.setup()
 
-    # patch workflow
+    if spec.global_settings.get("run_mriqc") is True:
+        logger.debug("init_workflow->going to setup mriqc_factory")
+        mriqc_factory = MriqcFactory(ctx)
+        # why doesnt this raise not implemented error? never run?
+        mriqc_factory.setup(
+            workdir,
+            list(bold_file_paths_dict.keys()),
+        )
+
+    ##################
+    # Patch Workflow #
+    ##################
     config_factory = deepcopyfactory(workflow.config)
     min_gb = MemoryCalculator.default().min_gb
 

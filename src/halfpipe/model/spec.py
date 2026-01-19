@@ -20,10 +20,12 @@ from marshmallow import (
     validates_schema,
 )
 
+# this import statement is so cryptic
 from .. import __version__ as halfpipe_version
 from ..logging import logger
 from ..utils.hash import hex_digest
 from ..utils.time import timestamp_format
+from .downstream_feature import DownstreamFeatureSchema
 from .feature import FeatureSchema
 from .file.base import File
 from .file.schema import FileSchema
@@ -34,6 +36,7 @@ from .setting import SettingSchema
 entity_aliases = {"direction": "phase_encoding_direction"}
 namespace = uuid.UUID("be028ae6-9a73-11ea-8002-000000000000")  # constant
 
+# TODO What are these doing?
 schema_version = "3.0"
 compatible_schema_versions = ["3.0"]
 
@@ -55,12 +58,20 @@ class SpecSchema(Schema):
     files = fields.List(fields.Nested(FileSchema), dump_default=[], required=True)
     settings = fields.List(fields.Nested(SettingSchema), dump_default=[], required=True)
     features = fields.List(fields.Nested(FeatureSchema), dump_default=[], required=True)
+    downstream_features = fields.List(
+        fields.Nested(DownstreamFeatureSchema), dump_default=[], required=True
+    )  # TODO test/validate this
     models = fields.List(fields.Nested(ModelSchema), dump_default=[], required=True)
 
     @validates_schema
     def validate_analyses(self, data, **kwargs):
         names = []
-        for field in ["settings", "features", "models"]:
+        for field in [
+            "settings",
+            "features",
+            # "downstream_features", # TODO
+            "models",
+        ]:
             if field not in data:
                 continue  # validation error will be raised independently
             names.extend([a["name"] if isinstance(a, dict) else a.name for a in data[field]])
@@ -114,6 +125,7 @@ class Spec:
         self.files = files
         self.settings: list[dict[str, Any]] = list()
         self.features: list = list()
+        self.downstream_features: list = list()  # TODO test/validate this
         self.models: list = list()
         self.global_settings: dict[str, Any] = dict()
         for k, v in kwargs.items():
@@ -173,6 +185,7 @@ def load_spec(
     return None
 
 
+# TODO confirm this is never used & remove
 def readspec(stdin_spec: dict, logger=logger) -> Spec | None:
     try:
         logger.info("Loading spec file from STDIN")

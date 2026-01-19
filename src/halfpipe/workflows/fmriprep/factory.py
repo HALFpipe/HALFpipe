@@ -14,20 +14,23 @@ from nipype.interfaces.base.traits_extension import isdefined
 from nipype.pipeline import engine as pe
 from packaging.version import Version
 
-from ..collect.fmap import collect_fieldmaps
-from ..logging import logger
-from ..logging.describe_workflow import describe_workflow
-from ..utils.copy import deepcopyfactory
-from ..utils.format import inflect_engine as p
-from .constants import Constants
-from .factory import Factory
-from .memory import MemoryCalculator
-from .reports import init_anat_report_wf, init_func_report_wf
+from halfpipe.collect.fmap import collect_fieldmaps
+from halfpipe.logging import logger
+from halfpipe.logging.describe_workflow import describe_workflow
+from halfpipe.utils.copy import deepcopyfactory
+from halfpipe.utils.format import inflect_engine as p
+from halfpipe.workflows.constants import Constants
+from halfpipe.workflows.factory import Factory
+from halfpipe.workflows.memory import MemoryCalculator
+from halfpipe.workflows.reports import init_anat_report_wf, init_func_report_wf
 
 
 def get_fmriprep_wf_name() -> str:
     ver = Version(config.environment.version)
     return f"fmriprep_{ver.major}_{ver.minor}_wf"
+
+
+# TODO refactoring
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -217,6 +220,7 @@ class FmriprepFactory(Factory):
         """
         This needs to be documented.
         """
+        # why is bold_file_paths passed to this function? shouldn't it already be in the FactoryContext?
 
         spec = self.ctx.spec
         database = self.ctx.database
@@ -272,7 +276,7 @@ class FmriprepFactory(Factory):
         # check and patch workflow
         skipped = set()
         for bold_file_path in bold_file_paths:
-            func_preproc_wf = self._get_hierarchy(
+            func_preproc_wf = self._create_hierarchy(
                 get_fmriprep_wf_name(), source_file=bold_file_path, processing_group=processing_groups
             )[-1]
 
@@ -319,7 +323,7 @@ class FmriprepFactory(Factory):
         anat_report_wf_factory = deepcopyfactory(init_anat_report_wf(workdir=str(workdir)))
         for processing_group in processing_groups:
             subject_id, sessions = processing_group
-            hierarchy = self._get_hierarchy("reports_wf", subject_id=subject_id, processing_group=processing_group)
+            hierarchy = self._create_hierarchy("reports_wf", subject_id=subject_id, processing_group=processing_group)
             wf = anat_report_wf_factory()
             hierarchy[-1].add_nodes([wf])
 
@@ -331,7 +335,7 @@ class FmriprepFactory(Factory):
             self.connect(hierarchy, inputnode, subject_id=subject_id, processing_group=processing_group)
 
         for bold_file_path in bold_file_paths:
-            hierarchy = self._get_hierarchy("reports_wf", source_file=bold_file_path, processing_group=processing_groups)
+            hierarchy = self._create_hierarchy("reports_wf", source_file=bold_file_path, processing_group=processing_groups)
 
             wf = init_func_report_wf(
                 workdir=str(workdir),
@@ -450,8 +454,8 @@ class FmriprepFactory(Factory):
         config.to_filename(config_file)
         return config_file
 
-    def get(self, *args, **kwargs):
-        return super().get(*args, **kwargs)  # type: ignore
+    def get_hierarchy(self, *args, **kwargs):
+        return super().get_hierarchy(*args, **kwargs)  # type: ignore
 
     def connect(
         self,
@@ -472,7 +476,7 @@ class FmriprepFactory(Factory):
 
         hierarchies: dict[Literal["anat_fit_wf", "bold_wf", "reports_wf"], list[pe.Workflow]] = dict()
 
-        bold_wf_hierarchy = self._get_hierarchy(
+        bold_wf_hierarchy = self._create_hierarchy(
             get_fmriprep_wf_name(), source_file=source_file, subject_id=subject_id, processing_group=processing_group
         )
         hierarchies["bold_wf"] = bold_wf_hierarchy
@@ -493,7 +497,7 @@ class FmriprepFactory(Factory):
         anat_fit_wf_hierarchy.append(anat_fit_wf)
         hierarchies["anat_fit_wf"] = anat_fit_wf_hierarchy
 
-        report_wf_hierarchy = self._get_hierarchy(
+        report_wf_hierarchy = self._create_hierarchy(
             "reports_wf", source_file=source_file, subject_id=subject_id, processing_group=processing_group
         )
         hierarchies["reports_wf"] = report_wf_hierarchy
