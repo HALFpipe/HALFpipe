@@ -120,7 +120,7 @@ class Gradients(BaseInterface):
             sparsity=self.inputs.sparsity,
             gamma=self.inputs.gamma,
             n_iter=self.inputs.n_iter,
-            reference=self.reference_img,
+            reference=self.inputs.reference,
         )
 
         self._lambdas = gm.lambdas_

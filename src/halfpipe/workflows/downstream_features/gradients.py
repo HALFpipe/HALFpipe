@@ -28,7 +28,7 @@ from ..memory import MemoryCalculator
 def init_gradients_wf(
     workdir: str | Path,
     correlation_matrix,  # TODO remove this & link I/O properly
-    downstream_feature: DownstreamFeature | None = None,
+    downstream_feature: DownstreamFeature,
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
     """Create workflow for gradients."""
