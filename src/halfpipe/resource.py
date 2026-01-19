@@ -7,7 +7,6 @@ from dataclasses import dataclass, field
 from os import getenv
 from pathlib import Path
 from types import TracebackType
-from typing import IO
 
 import requests
 import requests.adapters
@@ -53,6 +52,7 @@ class Session(AbstractContextManager):
 def download(url: str, target: str | Path | None = None) -> str | None:
     import io
     from pathlib import Path
+
     from tqdm import tqdm
 
     if not url.startswith("http"):
