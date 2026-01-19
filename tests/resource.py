@@ -7,7 +7,7 @@ from halfpipe import resource
 test_online_resources = {
     "wakemandg_hensonrn_statmaps.tar.gz": "https://figshare.com/ndownloader/files/25621988",
     "ds000108fixed.tar.gz": "https://osf.io/download/qh38c",
-    "bids_data.zip": "https://osf.io/download/qrvu4", # this url stopped working ! reverting back to original "https://figshare.com/ndownloader/files/48018256"
+    "bids_data.zip": "https://osf.io/download/qrvu4",  # this url stopped working ! reverting back to original "https://figshare.com/ndownloader/files/48018256"
     "PNAS_Smith09_rsn10.nii.gz": "https://www.nitrc.org/frs/download.php/7729/PNAS_Smith09_rsn10.nii.gz",
     "HarvardOxford.tgz": "https://www.nitrc.org/frs/download.php/9902/HarvardOxford.tgz",
     "run_01_spmdef.mat": "ftp://ftp.mrc-cbu.cam.ac.uk/personal/rik.henson/wakemandg_hensonrn/Sub01/BOLD/Trials/run_01_spmdef.mat",
