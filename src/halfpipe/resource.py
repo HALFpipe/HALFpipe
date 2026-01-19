@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from os import getenv
 from pathlib import Path
 from types import TracebackType
+from typing import BinaryIO
+from urllib.request import urlretrieve
 
 import requests
 import requests.adapters
@@ -58,8 +60,10 @@ def download(url: str, target: str | Path | None = None) -> str | None:
     if not url.startswith("http"):
         if not isinstance(target, (str, Path)):
             raise ValueError(f'Expected a string or Path, received "{target}"')
-        return urllib_download(url, str(target))
+        urlretrieve(url, str(target))
+        return None
 
+    file_handle: BinaryIO
     if target is not None:
         file_handle = open(target, "wb")
     else:
