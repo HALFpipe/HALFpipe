@@ -11,7 +11,6 @@ import tempfile
 from math import inf
 from pathlib import Path
 from random import choices, normalvariate, seed
-from typing import Iterator
 from zipfile import ZipFile
 
 import nibabel as nib
@@ -20,14 +19,19 @@ import pytest
 from nilearn.image import new_img_like
 
 from halfpipe.ingest.database import Database
+from halfpipe.logging import logger
+from halfpipe.model.feature import FeatureSchema
 from halfpipe.model.file.base import File
 from halfpipe.model.file.schema import FileSchema
+from halfpipe.model.model import ModelSchema
 from halfpipe.model.spec import Spec, SpecSchema, save_spec
 from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
 
 from ..create_mock_bids_dataset import create_bids_data
 from ..resource import setup as setup_test_resources
+from .datasets import Dataset
+from .expand_bids_dataset import expand_bids_dataset
 from .spec import TestSetting, make_bids_only_spec, make_spec
 
 
@@ -189,7 +193,7 @@ def mock_spec(bids_data: Path, mock_task_events: File, pcc_mask: Path) -> Spec:
 
 
 @pytest.fixture(scope="session")
-def bids_session_test_data(request: pytest.FixtureRequest) -> Iterator[tuple[Path, Path]]:
+def bids_session_test_empty_mock_data(request):
     """
     Create a parallel-safe temporary BIDS hierarchy with optional number of sessions + workdir.
 
@@ -239,3 +243,157 @@ def bids_session_test_data(request: pytest.FixtureRequest) -> Iterator[tuple[Pat
 
     # Cleanup after the test
     shutil.rmtree(base_path)
+
+
+@pytest.fixture(scope="session")
+def fibromyalgia_base_dataset(tmp_path_factory):
+    """
+    Download the OpenNeuro dataset exactly once per test session.
+    """
+    base_path = tmp_path_factory.mktemp("openneuro_cache")
+    base_dataset_path = base_path / "ds004144"
+
+    if not base_dataset_path.exists():
+        dataset = Dataset(
+            name="fibromyalgia",
+            openneuro_id="ds004144",
+            openneuro_url="https://openneuro.org/datasets/ds004144/versions/1.0.2",
+            url="https://github.com/OpenNeuroDatasets/ds004144.git",
+            paths=[
+                "sub-002/anat/sub-002_T1w.nii.gz",
+                "sub-002/anat/sub-002_T1w.json",
+                "sub-002/func/sub-002_task-epr_bold.nii.gz",
+                "sub-002/func/sub-002_task-epr_bold.json",
+                "sub-002/func/sub-002_task-epr_events.tsv",
+                "sub-002/func/sub-002_task-rest_bold.nii.gz",
+                "sub-002/func/sub-002_task-rest_bold.json",
+            ],
+        )
+        dataset.download(base_dataset_path)
+    logger.info(f"fibromyalgia dataset path: {base_dataset_path}")
+
+    return base_dataset_path
+
+
+@pytest.fixture(scope="session")
+def fixed_tmp_path() -> Path:
+    path = Path("/tmp/atlases_and_maps/")
+    path.mkdir(parents=True, exist_ok=True)  # Ensure the path exists
+    return path
+
+
+@pytest.fixture(scope="session")
+def bids_session_expanded_real_test_data(
+    request, fibromyalgia_base_dataset, tmp_path_factory, atlases_maps_seed_images_path, covariant_spreadsheet_path
+):
+    from typing import cast
+
+    sessions = int(cast(int, getattr(request, "param", 0)))
+
+    seed_image_file_pattern = atlases_maps_seed_images_path / "{seed}_seed_2009.nii.gz"
+
+    base_path = tmp_path_factory.mktemp("bids_test")
+    bids_label = "multisession-bids"
+    data_path = base_path / bids_label
+    workdir_path = base_path / "workdir"
+    data_path.mkdir(parents=True)
+    workdir_path.mkdir(parents=True)
+    logger.info(f"bids path: {data_path}")
+    logger.info(f"workdir path: {workdir_path}")
+
+    expand_bids_dataset(
+        base_dataset_dir=fibromyalgia_base_dataset,
+        output_dataset_dir=data_path,
+        base_subject="sub-002",
+        n_subjects=3,
+        n_sessions=sessions,
+    )
+
+    bids_file = FileSchema().load(dict(datatype="bids", path=str(data_path)))
+    logger.info(f"Covariant spreadsheet path: {covariant_spreadsheet_path}")
+    mock_spec = make_bids_only_spec(dataset_files=[bids_file])
+    file_schema = FileSchema()
+
+    spreadsheet_metadata = {
+        "variables": [
+            {"name": "IDs", "type": "id"},
+            {"name": "Case", "type": "continuous"},
+            {"name": "Age", "type": "continuous"},
+            {"name": "Sex", "type": "categorical", "levels": ["0", "1"]},
+            {"name": "Site", "type": "categorical", "levels": ["1", "2", "3"]},
+            {"name": "Severity", "type": "continuous"},
+        ]
+    }
+
+    covariant_spreadsheet_file_obj = file_schema.load(
+        dict(path=str(covariant_spreadsheet_path), datatype="spreadsheet", metadata=spreadsheet_metadata)
+    )
+    mock_spec.files.append(covariant_spreadsheet_file_obj)
+
+    seed_file_obj = file_schema.load(
+        dict(path=str(seed_image_file_pattern), datatype="ref", suffix="seed", extension=".nii.gz", tags={}, metadata=dict())
+    )
+
+    mock_spec.files.append(seed_file_obj)
+
+    # make one preproc 'feature'
+    mock_spec.settings.append(
+        {
+            "space": "standard",
+            "name": "preproc",
+            "filters": [
+                {
+                    "type": "tag",
+                    "action": "include",
+                    "entity": "task",
+                    "values": ["epr"],
+                }
+            ],
+            "output_image": True,
+        }
+    )
+    mock_spec.settings.append(
+        {
+            "space": "standard",
+            "ica_aroma": False,
+            "grand_mean_scaling": {"mean": 10000.0},
+            "name": "seedCorrSetting",
+            "filters": [],
+            "output_image": False,
+        }
+    )
+
+    feature_schema = FeatureSchema()
+
+    test_seed_based_feature = feature_schema.load(
+        dict(
+            name="seedCorr",
+            setting="seedCorrSetting",
+            type="seed_based_connectivity",
+            seeds=[],
+            # seeds= [
+            #     "R_vlPFC_pt"
+            # ],
+            min_seed_coverage=0.8,
+        )
+    )
+    mock_spec.features.append(test_seed_based_feature)
+
+    model_schema = ModelSchema()
+    test_lm_model = model_schema.load(
+        dict(
+            name="model",
+            inputs=["seedCorr"],
+            filters=[{"type": "missing", "action": "exclude", "variable": "Case"}],
+            type="lme",
+            across="sub",
+            algorithms=["flame1", "mcartest", "heterogeneity"],
+            spreadsheet=str(covariant_spreadsheet_path),
+            contrasts=[{"type": "infer", "variable": ["Case"]}],
+        )
+    )
+    mock_spec.models.append(test_lm_model)
+
+    save_spec(mock_spec, workdir=workdir_path)
+
+    yield data_path, workdir_path
