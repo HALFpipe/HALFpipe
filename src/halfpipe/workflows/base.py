@@ -7,7 +7,6 @@ from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
-from .configurables import configurables
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
@@ -16,6 +15,7 @@ from ..logging.describe_workflow import describe_workflow
 from ..model.spec import Spec, load_spec
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
+from .configurables import configurables
 from .constants import Constants
 from .convert import convert_all
 from .factory import FactoryContext
