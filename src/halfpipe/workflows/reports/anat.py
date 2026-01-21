@@ -9,7 +9,7 @@ from niworkflows.interfaces.reportlets.masks import SimpleShowMaskRPT
 from ...interfaces.reports.imageplot import PlotRegistration
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
-from ..constants import Constants
+from ..configurables import configurables
 from ..memory import MemoryCalculator
 
 
@@ -66,7 +66,7 @@ def init_anat_report_wf(
 
     # T1 -> mni
     t1_norm_rpt = pe.Node(
-        PlotRegistration(template=Constants.reference_space),
+        PlotRegistration(template=configurables.reference_space),
         name="t1_norm_rpt",
         mem_gb=memcalc.min_gb,
     )

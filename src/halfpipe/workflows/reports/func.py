@@ -12,7 +12,6 @@ from ...interfaces.reports.vals import CalcMean, UpdateVals
 from ...interfaces.result.datasink import ResultdictDatasink
 from ...interfaces.result.make import MakeResultdicts
 from ..configurables import configurables
-from ..constants import Constants
 from ..memory import MemoryCalculator
 
 
@@ -97,7 +96,7 @@ def init_func_report_wf(workdir=None, name="func_report_wf", memcalc: MemoryCalc
     # Register EPI to MNI space to use in the QC report
     # EPI -> MNI
     epi_norm_rpt = pe.Node(
-        PlotRegistration(template=Constants.reference_space),
+        PlotRegistration(template=configurables.reference_space),
         name="epi_norm_rpt",
         mem_gb=0.1,
     )
