@@ -7,7 +7,7 @@ from typing import Optional
 from uuid import uuid5
 
 from .. import __version__
-from ..configurables import configurables
+from .configurables import configurables
 from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
