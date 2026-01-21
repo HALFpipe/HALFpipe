@@ -8,6 +8,8 @@ from typing import NamedTuple, Tuple, Union
 import pint
 from templateflow.api import get as get_template
 
+from halfpipe.model.global_settings import GlobalSettingsSchema
+
 from ..ingest.metadata.niftiheader import NiftiheaderLoader
 from .configurables import configurables
 
@@ -26,6 +28,15 @@ class MemoryCalculator(NamedTuple):
     @classmethod
     def from_bold_shape(cls, x: int = 72, y: int = 72, z: int = 72, t: int = 200):
         volume_gb, series_gb = cls.calc_bold_gb((x, y, z, t))
+
+        # since reference resolution and space are now configurables
+        # we need to first initial the globalsettingschema to get out
+        # the default values
+        schema = GlobalSettingsSchema()
+        global_settings = schema.dump({})
+
+        configurables.reference_res = global_settings["reference_res"]
+        configurables.reference_space = global_settings["reference_space"]
 
         reference_file = get_template(
             configurables.reference_space,
