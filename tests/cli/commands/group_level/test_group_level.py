@@ -10,7 +10,6 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import scipy
-from halfpipe.configurables import configurables
 from nilearn.image import new_img_like
 from templateflow.api import get as get_template
 
@@ -19,6 +18,7 @@ from halfpipe.cli.parser import parse_args
 from halfpipe.model.global_settings import GlobalSettingsSchema
 from halfpipe.resource import get as get_resource
 from halfpipe.stats.miscmaths import t2z_convert
+from halfpipe.workflows.configurables import configurables
 
 from ....resource import setup as setup_test_resources
 

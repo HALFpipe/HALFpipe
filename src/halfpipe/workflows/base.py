@@ -76,8 +76,8 @@ def init_workflow(
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
     # globally initialize reference resolution and space from the global settings
-    configurables.reference_res = spec.global_settings.get("reference_res")
-    configurables.reference_space = spec.global_settings.get("reference_space")
+    configurables.reference_res = spec.global_settings.get("reference_res", configurables.reference_res)
+    configurables.reference_space = spec.global_settings.get("reference_space", configurables.reference_space)
 
     # create factories
     logger.debug("init_workflow->creating factories")
