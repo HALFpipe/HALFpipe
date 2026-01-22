@@ -53,7 +53,7 @@ class Database:
             if tagval is None:
                 return
 
-            logger.debug(f"Adding tag {entity}={tagval} for {filepath}")
+            logger.debug(f"Database.index->Adding tag {entity}={tagval} for {filepath}")
 
             if entity not in self.filepaths_by_tags:
                 self.filepaths_by_tags[entity] = dict()
@@ -71,12 +71,15 @@ class Database:
 
         tagdict = dict(datatype=fileobj.datatype)
         tagdict.update(tags)
+
         if hasattr(fileobj, "suffix"):
             tagdict.update(dict(suffix=fileobj.suffix))
         if hasattr(fileobj, "extension"):
             tagdict.update(dict(extension=fileobj.extension))
+        logger.debug(f"Database.index->tagdict {tagdict}")
 
         self.tags_by_filepaths[filepath] = dict(**tagdict)
+        logger.debug(f"Database.index->fileobj {fileobj.path}, {fileobj.intended_for}")
 
         if hasattr(fileobj, "intended_for"):
             intended_for = fileobj.intended_for
@@ -213,6 +216,7 @@ class Database:
 
     def associations2(self, optional_tags: Mapping[str, str], mandatory_tags: Mapping[str, str]) -> tuple[str, ...] | None:
         matching_files = self.get(**mandatory_tags)
+        logger.debug(f"Database.associations2-> matching_files:{matching_files}")
         for entity in reversed(entities):  # from high to low priority
             if entity not in self.filepaths_by_tags:
                 continue
@@ -222,11 +226,13 @@ class Database:
             if optional_tags[entity] not in entity_dict:
                 continue
             files: set[str] = entity_dict[optional_tags[entity]].copy()
+            logger.debug(f"Database.associations2-> entity: {entity},  files:{files}")
             files &= matching_files
             if len(files) > 0:
                 matching_files = files
             if len(files) == 1:
                 break
+        logger.debug(f"Database.associations2-> matching_files:{matching_files}")
         if len(matching_files) > 0:
             return tuple(matching_files)
         return None

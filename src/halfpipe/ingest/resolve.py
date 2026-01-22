@@ -180,8 +180,10 @@ class ResolvedSpec:
         basemetadata = dict()
         if hasattr(fileobj, "metadata"):
             metadata = getattr(fileobj, "metadata", None)
+            logger.debug(f"ResolvedSpec._resolve_bids-> metadata:{metadata}")
             if isinstance(metadata, dict):
                 basemetadata.update(metadata)
+            logger.debug(f"ResolvedSpec.basemetadata-> basemetadata:{basemetadata}")
 
         resolved_files: list[File] = []
         for obj in layout.get_files().values():
@@ -193,6 +195,7 @@ class ResolvedSpec:
             self.fileobj_by_filepaths[file.path] = file
             self.specfileobj_by_filepaths[file.path] = file
             resolved_files.append(file)
+            logger.debug(f"ResolvedSpec._resolve_bids-> resolved_files:{resolved_files}")
 
         intended_for: dict[str, frozenset[tuple[str, str]]] = dict()
         for file in resolved_files:
@@ -204,12 +207,15 @@ class ResolvedSpec:
                 continue
 
             intended_for_paths = metadata.get("intended_for")
+            logger.debug(f"ResolvedSpec._resolve_bids-> file: {file}, intended_for_paths:{intended_for_paths}")
+
             if intended_for_paths is None:
                 continue
 
             linked_fmap_tags = frozenset(file.tags.items())
             for intended_for_path in intended_for_paths:
                 intended_for[intended_for_path] = linked_fmap_tags
+            logger.debug(f"ResolvedSpec._resolve_bids-> intended_for_path: {intended_for_path}")
 
         informed_by: dict[frozenset[tuple[str, str]], list[frozenset[tuple[str, str]]]] = defaultdict(list)
         for file in resolved_files:
@@ -218,6 +224,7 @@ class ResolvedSpec:
             for file_path, linked_fmap_tags in intended_for.items():
                 if file.path.endswith(file_path):  # slow performance
                     informed_by[file_tags].append(linked_fmap_tags)
+        logger.debug(f"ResolvedSpec._resolve_bids-> intended_for:{intended_for}")
 
         mappings: set[tuple[tuple[str, str], tuple[str, str]]] = set()
         for func_tags, linked_fmap_tags_list in informed_by.items():
@@ -228,6 +235,7 @@ class ResolvedSpec:
                     if func_tag[0] == linked_fmap_tag[0]:  # only map between different entities
                         continue
                     mappings.add((func_tag, linked_fmap_tag))
+        logger.debug(f"ResolvedSpec._resolve_bids-> mappings:{mappings}")
 
         intended_for_rules = defaultdict(list)
         for functag, fmaptag in mappings:
@@ -238,6 +246,7 @@ class ResolvedSpec:
             fmapstr = f"{entity}.{val}"
 
             intended_for_rules[fmapstr].append(funcstr)
+        logger.debug(f"ResolvedSpec._resolve_bids-> intended_for_rules: {intended_for_rules}")
 
         if len(intended_for) > 0:
             logger.info(
@@ -248,6 +257,7 @@ class ResolvedSpec:
                 if file.datatype != "fmap":
                     continue
                 file.intended_for = intended_for_rules
+        logger.debug(f"ResolvedSpec._resolve_bids-> intended_for_rules2: {intended_for_rules}")
 
         return resolved_files
 
