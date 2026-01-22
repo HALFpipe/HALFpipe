@@ -1,16 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from asyncio import sleep
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from halfpipe.logging import logger
 
-from .pilot_functions import (
-    _set_work_dir,
-    check_and_run_tab_refresh,
-    settable_scroll_screen_down,
-)
+from .pilot_functions import _set_work_dir, check_and_run_tab_refresh, click_until_gone, settable_scroll_screen_down
 from .utils.compare_jsons import compare_json_files
 
 widget_label_map = {
@@ -55,15 +52,18 @@ async def run_before(
     await _set_work_dir(pilot, work_dir_path, load_from_spec_file=True)
 
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await pilot.click("#only_one_button")
+    await click_until_gone(pilot, "#only_one_button", max_failures=7)
 
     # For some reason the button remains focussed when I do it locally, but it is not focussed when it runs through CI,
     # the tab should prevent this.
     if feature_label is None:
         await check_and_run_tab_refresh(pilot)
         await settable_scroll_screen_down(pilot, 50)
+        # save
+        await pilot.click("#save_button")
+        await pilot.click("#only_one_button")
     else:
-        await sleep(10)
+        # await sleep(10)
         await pilot.press("f")
         if scroll_to_remaining_part:
             # await pilot.click(offset=(15, feature_number))
@@ -93,9 +93,11 @@ async def run_before(
         # click on the form area
         await pilot.click(offset=(55, 10))
         # scroll
-        await settable_scroll_screen_down(pilot, 15)
+        await settable_scroll_screen_down(pilot, 20)
 
 
+@pytest.mark.forked
+@pytest.mark.flaky(reruns=1)
 def test_load_from_spec_file_f0(
     snap_compare,
     start_app,
@@ -117,6 +119,7 @@ def test_load_from_spec_file_f0(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_f1(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_label: str = "taskBased_2"
 ) -> None:
@@ -128,6 +131,7 @@ def test_load_from_spec_file_f1(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_f2(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_label: str = "seedCorr_1"
 ) -> None:
@@ -139,6 +143,7 @@ def test_load_from_spec_file_f2(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_f3(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_label: str = "dualReg_1"
 ) -> None:
@@ -150,6 +155,7 @@ def test_load_from_spec_file_f3(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_f4(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_label: str = "corrMatrix_1"
 ) -> None:
@@ -161,6 +167,7 @@ def test_load_from_spec_file_f4(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_f5(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_label: str = "reHo_1"
 ) -> None:
@@ -176,6 +183,7 @@ def test_load_from_spec_file_f5(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_f6(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_label: str = "fALFF_1"
 ) -> None:
@@ -191,6 +199,7 @@ def test_load_from_spec_file_f6(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_f7(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_label: str = "fALFF_2"
 ) -> None:
@@ -206,6 +215,7 @@ def test_load_from_spec_file_f7(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_f8(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, feature_label: str = "preproc_1"
 ) -> None:
@@ -221,6 +231,7 @@ def test_load_from_spec_file_f8(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_load_from_spec_file_resave_spec_file(
     snap_compare, start_app, spec_file_dir_path: Path, downloaded_data_path: Path, covariant_spreadsheet_path: Path
 ) -> None:

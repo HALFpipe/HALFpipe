@@ -5,6 +5,8 @@ import shutil
 from functools import partial
 from pathlib import Path
 
+import pytest
+
 from halfpipe.logging import logger
 
 from .pilot_functions import (
@@ -13,6 +15,7 @@ from .pilot_functions import (
     add_contrast_value_column,
     add_new_feature,
     check_and_run_tab_refresh,
+    click_until_gone,
     delete_column,
     deselect_conditions,
     preprocessing_options,
@@ -82,7 +85,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     if stage == "at_spec_preview":
         how_much_down = 60
     elif stage == "duplicate_at_spec_preview":
-        how_much_down = 36
+        how_much_down = 39
 
     # Execute tasks based on the specified stage
     # set work dir
@@ -90,12 +93,13 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> N
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await pilot.click("#only_one_button")
+    await click_until_gone(pilot, "#only_one_button")
 
     for task in tasks_by_stage[stage]:
         await task()
 
 
+@pytest.mark.forked
 def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add Task-based feature, unselect a condition, make a column in the table, delete it, make it again"""
     run_before_with_extra_args = partial(
@@ -104,6 +108,7 @@ def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: P
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_task_based_at_features_tab_p2(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -115,6 +120,7 @@ def test_task_based_at_features_tab_p2(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_task_based_features_at_spec_preview(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -128,6 +134,7 @@ def test_task_based_features_at_spec_preview(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_task_based_features_at_features_duplicate(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
@@ -140,6 +147,7 @@ def test_task_based_features_at_features_duplicate(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_task_based_features_duplicate_at_spec_preview(
     snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
 ) -> None:
