@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
 import os
 import shutil
 import tarfile
@@ -34,11 +35,19 @@ from .datasets import Dataset
 from .expand_bids_dataset import expand_bids_dataset
 from .spec import TestSetting, make_bids_only_spec, make_spec
 
-
 @pytest.fixture(scope="session")
-def bids_data(tmp_path_factory) -> Path:
-    tmp_path = tmp_path_factory.mktemp(basename="bids_data")
+def bids_data(tmp_path_factory, request) -> Path:
+    # --------------------------------------------------------------
+    # Read parameters from test (default = False)
+    # --------------------------------------------------------------
+    extend_tasks = False
+    if hasattr(request, "param"):
+        if isinstance(request.param, dict):
+            extend_tasks = request.param.get("extend_tasks", False)
+        else:
+            extend_tasks = bool(request.param)
 
+    tmp_path = tmp_path_factory.mktemp(basename="bids_data")
     os.chdir(str(tmp_path))
 
     setup_test_resources()
@@ -48,16 +57,76 @@ def bids_data(tmp_path_factory) -> Path:
         fp.extractall(tmp_path)
 
     bids_data_path = tmp_path / "bids_data"
-
     func_path = bids_data_path / "sub-1012" / "func"
+    fmap_path = bids_data_path / "sub-1012" / "fmap"
 
-    Path(func_path / "sub-1012_task-rest_events.tsv").unlink()  # this file is empty
+    # --------------------------------------------------------------
+    # Original behavior (always runs)
+    # --------------------------------------------------------------
+    events_file = func_path / "sub-1012_task-rest_events.tsv"
+    events_file.unlink()
 
     bold_file = func_path / "sub-1012_task-rest_bold.nii.gz"
-    bold_img = nib.nifti1.load(bold_file)
-    bold_data = bold_img.get_fdata()[..., :64]  # we don't need so many volumes for testing
+    bold_img = nib.load(bold_file)
+    bold_data = bold_img.get_fdata()[..., :64]
     bold_img = new_img_like(bold_img, bold_data, copy_header=True)
-    nib.loadsave.save(bold_img, bold_file)
+    nib.save(bold_img, bold_file)
+
+    # Explicit IntendedFor always starts with rest
+    intended_for = [
+        "func/sub-1012_task-rest_bold.nii.gz"
+    ]
+
+    # --------------------------------------------------------------
+    # Optional extension controlled by parametrization
+    # --------------------------------------------------------------
+    if extend_tasks:
+        task_runs = {
+            "task1": [1, 2],
+            "task2": [1],
+        }
+
+        src_prefix = "sub-1012_task-rest_bold"
+
+        for task, runs in task_runs.items():
+            for run in runs:
+                run_label = f"run-{run:02d}"
+                task_label = f"task-{task}_{run_label}"
+                dst_prefix = f"sub-1012_{task_label}_bold"
+
+                # Copy NIfTI
+                shutil.copy(
+                    func_path / f"{src_prefix}.nii.gz",
+                    func_path / f"{dst_prefix}.nii.gz",
+                )
+
+                # Copy JSON
+                shutil.copy(
+                    func_path / f"{src_prefix}.json",
+                    func_path / f"{dst_prefix}.json",
+                )
+
+                # Create run-specific events file
+                (func_path / f"sub-1012_{task_label}_events.tsv").write_text(
+                    "onset\tduration\n0\t10\n"
+                )
+
+                # Explicit IntendedFor entry
+                intended_for.append(
+                    f"func/{dst_prefix}.nii.gz"
+                )
+
+    # --------------------------------------------------------------
+    # Write IntendedFor explicitly to all fmap JSONs
+    # --------------------------------------------------------------
+    for fmap_json in fmap_path.glob("*.json"):
+        with fmap_json.open() as f:
+            data = json.load(f)
+
+        data["IntendedFor"] = intended_for
+
+        with fmap_json.open("w") as f:
+            json.dump(data, f, indent=2)
 
     return bids_data_path
 
