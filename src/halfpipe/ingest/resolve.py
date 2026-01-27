@@ -152,25 +152,18 @@ class ResolvedSpec:
         return resolved_files
 
     def _resolve_bids(self, fileobj: File) -> list[File]:
-        logger.info("BIDS resolve started for path=%s", fileobj.path)
-
         if not exists(fileobj.path):
             logger.warning(
-                'Skipping BIDS directory "%s" (missing or insufficient permissions)',
-                fileobj.path,
+                f'Skipping BIDS directory "{fileobj.path}" because it does not exist or we do not have sufficient permissions.'
             )
-            return []
+            return list()
 
-        # ---- BIDS layout -----------------------------------------------------
-        validate = False
-        reset_database = self.bids_database_dir is None
+        # Load using pybids
+        validate = False  # Save time
 
-        logger.debug(
-            "Initializing BIDSLayout (validate=%s, reset_database=%s, database_path=%s)",
-            validate,
-            reset_database,
-            self.bids_database_dir,
-        )
+        reset_database = True  # Force reindex in case files have changed
+        if self.bids_database_dir is not None:
+            reset_database = False
 
         layout = BIDSLayout(
             root=fileobj.path,
@@ -179,165 +172,96 @@ class ResolvedSpec:
             validate=validate,
             indexer=BIDSLayoutIndexer(
                 validate=validate,
-                index_metadata=False,
+                index_metadata=False,  # Save time
             ),
         )
 
-        # ---- Base metadata ---------------------------------------------------
-        basemetadata = {}
-        if isinstance(getattr(fileobj, "metadata", None), dict):
-            basemetadata.update(fileobj.metadata)
+        # load override metadata
+        basemetadata = dict()
+        if hasattr(fileobj, "metadata"):
+            metadata = getattr(fileobj, "metadata", None)
+            if isinstance(metadata, dict):
+                basemetadata.update(metadata)
 
-        logger.debug("Base metadata loaded: %s", basemetadata)
-
-        # ---- Resolve files ---------------------------------------------------
         resolved_files: list[File] = []
-        layout_files = list(layout.get_files().values())
+        for obj in layout.get_files().values():
+            file: File | None = to_fileobj(obj, basemetadata)
 
-        logger.info("Found %d files in BIDS layout", len(layout_files))
-
-        for idx, obj in enumerate(layout_files, start=1):
-            logger.debug("Processing layout file %d/%d: %s", idx, len(layout_files), obj)
-
-            file = to_fileobj(obj, basemetadata)
             if file is None:
-                logger.debug("→ Skipped (to_fileobj returned None)")
                 continue
 
             self.fileobj_by_filepaths[file.path] = file
             self.specfileobj_by_filepaths[file.path] = file
             resolved_files.append(file)
 
-            logger.debug(
-                "→ Added file: path=%s datatype=%s tags=%s",
-                file.path,
-                file.datatype,
-                file.tags,
-            )
-
-        logger.info("Resolved %d files total", len(resolved_files))
-
-        # ---- IntendedFor extraction -----------------------------------------
-        # intended_for: dict[str, frozenset[tuple[str, str]]] = {}
-        intended_for: dict[str, list[frozenset[tuple[str, str]]]] = defaultdict(list)
-
-        for idx, file in enumerate(resolved_files, start=1):
+        intended_for: dict[str, frozenset[tuple[str, str]]] = dict()
+        for file in resolved_files:
             if file.datatype != "fmap":
                 continue
 
-            logger.debug("Reading IntendedFor metadata (%d): %s", idx, file.path)
-
             metadata = SidecarMetadataLoader.load(file.path)
-            if not metadata:
-                logger.debug("→ No sidecar metadata found")
+            if metadata is None:
                 continue
 
             intended_for_paths = metadata.get("intended_for")
-            if not intended_for_paths:
-                logger.debug("→ No IntendedFor field present")
+            if intended_for_paths is None:
                 continue
 
-            fmap_tags = frozenset(file.tags.items())
-            logger.debug(
-                "→ fmap tags=%s intended_for=%s",
-                fmap_tags,
-                intended_for_paths,
-            )
+            linked_fmap_tags = frozenset(file.tags.items())
+            for intended_for_path in intended_for_paths:
+                intended_for[intended_for_path] = linked_fmap_tags
 
-            for path in intended_for_paths:
-                # intended_for[path] = fmap_tags
-                # MODIFIED: append instead of overwrite (preserve AP + PA)
-                intended_for[path].append(fmap_tags)
-
-        logger.info(
-            "Collected IntendedFor mappings for %d target paths",
-            len(intended_for),
-        )
-
-        # ---- Match IntendedFor → files --------------------------------------
         informed_by: dict[frozenset[tuple[str, str]], list[frozenset[tuple[str, str]]]] = defaultdict(list)
-
         for file in resolved_files:
             file_tags = frozenset(file.tags.items())
 
-            # for target_path, fmap_tags in intended_for.items():
-            #     if file.path.endswith(target_path):
-            #         informed_by[file_tags].append(fmap_tags)
-            #         logger.debug(
-            #             "Matched IntendedFor: file=%s ← fmap_tags=%s",
-            #             file.path,
-            #             fmap_tags,
-            #         )
-            for target_path, fmap_tags_list in intended_for.items():
-                if file.path.endswith(target_path):
-                    for fmap_tags in fmap_tags_list:
-                        # MODIFIED: handle multiple fmap tags per path
-                        informed_by[file_tags].append(fmap_tags)
-                        logger.debug(
-                            "Matched IntendedFor: file=%s ← fmap_tags=%s",
-                            file.path,
-                            fmap_tags,
-                        )
+            for file_path, linked_fmap_tags in intended_for.items():
+                if file.path.endswith(file_path):  # slow performance
+                    informed_by[file_tags].append(linked_fmap_tags)
 
-        logger.info(
-            "Matched %d files to fmap IntendedFor rules",
-            len(informed_by),
-        )
-
-        # ---- Build entity mappings ------------------------------------------
         mappings: set[tuple[tuple[str, str], tuple[str, str]]] = set()
-
-        for func_tags, fmap_tags_list in informed_by.items():
-            for fmap_tags in fmap_tags_list:
-                for func_tag, fmap_tag in product(func_tags, fmap_tags):
-                    if "sub" in (func_tag[0], fmap_tag[0]):
+        for func_tags, linked_fmap_tags_list in informed_by.items():
+            for linked_fmap_tags in linked_fmap_tags_list:
+                for func_tag, linked_fmap_tag in product(func_tags, linked_fmap_tags):
+                    if func_tag[0] == "sub" or linked_fmap_tag[0] == "sub":
                         continue
-                    if func_tag[0] == fmap_tag[0]:
+                    if func_tag[0] == linked_fmap_tag[0]:  # only map between different entities
                         continue
+                    mappings.add((func_tag, linked_fmap_tag))
 
-                    mappings.add((func_tag, fmap_tag))
-
-        logger.debug("Derived %d entity mappings", len(mappings))
-
-        # ---- Build IntendedFor rules ----------------------------------------
         intended_for_rules = defaultdict(list)
+        for functag, fmaptag in mappings:
+            entity, val = functag
+            funcstr = f"{entity}.{val}"
 
-        for func_tag, fmap_tag in mappings:
-            func_entity, func_val = func_tag
-            fmap_entity, fmap_val = fmap_tag
+            entity, val = fmaptag
+            fmapstr = f"{entity}.{val}"
 
-            intended_for_rules[f"{fmap_entity}.{fmap_val}"].append(f"{func_entity}.{func_val}")
+            intended_for_rules[fmapstr].append(funcstr)
 
-        if intended_for_rules:
+        if len(intended_for) > 0:
             logger.info(
-                "Inferred fmap → func IntendedFor rules:\n%s",
-                pformat(dict(intended_for_rules)),
+                "Inferred mapping between func and fmap files to be %s",
+                pformat(intended_for_rules),
             )
-
             for file in resolved_files:
-                if file.datatype == "fmap":
-                    file.intended_for = intended_for_rules
+                if file.datatype != "fmap":
+                    continue
+                file.intended_for = intended_for_rules
 
-        logger.info("BIDS resolve completed successfully")
         return resolved_files
 
     def resolve(self, fileobj: File) -> list[File]:
-        logger.debug(f"ResolvedSpec->resolve: {fileobj.path}")
         if len(get_entities_in_path(fileobj.path)) == 0:
             if fileobj.datatype == "bids":
-                logger.debug("ResolvedSpec->resolve: len==0 ->bids")
                 resolved_files = self._resolve_bids(fileobj)
             else:
-                logger.debug("ResolvedSpec->resolve: len==0 -> else")
                 resolved_files = [fileobj]
                 self.fileobj_by_filepaths[fileobj.path] = fileobj
         else:
-            logger.debug("ResolvedSpec->resolve: _resolve_fileobj_with_tags")
-
             resolved_files = self._resolve_fileobj_with_tags(fileobj)
 
         self.fileobjs_by_specfilepaths[fileobj.path] = resolved_files
-        logger.debug(f"ResolvedSpec->resolve: {fileobj.__dict__}")
 
         return resolved_files
 

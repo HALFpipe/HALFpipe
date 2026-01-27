@@ -42,9 +42,6 @@ def init_workflow(
     assert spec is not None, "A spec file could not be loaded"
     logger.info("Initializing file database")
     database = Database(spec, bids_database_dir=bids_database_dir)
-    logger.debug(f"database.filepaths_by_tags: {database.filepaths_by_tags}")
-    logger.debug(f"database.tags_by_filepaths: {database.tags_by_filepaths}")
-
     # uuid depends on the spec file, the files found and the version of the program
     uuid = uuid5(spec.uuid, database.sha1 + __version__)
 
@@ -55,10 +52,6 @@ def init_workflow(
 
     # init classes that use the database
     bids_database = BidsDatabase(database)
-    logger.debug(f"bids_database.file_paths: {bids_database.file_paths}")
-    logger.debug(f"bids_database.bids_tags: {bids_database.bids_tags}")
-    logger.debug(f"bids_database._metadata: {bids_database._metadata}")
-    logger.debug(f"bids_database.bids_paths: {bids_database.bids_paths}")
 
     # create parent workflow
 
@@ -93,19 +86,8 @@ def init_workflow(
     logger.debug(f"init_workflow->bold_file_paths_dict done by collect_bold_files: {bold_file_paths_dict}")
 
     # write out
-    logger.debug(f"2bids_database.file_paths: {bids_database.file_paths}")
-    logger.debug(f"2bids_database.bids_tags: {bids_database.bids_tags}")
-    logger.debug(f"2bids_database._metadata: {bids_database._metadata}")
-    logger.debug(f"2bids_database.bids_paths: {bids_database.bids_paths}")
 
-    logger.debug(f"2database.filepaths_by_tags: {database.filepaths_by_tags}")
-    logger.debug(f"2database.tags_by_filepaths: {database.tags_by_filepaths}")
     convert_all(database, bids_database, bold_file_paths_dict)
-
-    logger.debug(f"3bids_database.file_paths: {bids_database.file_paths}")
-    logger.debug(f"3bids_database.bids_tags: {bids_database.bids_tags}")
-    logger.debug(f"3bids_database._metadata: {bids_database._metadata}")
-    logger.debug(f"3bids_database.bids_paths: {bids_database.bids_paths}")
 
     for bold_file_path in bold_file_paths_dict.keys():
         bids_path = bids_database.to_bids(bold_file_path)

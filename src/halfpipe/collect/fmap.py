@@ -55,11 +55,6 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
         del bold_file_tags["dir"]
 
     matching_files = database.associations2(bold_file_tags, filters)
-    logger.debug(
-        f"For bold_file_path {bold_file_path} with bold_file_tags {bold_file_tags.get('sub')}, {bold_file_tags.get('ses')}, "
-        f"{bold_file_tags.get('dir')} found matching files: {matching_files}"
-    )
-
     if matching_files is None:
         return list()
     candidates: set[str] = set(matching_files)
