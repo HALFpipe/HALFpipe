@@ -35,6 +35,7 @@ from .datasets import Dataset
 from .expand_bids_dataset import expand_bids_dataset
 from .spec import TestSetting, make_bids_only_spec, make_spec
 
+
 @pytest.fixture(scope="session")
 def bids_data(tmp_path_factory, request) -> Path:
     # --------------------------------------------------------------
@@ -73,9 +74,7 @@ def bids_data(tmp_path_factory, request) -> Path:
     nib.save(bold_img, bold_file)
 
     # Explicit IntendedFor always starts with rest
-    intended_for = [
-        "func/sub-1012_task-rest_bold.nii.gz"
-    ]
+    intended_for = ["func/sub-1012_task-rest_bold.nii.gz"]
 
     # --------------------------------------------------------------
     # Optional extension controlled by parametrization
@@ -107,14 +106,10 @@ def bids_data(tmp_path_factory, request) -> Path:
                 )
 
                 # Create run-specific events file
-                (func_path / f"sub-1012_{task_label}_events.tsv").write_text(
-                    "onset\tduration\n0\t10\n"
-                )
+                (func_path / f"sub-1012_{task_label}_events.tsv").write_text("onset\tduration\n0\t10\n")
 
                 # Explicit IntendedFor entry
-                intended_for.append(
-                    f"func/{dst_prefix}.nii.gz"
-                )
+                intended_for.append(f"func/{dst_prefix}.nii.gz")
 
     # --------------------------------------------------------------
     # Write IntendedFor explicitly to all fmap JSONs
