@@ -52,6 +52,8 @@ def replace_t1w_with_mask(filename: str) -> str:
 
 class BidsDatabase:
     def __init__(self, database: Database) -> None:
+        logger.info("BidsDatabase initialization started")
+
         self.database = database
 
         # indexed by bids_path
@@ -64,15 +66,33 @@ class BidsDatabase:
 
         self.bids_paths: dict[str, str] = dict()
 
+        logger.info("BidsDatabase initialization completed")
+
     def put(self, file_path: str) -> str:
+        logger.debug("BidsDatabase.put-> start file_path=%s", file_path)
+
         bids_path = self.bids_paths.get(file_path)
 
         if bids_path is not None:
+            logger.debug(
+                "BidsDatabase.put-> already exists: %s → %s",
+                file_path,
+                bids_path,
+            )
             return bids_path  # already added
 
         tags = self.database.tags(file_path)
         if not isinstance(tags, dict):
+            logger.error(
+                'BidsDatabase.put-> file has no tags: "%s"',
+                file_path,
+            )
             raise ValueError(f'File "{file_path}" has no tags')
+
+        logger.debug(
+            "BidsDatabase.put-> source tags=%s",
+            tags,
+        )
 
         bids_tags = dict()
         for entity, value in tags.items():
@@ -80,8 +100,16 @@ class BidsDatabase:
 
             if bids_entity in entity_longnames:  # map to long names
                 bids_entity = entity_longnames[bids_entity]
+                logger.debug(
+                    "BidsDatabase.put-> mapped entity %s → %s",
+                    entity,
+                    bids_entity,
+                )
 
             if bids_entity == "task" and tags.get("datatype") == "fmap":
+                logger.debug(
+                    "BidsDatabase.put-> fmap task remapped to acquisition",
+                )
                 assert "acq" not in tags
                 bids_entity = "acquisition"
 
@@ -96,6 +124,11 @@ class BidsDatabase:
             else:
                 bids_tags[entity] = value
 
+        logger.debug(
+            "BidsDatabase.put-> bids_tags=%s",
+            bids_tags,
+        )
+
         # In case of lesion mask presence, we temporary change the suffix to standard anat T1w and let the
         # halfpipe create symbolic path for the files as it was a normal anat T1w file. But afterwards,
         # by checking the suffix (if roi or mask), we change the suffix of the symbolic path (bids_path_result) using the
@@ -106,6 +139,10 @@ class BidsDatabase:
 
         # Temporarily override suffix if needed
         build_tags = {**bids_tags, "suffix": "T1w"} if suffix in {"mask", "roi"} else bids_tags
+        logger.debug(
+            "BidsDatabase.put-> temporary suffix override (%s → T1w)",
+            suffix,
+        )
 
         # Single build_path call
         bids_path_result = build_path(build_tags, bids_config.default_path_patterns)
@@ -113,14 +150,32 @@ class BidsDatabase:
         # Post-process in case of masks (rois)
         if suffix in {"mask", "roi"}:
             bids_path_result = replace_t1w_with_mask(bids_path_result)
+            logger.debug(
+                "BidsDatabase.put-> restored mask/roi suffix in path",
+            )
 
         if bids_path_result is None:
+            logger.error(
+                "BidsDatabase.put-> failed to build path for %s (tags=%s)",
+                file_path,
+                bids_tags,
+            )
             raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}" with tags "{bids_tags}"')
 
         bids_path = str(bids_path_result)
 
+        logger.debug(
+            "BidsDatabase.put-> resolved BIDS path=%s",
+            bids_path,
+        )
+
         if bids_path in self.file_paths:
             if self.file_paths[bids_path] != str(file_path):
+                logger.error(
+                    "BidsDatabase.put-> path collision: %s already mapped to %s",
+                    bids_path,
+                    self.file_paths[bids_path],
+                )
                 raise ValueError("Cannot assign different files to the same BIDS path")
 
         self.bids_paths[file_path] = str(bids_path)
@@ -130,13 +185,31 @@ class BidsDatabase:
 
         self._metadata[bids_path] = get_bids_metadata(self.database, file_path)
 
+        logger.debug(
+            "BidsDatabase.put-> metadata keys=%s",
+            list(self._metadata[bids_path].keys()),
+        )
+        logger.debug("BidsDatabase.put-> completed for %s", file_path)
+
         return bids_path
 
     def to_bids(self, file_path: str) -> str | None:
-        return self.bids_paths.get(file_path)
+        bids_path = self.bids_paths.get(file_path)
+        logger.debug(
+            "BidsDatabase.to_bids-> %s → %s",
+            file_path,
+            bids_path,
+        )
+        return bids_path
 
     def from_bids(self, bids_path: str) -> str | None:
-        return self.file_paths.get(bids_path)
+        file_path = self.file_paths.get(bids_path)
+        logger.debug(
+            "BidsDatabase.from_bids-> %s → %s",
+            bids_path,
+            file_path,
+        )
+        return file_path
 
     def tags(self, bids_path: str) -> dict | None:
         """
@@ -161,6 +234,8 @@ class BidsDatabase:
         return None
 
     def write(self, bidsdir: str | Path):
+        logger.info("BidsDatabase.write-> start bidsdir=%s", bidsdir)
+
         bidsdir = Path(bidsdir)
         if bidsdir.is_symlink():
             raise ValueError("Will not write to symlink")
@@ -180,10 +255,17 @@ class BidsDatabase:
         with open(dataset_description_path, "w") as f:
             json.dump(dataset_description, f, indent=4)
 
-        # image files
-        for bids_path_str, file_path in self.file_paths.items():
-            logger.debug(f'BidsDatabase->image files->bids_path_str::: "{bids_path_str}"')
-            logger.debug(f'BidsDatabase->image files->file_path::: "{file_path}"')
+        logger.debug("BidsDatabase.write-> wrote dataset_description.json")
+
+        # ---- Image files -------------------------------------------------------
+        for idx, (bids_path_str, file_path) in enumerate(self.file_paths.items(), start=1):
+            logger.debug(
+                "BidsDatabase.write-> image %d/%d: %s ← %s",
+                idx,
+                len(self.file_paths),
+                bids_path_str,
+                file_path,
+            )
             if bids_path_str is None:
                 raise ValueError(f'File "{file_path}" has no BIDS path')
             bids_path = Path(bidsdir) / bids_path_str
@@ -191,18 +273,20 @@ class BidsDatabase:
             bids_path.parent.mkdir(parents=True, exist_ok=True)
 
             if bids_path.is_file():
+                logger.debug("BidsDatabase.write-> file exists, skipping")
                 continue  # ignore real files
             elif bids_path.is_symlink():
                 if bids_path.resolve() == Path(file_path).resolve():
+                    logger.debug("BidsDatabase.write-> correct symlink exists")
                     continue  # nothing to be done
                 else:
+                    logger.debug("BidsDatabase.write-> removing incorrect symlink")
                     bids_path.unlink()  # symlink points to different file
             relative_file_path = relpath(file_path, start=bids_path.parent)
             bids_path.symlink_to(relative_file_path)
 
-        # sidecar files
+        # ---- Sidecar files -----------------------------------------------------
         for bids_path_str in self.file_paths.keys():
-            logger.debug(f'BidsDatabase->sidecar files->bids_path_str::: "{bids_path_str}"')
             metadata = self._metadata.get(bids_path_str)
 
             if metadata is not None and len(metadata) > 0:
@@ -216,12 +300,21 @@ class BidsDatabase:
                 if sidecar_path.is_file():
                     with open(sidecar_path, "r") as f:
                         if jsonstr == f.read():
+                            logger.debug(
+                                "BidsDatabase.write-> sidecar unchanged: %s",
+                                sidecar_path,
+                            )
                             continue
 
                 with open(sidecar_path, "w") as f:
                     f.write(jsonstr)
 
-        # remove unnecessary files
+                logger.debug(
+                    "BidsDatabase.write-> wrote sidecar: %s",
+                    sidecar_path,
+                )
+
+        # ---- Cleanup -----------------------------------------------------------
         files_to_keep = set()
         for bids_path in bids_paths:
             relative_bids_path = relpath(bids_path, start=bidsdir)
@@ -234,7 +327,13 @@ class BidsDatabase:
             relative_file_path = relpath(file_path, start=bidsdir)
             if relative_file_path not in files_to_keep:
                 p = Path(file_path)
+                logger.debug(
+                    "BidsDatabase.write-> removing obsolete path: %s",
+                    p,
+                )
                 if not p.is_dir():
                     p.unlink()
                 else:
                     rmtree(p)
+
+    logger.info("BidsDatabase.write-> completed")

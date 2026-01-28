@@ -260,14 +260,6 @@ class ResolvedSpec:
         for file in resolved_files:
             file_tags = frozenset(file.tags.items())
 
-            # for target_path, fmap_tags in intended_for.items():
-            #     if file.path.endswith(target_path):
-            #         informed_by[file_tags].append(fmap_tags)
-            #         logger.debug(
-            #             "Matched IntendedFor: file=%s ← fmap_tags=%s",
-            #             file.path,
-            #             fmap_tags,
-            #         )
             for target_path, fmap_tags_list in intended_for.items():
                 if file.path.endswith(target_path):
                     for fmap_tags in fmap_tags_list:
