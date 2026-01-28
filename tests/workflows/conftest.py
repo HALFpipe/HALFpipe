@@ -34,7 +34,7 @@ from ..resource import setup as setup_test_resources
 from .datasets import Dataset
 from .expand_bids_dataset import expand_bids_dataset
 from .spec import TestSetting, make_bids_only_spec, make_spec
-import json
+
 
 @pytest.fixture(scope="session")
 def bids_data(tmp_path_factory, request) -> Path:
