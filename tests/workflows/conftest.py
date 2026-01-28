@@ -34,7 +34,7 @@ from ..resource import setup as setup_test_resources
 from .datasets import Dataset
 from .expand_bids_dataset import expand_bids_dataset
 from .spec import TestSetting, make_bids_only_spec, make_spec
-
+import json
 
 @pytest.fixture(scope="session")
 def bids_data(tmp_path_factory, request) -> Path:
@@ -58,23 +58,20 @@ def bids_data(tmp_path_factory, request) -> Path:
         fp.extractall(tmp_path)
 
     bids_data_path = tmp_path / "bids_data"
+
     func_path = bids_data_path / "sub-1012" / "func"
-    fmap_path = bids_data_path / "sub-1012" / "fmap"
+
+    Path(func_path / "sub-1012_task-rest_events.tsv").unlink()  # this file is empty
 
     # --------------------------------------------------------------
     # Original behavior (always runs)
     # --------------------------------------------------------------
-    events_file = func_path / "sub-1012_task-rest_events.tsv"
-    events_file.unlink()
 
     bold_file = func_path / "sub-1012_task-rest_bold.nii.gz"
     bold_img = nib.load(bold_file)
     bold_data = bold_img.get_fdata()[..., :64]
     bold_img = new_img_like(bold_img, bold_data, copy_header=True)
-    nib.save(bold_img, bold_file)
-
-    # Explicit IntendedFor always starts with rest
-    intended_for = ["func/sub-1012_task-rest_bold.nii.gz"]
+    nib.loadsave.save(bold_img, bold_file)
 
     # --------------------------------------------------------------
     # Optional extension controlled by parametrization
@@ -82,6 +79,8 @@ def bids_data(tmp_path_factory, request) -> Path:
     # This extension creates a bids data where each task have a 'run' suffix. The purpose of this is that there was
     # a bug that caused bad fmap resolution in such cases (no fmap directory was created in rawdata).
     if extend_tasks:
+        fmap_path = bids_data_path / "sub-1012" / "fmap"
+
         task_runs = {
             "task1": [1, 2],
             "task2": [1],
@@ -115,17 +114,17 @@ def bids_data(tmp_path_factory, request) -> Path:
         os.remove(func_path / f"{src_prefix}.json")
         os.remove(func_path / f"{src_prefix}.nii.gz")
 
-    # --------------------------------------------------------------
-    # Write IntendedFor explicitly to all fmap JSONs
-    # --------------------------------------------------------------
-    for fmap_json in fmap_path.glob("*.json"):
-        with fmap_json.open() as f:
-            data = json.load(f)
+        # --------------------------------------------------------------
+        # Write IntendedFor explicitly to all fmap JSONs
+        # --------------------------------------------------------------
+        for fmap_json in fmap_path.glob("*.json"):
+            with fmap_json.open() as f:
+                data = json.load(f)
 
-        data["IntendedFor"] = intended_for
+            data["IntendedFor"] = intended_for
 
-        with fmap_json.open("w") as f:
-            json.dump(data, f, indent=2)
+            with fmap_json.open("w") as f:
+                json.dump(data, f, indent=2)
 
     return bids_data_path
 
