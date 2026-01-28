@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
 import os
 import shutil
 import tarfile
@@ -33,7 +34,7 @@ from ..resource import setup as setup_test_resources
 from .datasets import Dataset
 from .expand_bids_dataset import expand_bids_dataset
 from .spec import TestSetting, make_bids_only_spec, make_spec
-import json
+
 
 @pytest.fixture(scope="session")
 def bids_data(tmp_path_factory, request) -> Path:
@@ -72,11 +73,8 @@ def bids_data(tmp_path_factory, request) -> Path:
     bold_img = new_img_like(bold_img, bold_data, copy_header=True)
     nib.save(bold_img, bold_file)
 
-
     # Explicit IntendedFor always starts with rest
-    intended_for = [
-        "func/sub-1012_task-rest_bold.nii.gz"
-    ]
+    intended_for = ["func/sub-1012_task-rest_bold.nii.gz"]
 
     # --------------------------------------------------------------
     # Optional extension controlled by parametrization
@@ -110,14 +108,10 @@ def bids_data(tmp_path_factory, request) -> Path:
                 )
 
                 # Create run-specific events file
-                (func_path / f"sub-1012_{task_label}_events.tsv").write_text(
-                    "onset\tduration\n0\t10\n"
-                )
+                (func_path / f"sub-1012_{task_label}_events.tsv").write_text("onset\tduration\n0\t10\n")
 
                 # Explicit IntendedFor entry
-                intended_for.append(
-                    f"func/{dst_prefix}.nii.gz"
-                )
+                intended_for.append(f"func/{dst_prefix}.nii.gz")
         os.remove(func_path / f"{src_prefix}.json")
         os.remove(func_path / f"{src_prefix}.nii.gz")
 
