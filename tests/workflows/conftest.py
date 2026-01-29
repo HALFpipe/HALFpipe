@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import json
 import os
 import shutil
 import tarfile
@@ -58,6 +59,52 @@ def bids_data(tmp_path_factory) -> Path:
     bold_data = bold_img.get_fdata()[..., :64]  # we don't need so many volumes for testing
     bold_img = new_img_like(bold_img, bold_data, copy_header=True)
     nib.loadsave.save(bold_img, bold_file)
+
+    return bids_data_path
+
+
+@pytest.fixture(scope="session")
+def bids_data_with_runs(bids_data: Path) -> Path:
+    bids_data_path = bids_data
+    func_path = bids_data_path / "sub-1012" / "func"
+    fmap_path = bids_data_path / "sub-1012" / "fmap"
+
+    task_runs = {
+        "task1": [1, 2],
+        "task2": [1],
+    }
+
+    intended_for = []
+    src_prefix = "sub-1012_task-rest_bold"
+
+    for task, runs in task_runs.items():
+        for run in runs:
+            run_label = f"run-{run:02d}"
+            task_label = f"task-{task}_{run_label}"
+            dst_prefix = f"sub-1012_{task_label}_bold"
+
+            shutil.copy(
+                func_path / f"{src_prefix}.nii.gz",
+                func_path / f"{dst_prefix}.nii.gz",
+            )
+            shutil.copy(
+                func_path / f"{src_prefix}.json",
+                func_path / f"{dst_prefix}.json",
+            )
+
+            (func_path / f"sub-1012_{task_label}_events.tsv").write_text("onset\tduration\n0\t10\n")
+
+            intended_for.append(f"func/{dst_prefix}.nii.gz")
+
+    # Remove original task-rest files
+    (func_path / f"{src_prefix}.nii.gz").unlink()
+    (func_path / f"{src_prefix}.json").unlink()
+
+    # Write IntendedFor to fmap JSONs
+    for fmap_json in fmap_path.glob("*.json"):
+        data = json.loads(fmap_json.read_text())
+        data["IntendedFor"] = intended_for
+        fmap_json.write_text(json.dumps(data, indent=2))
 
     return bids_data_path
 
