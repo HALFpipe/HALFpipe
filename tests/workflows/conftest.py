@@ -37,18 +37,9 @@ from .spec import TestSetting, make_bids_only_spec, make_spec
 
 
 @pytest.fixture(scope="session")
-def bids_data(tmp_path_factory, request) -> Path:
-    # --------------------------------------------------------------
-    # Read parameters from test (default = False)
-    # --------------------------------------------------------------
-    extend_tasks = False
-    if hasattr(request, "param"):
-        if isinstance(request.param, dict):
-            extend_tasks = request.param.get("extend_tasks", False)
-        else:
-            extend_tasks = bool(request.param)
-
+def bids_data(tmp_path_factory) -> Path:
     tmp_path = tmp_path_factory.mktemp(basename="bids_data")
+
     os.chdir(str(tmp_path))
 
     setup_test_resources()
@@ -63,68 +54,57 @@ def bids_data(tmp_path_factory, request) -> Path:
 
     Path(func_path / "sub-1012_task-rest_events.tsv").unlink()  # this file is empty
 
-    # --------------------------------------------------------------
-    # Original behavior (always runs)
-    # --------------------------------------------------------------
-
     bold_file = func_path / "sub-1012_task-rest_bold.nii.gz"
-    bold_img = nib.load(bold_file)
-    bold_data = bold_img.get_fdata()[..., :64]
+    bold_img = nib.nifti1.load(bold_file)
+    bold_data = bold_img.get_fdata()[..., :64]  # we don't need so many volumes for testing
     bold_img = new_img_like(bold_img, bold_data, copy_header=True)
     nib.loadsave.save(bold_img, bold_file)
 
-    # --------------------------------------------------------------
-    # Optional extension controlled by parametrization
-    # --------------------------------------------------------------
-    # This extension creates a bids data where each task have a 'run' suffix. The purpose of this is that there was
-    # a bug that caused bad fmap resolution in such cases (no fmap directory was created in rawdata).
-    if extend_tasks:
-        fmap_path = bids_data_path / "sub-1012" / "fmap"
+    return bids_data_path
 
-        task_runs = {
-            "task1": [1, 2],
-            "task2": [1],
-        }
-        intended_for = []
-        src_prefix = "sub-1012_task-rest_bold"
 
-        for task, runs in task_runs.items():
-            for run in runs:
-                run_label = f"run-{run:02d}"
-                task_label = f"task-{task}_{run_label}"
-                dst_prefix = f"sub-1012_{task_label}_bold"
+@pytest.fixture(scope="session")
+def bids_data_with_runs(bids_data: Path) -> Path:
+    bids_data_path = bids_data
+    func_path = bids_data_path / "sub-1012" / "func"
+    fmap_path = bids_data_path / "sub-1012" / "fmap"
 
-                # Copy NIfTI
-                shutil.copy(
-                    func_path / f"{src_prefix}.nii.gz",
-                    func_path / f"{dst_prefix}.nii.gz",
-                )
+    task_runs = {
+        "task1": [1, 2],
+        "task2": [1],
+    }
 
-                # Copy JSON
-                shutil.copy(
-                    func_path / f"{src_prefix}.json",
-                    func_path / f"{dst_prefix}.json",
-                )
+    intended_for = []
+    src_prefix = "sub-1012_task-rest_bold"
 
-                # Create run-specific events file
-                (func_path / f"sub-1012_{task_label}_events.tsv").write_text("onset\tduration\n0\t10\n")
+    for task, runs in task_runs.items():
+        for run in runs:
+            run_label = f"run-{run:02d}"
+            task_label = f"task-{task}_{run_label}"
+            dst_prefix = f"sub-1012_{task_label}_bold"
 
-                # Explicit IntendedFor entry
-                intended_for.append(f"func/{dst_prefix}.nii.gz")
-        os.remove(func_path / f"{src_prefix}.json")
-        os.remove(func_path / f"{src_prefix}.nii.gz")
+            shutil.copy(
+                func_path / f"{src_prefix}.nii.gz",
+                func_path / f"{dst_prefix}.nii.gz",
+            )
+            shutil.copy(
+                func_path / f"{src_prefix}.json",
+                func_path / f"{dst_prefix}.json",
+            )
 
-        # --------------------------------------------------------------
-        # Write IntendedFor explicitly to all fmap JSONs
-        # --------------------------------------------------------------
-        for fmap_json in fmap_path.glob("*.json"):
-            with fmap_json.open() as f:
-                data = json.load(f)
+            (func_path / f"sub-1012_{task_label}_events.tsv").write_text("onset\tduration\n0\t10\n")
 
-            data["IntendedFor"] = intended_for
+            intended_for.append(f"func/{dst_prefix}.nii.gz")
 
-            with fmap_json.open("w") as f:
-                json.dump(data, f, indent=2)
+    # Remove original task-rest files
+    (func_path / f"{src_prefix}.nii.gz").unlink()
+    (func_path / f"{src_prefix}.json").unlink()
+
+    # Write IntendedFor to fmap JSONs
+    for fmap_json in fmap_path.glob("*.json"):
+        data = json.loads(fmap_json.read_text())
+        data["IntendedFor"] = intended_for
+        fmap_json.write_text(json.dumps(data, indent=2))
 
     return bids_data_path
 
