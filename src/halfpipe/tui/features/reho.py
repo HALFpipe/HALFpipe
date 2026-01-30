@@ -3,9 +3,13 @@
 
 from copy import deepcopy
 
+from textual import on
 from textual.app import ComposeResult
-from textual.containers import ScrollableContainer
+from textual.containers import Horizontal, ScrollableContainer, Vertical
+from textual.message import Message
+from textual.widgets import Static
 
+from ..general_widgets.custom_switch import TextSwitch
 from ..standards import reho_defaults
 from ..templates.feature_template import FeatureTemplate
 
@@ -36,15 +40,30 @@ class ReHo(FeatureTemplate):
         # in this case, smoothing is in features!!!
         self.feature_dict.setdefault("smoothing", _defaults["smoothing"])
         self.setting_dict.pop("smoothing", None)
+        self.feature_dict.setdefault("zscore", _defaults["zscore"])
+
         # recreate preprocessing panel to reflect smoothing migration from setting to features (in the spec file).
         self.create_preprocessing_panel(self.feature_dict["smoothing"]["fwhm"])
 
-    def on_mount(self):
+    async def on_mount(self):
         """
         On the widget mount the default option for the bandpass filter type is set
         to "frequency_based".
         """
         self.get_widget_by_id("bandpass_filter_type").default_option = "frequency_based"
+
+        zscore_widget = Vertical(
+            Horizontal(
+                Static("Apply within-subject Z-score scaling", id="zscore_label"),
+                TextSwitch(value=self.feature_dict.setdefault("zscore"), id="zscore_switch"),
+                id="zscore_switch_panel",
+            ),
+            id="zscore_panel",
+            classes="components",
+        )
+
+        zscore_widget.border_title = "Z-score"
+        await self.mount(zscore_widget, after=self.get_widget_by_id("tasks_to_use_selection_panel"))
 
     def compose(self) -> ComposeResult:
         with ScrollableContainer(id="top_container_task_based"):
@@ -68,3 +87,7 @@ class ReHo(FeatureTemplate):
         else:
             # Switch is OFF → clear value
             self.feature_dict["smoothing"]["fwhm"] = None
+
+    @on(TextSwitch.Changed, "#zscore_switch")
+    def on_zscore_switch_changed(self, message: Message):
+        self.feature_dict["zscore"] = message.value

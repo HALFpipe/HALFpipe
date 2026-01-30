@@ -75,3 +75,14 @@ FeatureSelection {
         color: white;
     }
 }
+
+ReHo {
+    #zscore_panel {
+        height: 5;
+    }
+    #zscore_label {
+        height: 3;
+        width: 40;
+        border: transparent;
+    }
+}
