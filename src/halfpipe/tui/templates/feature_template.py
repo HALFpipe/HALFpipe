@@ -5,10 +5,10 @@ from copy import deepcopy
 
 import inflect
 from textual import on
-from textual.containers import Vertical
+from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.widget import Widget
-from textual.widgets import SelectionList
+from textual.widgets import Select, SelectionList, Static
 from textual.widgets.selection_list import Selection
 
 from ...model.tags import entity_longnames as entity_display_aliases
@@ -175,18 +175,6 @@ class FeatureTemplate(Widget):
         else:
             self.images_to_use = None
 
-        # confounds_options = {
-        #     "ICA-AROMA": ["ICA-AROMA", False],
-        #     "(trans|rot)_[xyz]": ["Motion parameters", False],
-        #     "(trans|rot)_[xyz]_derivative1": ["Derivatives of motion parameters", False],
-        #     "(trans|rot)_[xyz]_power2": ["Motion parameters squared", False],
-        #     "(trans|rot)_[xyz]_derivative1_power2": ["Derivatives of motion parameters squared", False],
-        #     "motion_outlier[0-9]+": ["Motion scrubbing", False],
-        #     "a_comp_cor_0[0-4]": ["aCompCor (top five components)", False],
-        #     "white_matter": ["White matter signal", False],
-        #     "csf": ["CSF signal", False],
-        #     "global_signal": ["Global signal", False],
-        # }
         confounds_options = _defaults["confounds_options"]
         for confound in self.setting_dict.get("confounds_removal", []):
             confounds_options[confound][1] = True
@@ -233,6 +221,16 @@ class FeatureTemplate(Widget):
         # update low and high pass filter is done automatically at start, the SwitchWithSelect.Changed
         # "#bandpass_filter_type") automatically triggers def _on_bandpass_filter_type_change
         self.preprocessing_panel = Vertical(
+            Horizontal(
+                Static("Specify space", id="space_label"),
+                Select(
+                    options=[("Standard space (MNI ICBM 2009c Nonlinear Asymmetric)", "standard"), ("Native space", "native")],
+                    value=self.setting_dict["space"],
+                    allow_blank=False,
+                    id="space_selection",
+                ),
+                id="space_selection_panel",
+            ),
             SwitchWithInputBox(
                 label="Smoothing (FWHM in mm)",
                 value=str(default_smoothing_value) if default_smoothing_value is not None else default_smoothing_value,
@@ -656,3 +654,7 @@ class FeatureTemplate(Widget):
             The selection list widget.
         """
         self.feature_dict[self.featurefield] = message.value
+
+    @on(Select.Changed, "#space_selection")
+    def on_keep_selection_changed(self, message: Message):
+        self.setting_dict["space"] = message.value

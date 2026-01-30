@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
-from textual import on
 from textual.app import ComposeResult
-from textual.containers import Horizontal, ScrollableContainer
-from textual.message import Message
-from textual.widgets import Select, Static
+from textual.containers import ScrollableContainer
 
 from ..standards import preproc_output_defaults
 from .task_based import TaskBased
@@ -50,21 +47,3 @@ class PreprocessedOutputOptions(TaskBased):
             if self.images_to_use is not None:
                 yield self.tasks_to_use_selection_panel
             yield self.preprocessing_panel
-
-    async def on_mount(self):
-        space_selection = Horizontal(
-            Static("Specify space", id="space_label"),
-            Select(
-                options=[("Standard space (MNI ICBM 2009c Nonlinear Asymmetric)", "standard"), ("Native space", "native")],
-                value=self.setting_dict["space"],
-                allow_blank=False,
-                id="space_selection",
-            ),
-            id="space_selection_panel",
-        )
-        preproc_widget = self.get_widget_by_id("preprocessing")
-        await preproc_widget.mount(space_selection, before=preproc_widget.get_widget_by_id("smoothing"))
-
-    @on(Select.Changed, "#space_selection")
-    def on_keep_selection_changed(self, message: Message):
-        self.setting_dict["space"] = message.value
