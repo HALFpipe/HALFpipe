@@ -174,8 +174,23 @@ def test_feature_extraction(tmp_path: Path, mock_spec: Spec) -> None:
     assert dice_similarity(tsnr_image_path, template_mask_path, threshold=20.0) >= 0.8
 
 
-@pytest.mark.parametrize("fieldmap_type", ["phasediff", "epi"])
-def test_with_fieldmaps(tmp_path: Path, bids_data: Path, mock_spec: Spec, fieldmap_type: str) -> None:
+@pytest.mark.parametrize(
+    ("fieldmap_type", "extend_tasks"),
+    [
+        pytest.param("phasediff", False, id="phasediff-original"),
+        pytest.param("epi", False, id="epi-original"),
+        pytest.param("epi", True, id="epi-extended"),
+    ],
+)
+def test_with_fieldmaps(
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+    extend_tasks: bool,
+    fieldmap_type: str,
+    mock_spec: Spec,
+) -> None:
+    bids_data = request.getfixturevalue("bids_data_with_runs" if extend_tasks else "bids_data")
+
     bids_path = tmp_path / "bids"
     shutil.copytree(bids_data, bids_path)
 
