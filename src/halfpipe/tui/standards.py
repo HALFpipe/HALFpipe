@@ -79,6 +79,8 @@ reho_defaults.pop("widget_header")
 reho_defaults.pop("file_selection_widget_header")
 # bring back smoothing because it was None at Atlas
 reho_defaults["smoothing"] = {"fwhm": "6"}
+reho_defaults["zscore"] = True
+
 falff_defaults = deepcopy(reho_defaults)
 
 group_level_modesl_defaults: dict[str, list[dict[str, str]]] = {
