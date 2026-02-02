@@ -12,7 +12,7 @@ from smriprep.interfaces.templateflow import fetch_template_files
 
 from ...interfaces.fixes.applytransforms import ApplyTransforms
 from ...resource import get as get_resource
-from ..constants import Constants
+from ..configurables import configurables
 from ..memory import MemoryCalculator
 
 
@@ -64,7 +64,7 @@ def init_alt_bold_std_trans_wf(
 
     # We use ravel_inputs to flatten the list, to have just a list instead of a list of lists
     mergexfm = pe.Node(niu.Merge(numinputs=2, ravel_inputs=True), name="mergexfm")
-    mergexfm.inputs.in1 = get_resource(f"tpl_{alt_reference_space}_from_{Constants.reference_space}_mode_image_xfm.h5")
+    mergexfm.inputs.in1 = get_resource(f"tpl_{alt_reference_space}_from_{configurables.reference_space}_mode_image_xfm.h5")
     workflow.connect(inputnode, "anat2std_xfm", mergexfm, "in2")  # in the fmriprep resample one this one is not there
 
     omp_nthreads = config.nipype.omp_nthreads

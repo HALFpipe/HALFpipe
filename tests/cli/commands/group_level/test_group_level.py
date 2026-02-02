@@ -15,17 +15,27 @@ from templateflow.api import get as get_template
 
 from halfpipe.cli.commands.group_level.export import Statistic
 from halfpipe.cli.parser import parse_args
+from halfpipe.model.global_settings import GlobalSettingsSchema
 from halfpipe.resource import get as get_resource
 from halfpipe.stats.miscmaths import t2z_convert
-from halfpipe.workflows.constants import Constants
+from halfpipe.workflows.configurables import configurables
 
 from ....resource import setup as setup_test_resources
 
 
 def test_group_level(tmp_path: Path) -> None:
+    # since reference resolution and space are now configurables
+    # we need to first initial the globalsettingschema to get out
+    # the default values
+    schema = GlobalSettingsSchema()
+    global_settings = schema.dump({})
+
+    configurables.reference_res = global_settings["reference_res"]
+    configurables.reference_space = global_settings["reference_space"]
+
     template_query: dict[str, Any] = dict(
-        template=Constants.reference_space,
-        resolution=Constants.reference_res,
+        template=configurables.reference_space,
+        resolution=configurables.reference_res,
         desc="brain",
     )
     template_path = get_template(**template_query, suffix="T1w")
