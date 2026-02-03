@@ -86,5 +86,13 @@ FeatureSelectionModal {
         margin: 1;
         min-width: 10;
         content-align: center middle;
+ReHo {
+    #zscore_panel {
+        height: 5;
+    }
+    #zscore_label {
+        height: 3;
+        width: 40;
+        border: transparent;
     }
 }
