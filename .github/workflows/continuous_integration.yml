@@ -142,20 +142,12 @@ jobs:
           EOF
           failure=0
           # Run the integration tests
-          echo "***Running TUI tests***"
-          py.test  --last-failed --reruns 3 /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
           echo "***Running backend tests***"
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
             --numprocesses=2 \
             --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui"\
             --ignore=tests/tui
-      - name: Upload snapshot report
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: snapshot-report
-          path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
@@ -231,3 +223,51 @@ jobs:
             --acl public-read \
             "${image_file}" \
             "s3://download-fmri-science/singularity/"
+  tui-tests:
+    name: TUI tests (informational)
+    runs-on: self-hosted
+    needs: test
+    continue-on-error: true   # non-blocking
+    timeout-minutes: 240
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Start TUI test container
+        run: |
+          docker run \
+            --detach \
+            --rm \
+            --name="tui-test" \
+            --volume="/home/runner/resource-cache:/var/cache/halfpipe" \
+            --volume="/home/runner:/home/runner" \
+            --volume="$(pwd):/halfpipe" \
+            --workdir="/halfpipe" \
+            --entrypoint="tail" \
+            ${{ needs.test.outputs.build_tag || steps.metadata.outputs.build_tag }} \
+            --follow /dev/null
+
+      - name: Run TUI tests
+        shell: docker exec tui-test bash -x -e {0}
+        env:
+          GITHUB_ACTIONS: true
+        run: |
+          echo "***Running TUI tests (informational)***"
+          py.test --last-failed --reruns 3 \
+            /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
+
+      - name: Upload snapshot report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tui-snapshot-report
+          path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
+
+      - name: Stop TUI test container
+        if: always()
+        run: |
+          docker kill tui-test
+
