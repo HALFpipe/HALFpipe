@@ -83,10 +83,8 @@ FeatureSelectionModal {
     height: 28;
     }
     #options {
-margin: 1;
-    content-align: center middle;
-
-
+        margin: 1;
+        min-width: 10;
+        content-align: center middle;
     }
-
 }
