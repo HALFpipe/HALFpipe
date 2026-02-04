@@ -23,6 +23,8 @@ defaults:
 jobs:
   test:
     runs-on: self-hosted
+    outputs:
+      build_tag: ${{ steps.metadata.outputs.build_tag }}
     timeout-minutes: 1440 # Set to 24 hours
     steps:
       - name: Checkout
@@ -223,7 +225,7 @@ jobs:
             --acl public-read \
             "${image_file}" \
             "s3://download-fmri-science/singularity/"
-  tui-tests:
+tui-tests:
     name: TUI tests (informational)
     runs-on: self-hosted
     needs: test
@@ -236,19 +238,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Start TUI test container
-        run: |
-          docker run \
-            --detach \
-            --rm \
-            --name="tui-test" \
-            --volume="/home/runner/resource-cache:/var/cache/halfpipe" \
-            --volume="/home/runner:/home/runner" \
-            --volume="$(pwd):/halfpipe" \
-            --workdir="/halfpipe" \
-            --entrypoint="tail" \
-            ${{ needs.test.outputs.build_tag || steps.metadata.outputs.build_tag }} \
-            --follow /dev/null
+    - name: Start TUI test container
+      run: |
+        docker run \
+          --detach \
+          --rm \
+          --name="tui-test" \
+          --volume="/home/runner/resource-cache:/var/cache/halfpipe" \
+          --volume="/home/runner:/home/runner" \
+          --volume="$(pwd):/halfpipe" \
+          --workdir="/halfpipe" \
+          --entrypoint="tail" \
+          ${{ steps.metadata.outputs.build_tag }} \
+          -follow /dev/null
+
 
       - name: Run TUI tests
         shell: docker exec tui-test bash -x -e {0}
