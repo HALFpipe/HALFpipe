@@ -225,7 +225,7 @@ jobs:
             --acl public-read \
             "${image_file}" \
             "s3://download-fmri-science/singularity/"
-tui-tests:
+  tui-tests:
     name: TUI tests (informational)
     runs-on: self-hosted
     needs: test
