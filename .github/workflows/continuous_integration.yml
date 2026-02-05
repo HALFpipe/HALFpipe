@@ -22,7 +22,7 @@ defaults:
 
 jobs:
   test:
-    runs-on: self-hosted
+    runs-on: runs-on: [self-hosted, halfpipe-runner]
     outputs:
       build_tag: ${{ steps.metadata.outputs.build_tag }}
     timeout-minutes: 1440 # Set to 24 hours
@@ -227,7 +227,7 @@ jobs:
             "s3://download-fmri-science/singularity/"
   tui-tests:
     name: TUI tests (informational)
-    runs-on: self-hosted
+    runs-on: runs-on: [self-hosted, halfpipe-runner]
     needs: test
     continue-on-error: true   # non-blocking
     timeout-minutes: 240
