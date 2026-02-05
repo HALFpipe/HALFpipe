@@ -2,9 +2,10 @@
 
 import os
 import shutil
-from asyncio import sleep
 from functools import partial
 from pathlib import Path
+
+import pytest
 
 from halfpipe.logging import logger
 
@@ -13,6 +14,8 @@ from .pilot_functions import (
     _set_work_dir,
     add_fmap,
     associate_fmaps,
+    clear_entry,
+    click_until_gone,
     set_non_bids_data,
     settable_scroll_screen_down,
 )
@@ -59,7 +62,7 @@ async def run_before(
         # await pilot.press('w')
         # filename = "{}_after_load_data.svg".format(stage)
         # pilot.app.save_screenshot(filename=filename)
-        await pilot.click("#only_one_button")
+        await click_until_gone(pilot, "#only_one_button")
 
     if stage == "non_bids_data_tab" or stage == "non_bids_data_tab_with_fmaps" or stage == "preproc_settings":
         await _set_work_dir(pilot, work_dir_path)
@@ -110,40 +113,41 @@ async def run_before(
                 await pilot.press("p")
                 # Toggle run recon all
                 # await pilot.click(offset=(109, 11))
-                pilot.app.get_widget_by_id("run_reconall").value = True
-                # Turn on slice timing
-                # await pilot.click(offset=(113, 19))
+                await pilot.click(pilot.app.get_widget_by_id("run_reconall"))
 
-                pilot.app.get_widget_by_id("time_slicing_switch").value = True
-                await sleep(10)
+                # Turn on slice timing
+                await pilot.click(pilot.app.get_widget_by_id("time_slicing_switch"))
 
                 # Check meta data modal. Click No to 'Proceed with these values?'
                 await pilot.click("#only_one_button")
-
+                #
                 # Specify slice acquisition direction, choose second choice
-                # await pilot.click(offset=(65, 26))
-                await pilot.click("#set_value_modal")
+                # await pilot.click("#set_value_modal")
                 await pilot.press("down")
                 await pilot.press("enter")
-
+                await pilot.click("#ok")
+                #
                 # Click ok on the warning modal: Missing images
-                # # await pilot.click(offset=(132, 30))
                 await pilot.click("#only_one_button")
+                #
+                # # # Specify Slice timing modal: Choose third options
+                # # await pilot.click("#set_value_modal")
 
-                # # Specify Slice timing modal: Choose third options
-                # await pilot.click("#set_value_modal")
-
-                # # await pilot.click(offset=(65, 25))
                 await pilot.click("#radio_set")
                 for _i in range(2):
                     await pilot.press("down")
                 await pilot.press("enter")
                 await pilot.click("#ok")
+            except Exception as e:
+                pilot.app.save_screenshot()
+                logger.info(e)
 
+            try:
                 # click in the input box to set initial volumes to remove
                 # await pilot.click(offset=(121, 31))
                 await pilot.click("#number_of_remove_initial_volumes")
                 # Type '9'
+                await clear_entry(pilot)
                 await pilot.press("9")
                 # random click to unfocus the input
                 await pilot.click(offset=(50, 10))
@@ -152,12 +156,14 @@ async def run_before(
                 await pilot.press("r")
                 # Click 'Refresh'
                 # await pilot.click(offset=(85, 9))
-                await settable_scroll_screen_down(pilot, 10)
+                await settable_scroll_screen_down(pilot, 5)
             except Exception as e:
                 pilot.app.save_screenshot()
                 logger.info(e)
+    # pilot.app.call_later(pilot.app.exit)  # 👈 schedule clean exit
 
 
+@pytest.mark.forked
 def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(
@@ -166,6 +172,7 @@ def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_d
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether a bids data can be loaded. This should yield some non-zero found files at the file summary panel."""
     run_before_with_extra_args = partial(
@@ -174,6 +181,7 @@ def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downl
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_non_bids_data_input_tab(
     snap_compare, start_app, work_dir_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -188,6 +196,7 @@ def test_non_bids_data_input_tab(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_non_bids_data_input_tab_with_fmaps(
     snap_compare,
     start_app,
@@ -210,6 +219,7 @@ def test_non_bids_data_input_tab_with_fmaps(
     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
+@pytest.mark.forked
 def test_preproc_settings_tab(
     snap_compare, start_app, work_dir_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:

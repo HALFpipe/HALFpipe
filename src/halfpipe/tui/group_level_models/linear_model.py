@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import asyncio
 from itertools import chain, combinations
 
 from textual import on
@@ -272,6 +273,7 @@ class LinearModel(ModelTemplate):
                             classes="level_sub_panels",
                         )
                     )
+
                     # To avoid duplicate entries in the filters, use this if. This can happened when we are loading or
                     # duplicating the model.
                     # if filt_dict is None:
@@ -283,23 +285,28 @@ class LinearModel(ModelTemplate):
                     #     }
                     #     self.model_dict["filters"].append(filt_dict)
 
-            await self.mount(
-                Container(
-                    Static(
-                        "Select the subjects to include in this analysis by their categorical variables\n\
+            sub_panels_top_widget = Container(
+                Static(
+                    "Select the subjects to include in this analysis by their categorical variables\n\
     For multiple categorical variables, the intersecion of the groups will be used.",
-                        id="levels_instructions",
-                        classes="instructions",
-                    ),
-                    Horizontal(
-                        *sub_panels,
-                        id="levels_panel",
-                    ),
-                    id="top_levels_panel",
-                    classes="components",
+                    id="levels_instructions",
+                    classes="instructions",
                 ),
-                after=self.get_widget_by_id("spreadsheet_selection_panel"),
+                Horizontal(
+                    *sub_panels,
+                    id="levels_panel",
+                ),
+                id="top_levels_panel",
+                classes="components",
             )
+
+            await self.mount(sub_panels_top_widget, after=self.get_widget_by_id("spreadsheet_selection_panel"))
+
+            while not sub_panels_top_widget.is_attached:
+                await asyncio.sleep(1)
+            for sub_panel in sub_panels:
+                while not sub_panel.is_attached:
+                    await asyncio.sleep(1)
 
             # If a selection for a variable in 'Add variables to the model' is On, then in the contrast field there is a
             # dictionary with "type": "infer" and "variable": *the variable*. We use this to set up the defaults in the
@@ -322,89 +329,94 @@ class LinearModel(ModelTemplate):
             # {"action": "exclude", "type": "missing", "variable": *the variable*} in the model_dict['filters']. If it is there
             # the default values is set to 'listwise_deletion'. If this is a new widget then there are no such entries in the
             # 'filters' hence all default values are set to 'mean_substitution'.
-            await self.mount(
-                Container(
-                    Static(
-                        "Specify the variables to add to the model and action for missing values",
-                        id="model_variables_instructions",
-                        classes="instructions",
-                    ),
-                    *[
-                        SwitchWithSelect(
-                            v,
-                            options=[("Listwise deletion", "listwise_deletion"), ("Mean substitution", "mean_substitution")],
-                            switch_value=bool(
-                                next((f for f in self.model_dict["contrasts"] if f.get("variable") == [v]), False)
-                            ),
-                            default_option="listwise_deletion"
-                            if next(
-                                (
-                                    f
-                                    for f in self.model_dict["filters"]
-                                    if f.get("variable") == v and f.get("type") == "missing"
-                                ),
-                                False,
-                            )
-                            or self.is_new
-                            else "mean_substitution",
-                            id=v + "_model_vars",
-                            classes="additional_preprocessing_settings",
-                        )
-                        for v in self.variables
-                    ],
-                    id="top_model_variables_panel",
-                    classes="components",
+            top_model_variables_panel_widget = Container(
+                Static(
+                    "Specify the variables to add to the model and action for missing values",
+                    id="model_variables_instructions",
+                    classes="instructions",
                 ),
+                *[
+                    SwitchWithSelect(
+                        v,
+                        options=[("Listwise deletion", "listwise_deletion"), ("Mean substitution", "mean_substitution")],
+                        switch_value=bool(next((f for f in self.model_dict["contrasts"] if f.get("variable") == [v]), False)),
+                        default_option="listwise_deletion"
+                        if next(
+                            (f for f in self.model_dict["filters"] if f.get("variable") == v and f.get("type") == "missing"),
+                            False,
+                        )
+                        or self.is_new
+                        else "mean_substitution",
+                        id=v + "_model_vars",
+                        classes="additional_preprocessing_settings",
+                    )
+                    for v in self.variables
+                ],
+                id="top_model_variables_panel",
+                classes="components",
+            )
+            await self.mount(
+                top_model_variables_panel_widget,
                 after=self.get_widget_by_id("top_levels_panel"),
+            )
+            while not top_model_variables_panel_widget.is_attached:
+                await asyncio.sleep(1)
+
+            top_interaction_panel_widget = Container(
+                Static(
+                    "Specify the variables for which to calculate interaction terms",
+                    id="interaction_variables_instructions",
+                    classes="instructions",
+                ),
+                SelectionList[str](
+                    *[Selection(str(v), str(v), v in interaction_variables) for v in self.variables],
+                    id="interaction_variables_selection_panel",
+                ),
+                Static(
+                    "Select which interaction terms to add to the model",
+                    id="interaction_terms_instructions",
+                    classes="instructions",
+                ),
+                SelectionList[str](
+                    *[Selection(key, term_by_str[key], True) for key in term_by_str.keys()],
+                    id="interaction_terms_selection_panel",
+                ),
+                id="top_interaction_panel",
+                classes="components",
             )
 
             await self.mount(
-                Container(
-                    Static(
-                        "Specify the variables for which to calculate interaction terms",
-                        id="interaction_variables_instructions",
-                        classes="instructions",
-                    ),
-                    SelectionList[str](
-                        *[Selection(str(v), str(v), v in interaction_variables) for v in self.variables],
-                        id="interaction_variables_selection_panel",
-                    ),
-                    Static(
-                        "Select which interaction terms to add to the model",
-                        id="interaction_terms_instructions",
-                        classes="instructions",
-                    ),
-                    SelectionList[str](
-                        *[Selection(key, term_by_str[key], True) for key in term_by_str.keys()],
-                        id="interaction_terms_selection_panel",
-                    ),
-                    id="top_interaction_panel",
-                    classes="components",
-                ),
+                top_interaction_panel_widget,
                 after=self.get_widget_by_id("top_model_variables_panel"),
             )
+            while not top_interaction_panel_widget.is_attached:
+                await asyncio.sleep(1)
 
             # In the TextSwitch we use hardcoded False but on the other hand, we use the flag self.has_type_t to toggle the
             # switch if there is some content for the contrast tables (load, duplication case). Doing this in such a two step
             # way will automatically trigger the function _on_contrast_switch_changed same as when the user toggles the button.
-            await self.mount(
-                Container(
-                    Static(
-                        "Contrasts for the mean across all subjects, and for all variables will be generated automatically",
-                        classes="instructions",
-                    ),
-                    Grid(
-                        Static(
-                            "Add additional contrasts for categorical variables", id="contrast_switch_label", classes="label"
-                        ),
-                        TextSwitch(value=False, id="contrast_switch"),
-                        id="contrast_switch_panel",
-                    ),
-                    id="top_contrast_panel",
-                    classes="components",
+            top_contrast_panel_widget = Container(
+                Static(
+                    "Contrasts for the mean across all subjects, and for all variables will be generated automatically",
+                    classes="instructions",
                 ),
+                Grid(
+                    Static("Add additional contrasts for categorical variables", id="contrast_switch_label", classes="label"),
+                    TextSwitch(value=False, id="contrast_switch"),
+                    id="contrast_switch_panel",
+                ),
+                id="top_contrast_panel",
+                classes="components",
+            )
+
+            await self.mount(
+                top_contrast_panel_widget,
                 after=self.get_widget_by_id("top_interaction_panel"),
             )
+
+            while not top_contrast_panel_widget.is_attached:
+                await asyncio.sleep(1)
+
             # Scan whether there are some values for the contrast tables (in case of load or duplication.
             self.has_type_t = any(item.get("type") == "t" for item in self.model_dict["contrasts"])
             if self.has_type_t is True:

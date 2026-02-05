@@ -27,7 +27,14 @@ def copy_jinja2_file(resolved_test_dir_path):
     """Copy a file before tests start. This is just a hot fix because somehow the resources directory
     is delete during the docker build."""
     source_file = resolved_test_dir_path / "snapshot_report_template.jinja2"
-    destination = Path("/opt/conda/envs/fmriprep/lib/python3.11/site-packages/resources/")
+
+    import pytest_textual_snapshot
+
+    # Path to the module file
+    module_path = Path(pytest_textual_snapshot.__file__)
+
+    # Go up one level (site-packages) and append "resources"
+    destination = module_path.parent / "resources"
 
     try:
         destination.mkdir(parents=True, exist_ok=True)
@@ -66,6 +73,8 @@ def work_dir_path(fixed_tmp_path) -> Path:
 @pytest.fixture(scope="session")
 def spec_file_dir_path(fixed_tmp_path, resolved_test_dir_path) -> Path:
     source_dir = resolved_test_dir_path / "spec_file_for_load_test"
+    shutil.copy(source_dir / "spec.json", source_dir / "spec_reference.json")
+
     destination_dir = fixed_tmp_path / "spec_file_for_load_test/"
     if os.path.exists(destination_dir):
         shutil.rmtree(destination_dir)
