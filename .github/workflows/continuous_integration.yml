@@ -140,7 +140,7 @@ jobs:
         with:
           name: snapshot-report
           path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
-          
+
       - name: Run integration tests
         shell: docker exec test bash -x -e {0}
         env:
