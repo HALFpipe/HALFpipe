@@ -23,8 +23,6 @@ defaults:
 jobs:
   test:
     runs-on: self-hosted
-    outputs:
-      build_tag: ${{ steps.metadata.outputs.build_tag }}
     timeout-minutes: 1440 # Set to 24 hours
     steps:
       - name: Checkout
@@ -32,13 +30,7 @@ jobs:
         with:
           # Check out full history for `setuptools_scm`
           fetch-depth: 0
-      - name: Debug runner identity
-        run: |
-          echo "Runner name: $RUNNER_NAME"
-          echo "Hostname:"
-          hostname
-          echo "Docker images:"
-          docker images | head
+
       - name: Setup Micromamba
         uses: mamba-org/setup-micromamba@v2.0.7
         with:
@@ -134,6 +126,21 @@ jobs:
             --follow /dev/null
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Run TUI snapshot tests (informational)
+        continue-on-error: true
+        shell: docker exec test bash -x -e {0}
+        env:
+          GITHUB_ACTIONS: true
+        run: |
+          echo "***Running TUI tests (informational)***"
+          py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
+      - name: Upload snapshot report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-report
+          path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
+          
       - name: Run integration tests
         shell: docker exec test bash -x -e {0}
         env:
@@ -156,6 +163,7 @@ jobs:
             --numprocesses=2 \
             --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui"\
             --ignore=tests/tui
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
@@ -231,57 +239,3 @@ jobs:
             --acl public-read \
             "${image_file}" \
             "s3://download-fmri-science/singularity/"
-  tui-tests:
-    name: TUI tests (informational)
-    runs-on: self-hosted
-    needs: test
-    continue-on-error: true   # non-blocking
-    timeout-minutes: 240
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-      - name: Debug runner identity
-        run: |
-          echo "Runner name: $RUNNER_NAME"
-          echo "Hostname:"
-          hostname
-          echo "Docker images:"
-          docker images | head
-      - name: Start TUI test container
-        run: |
-          docker run \
-            --detach \
-            --rm \
-            --name="tui-test" \
-            --volume="/home/runner/resource-cache:/var/cache/halfpipe" \
-            --volume="/home/runner:/home/runner" \
-            --volume="$(pwd):/halfpipe" \
-            --workdir="/halfpipe" \
-            --entrypoint="tail" \
-            ${{ needs.test.outputs.build_tag }} \
-            --follow /dev/null
-
-
-      - name: Run TUI tests
-        shell: docker exec tui-test bash -x -e {0}
-        env:
-          GITHUB_ACTIONS: true
-        run: |
-          echo "***Running TUI tests (informational)***"
-          py.test --last-failed --reruns 3 \
-            /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
-
-      - name: Upload snapshot report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: tui-snapshot-report
-          path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
-
-      - name: Stop TUI test container
-        if: always()
-        run: |
-          docker kill tui-test
