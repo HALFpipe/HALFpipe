@@ -62,6 +62,10 @@ class BaseSettingSchema(Schema):
     ica_aroma = fields.Bool(
         allow_none=True,
     )
+    aroma_melodic_seed = fields.Int(
+        allow_none=True,
+        validate=validate.Range(min=1),
+    )
     smoothing = fields.Nested(
         SmoothingSettingSchema,
         allow_none=True,  # None is allowed to signify that this step will be skipped
