@@ -1,0 +1,161 @@
+# -*- coding: utf-8 -*-
+
+import os
+import shutil
+from functools import partial
+from pathlib import Path
+
+import pytest
+
+from halfpipe.logging import logger
+
+from ..pilot_functions import (
+    _load_data,
+    _set_work_dir,
+    add_contrast_value_column,
+    add_new_feature,
+    check_and_run_tab_refresh,
+    click_until_gone,
+    delete_column,
+    deselect_conditions,
+    preprocessing_options,
+    remove_confounds,
+    # scroll_screen_down,
+    select_images,
+    settable_scroll_screen_down,
+)
+
+
+async def run_before(pilot, data_path=None, work_dir_path=None, stage=None) -> None:
+    # always reload the app first, there is some strange crossinteraction between tests, nothing else helped except using
+    # -n 2 flag for the pytest, i.e., running each test with a separate worker
+    how_much_down = 0
+
+    # pilot.app.reload_ui()
+    if isinstance(data_path, Path):
+        data_path = str(data_path)
+    if isinstance(work_dir_path, Path):
+        work_dir_path = str(work_dir_path)
+    # Delete work_dir if exists
+    if os.path.exists(work_dir_path):
+        shutil.rmtree(work_dir_path)
+
+    logger.info(f"Setting data path: {data_path}, work dir path: {work_dir_path}")
+
+    # Define functions to execute based on stage requirements
+    async def add_feature_related_tasks():
+        await add_new_feature(pilot)
+        await select_images(pilot)
+        await deselect_conditions(pilot)
+        await add_contrast_value_column(pilot, label="col1")
+        await delete_column(pilot)
+        await add_contrast_value_column(pilot, label="col2")
+
+    async def feature_p2_and_final_tasks():
+        # random click before scroll
+        await pilot.click(offset=(80, 20))
+        await settable_scroll_screen_down(pilot, 60)
+        await preprocessing_options(pilot)
+        await remove_confounds(pilot)
+        # random click before scroll
+        await pilot.click(offset=(80, 20))
+        await settable_scroll_screen_down(pilot, 5)
+
+    async def duplicate():
+        # await pilot.click(offset=(10, 12))
+        await pilot.click("#duplicate_item_button")
+        # confirm new name
+        await pilot.click("#ok")
+        # await scroll_screen_down(pilot)
+        await settable_scroll_screen_down(pilot, 50)
+
+    async def final_stage_tasks():
+        await check_and_run_tab_refresh(pilot)
+        await settable_scroll_screen_down(pilot, how_much_down)
+        # os.rename(Path(work_dir_path) / "spec.json", Path(work_dir_path) / f"spec_{stage}.json")
+
+    # Map stages to the tasks they should trigger
+    tasks_by_stage = {
+        "at_features_tab_p1": [add_feature_related_tasks],
+        "at_features_tab_p2": [add_feature_related_tasks, feature_p2_and_final_tasks],
+        "at_spec_preview": [add_feature_related_tasks, feature_p2_and_final_tasks, final_stage_tasks],
+        "at_features_duplicate": [add_feature_related_tasks, feature_p2_and_final_tasks, duplicate],
+        "duplicate_at_spec_preview": [add_feature_related_tasks, feature_p2_and_final_tasks, duplicate, final_stage_tasks],
+    }
+    if stage == "at_spec_preview":
+        how_much_down = 60
+    elif stage == "duplicate_at_spec_preview":
+        how_much_down = 39
+
+    # Execute tasks based on the specified stage
+    # set work dir
+    await _set_work_dir(pilot, work_dir_path)
+    # set data dir
+    await _load_data(pilot, data_path)
+    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    await click_until_gone(pilot, "#only_one_button")
+
+    for task in tasks_by_stage[stage]:
+        await task()
+
+
+@pytest.mark.forked
+def test_task_based_at_features_tab_p1(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
+    """Add Task-based feature, unselect a condition, make a column in the table, delete it, make it again"""
+    run_before_with_extra_args = partial(
+        run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_features_tab_p1"
+    )
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+@pytest.mark.forked
+def test_task_based_at_features_tab_p2(
+    snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
+) -> None:
+    """Continue from test_task_based_at_features_tab_p1, scroll, make choices in the preprocessing part"""
+    run_before_with_extra_args = partial(
+        run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_features_tab_p2"
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+@pytest.mark.forked
+def test_task_based_features_at_spec_preview(
+    snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
+) -> None:
+    """Continue from test_task_based_at_features_tab_p2 to spec preview (last tab), also the spec file is saved for
+    further inspection."""
+
+    run_before_with_extra_args = partial(
+        run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_spec_preview"
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+@pytest.mark.forked
+def test_task_based_features_at_features_duplicate(
+    snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
+) -> None:
+    """Continue from test_task_based_at_features_tab_p2, click on duplicate, scroll to the part where the table and
+    preprocessing options can be seen."""
+    run_before_with_extra_args = partial(
+        run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="at_features_duplicate"
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+
+
+@pytest.mark.forked
+def test_task_based_features_duplicate_at_spec_preview(
+    snap_compare, start_app, fixed_tmp_path: Path, work_dir_path: Path, downloaded_data_path: Path
+) -> None:
+    """Continue from test_task_based_features_at_features_duplicate to spec preview because we need to be sure that the
+    duplicate was propagated also the the cache and further to the spec file."""
+
+    run_before_with_extra_args = partial(
+        run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="duplicate_at_spec_preview"
+    )
+
+    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
