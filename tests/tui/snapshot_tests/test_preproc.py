@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from .pilot_functions import run_before_for_reho_falff_preproc
+from ..pilot_functions import run_before_for_reho_falff_preproc
 
 
 @pytest.mark.forked
