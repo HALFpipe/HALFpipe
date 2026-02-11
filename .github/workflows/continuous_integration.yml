@@ -143,7 +143,7 @@ jobs:
           GITHUB_ACTIONS: true
         run: |
           echo "***Running TUI tests (informational)***"
-          py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
+          py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/snapshot_tests
       - name: Upload snapshot report
         if: always()
         uses: actions/upload-artifact@v4
@@ -163,7 +163,7 @@ jobs:
             --cov --cov-report=xml --dist=load \
             --numprocesses=2 \
             --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui" \
-            --ignore=tests/tui
+            --ignore=tests/tui/snapshot_tests
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
