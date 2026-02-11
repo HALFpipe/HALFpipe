@@ -9,7 +9,7 @@ import pytest
 
 from halfpipe.logging import logger
 
-from .pilot_functions import (
+from ..pilot_functions import (
     _load_data,
     _set_work_dir,
     add_atlas_or_seed_or_map_file_pattern,

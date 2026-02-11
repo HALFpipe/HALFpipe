@@ -9,7 +9,7 @@ import pytest
 
 from halfpipe.logging import logger
 
-from .pilot_functions import (
+from ..pilot_functions import (
     _load_data,
     _select_covariates_spreadsheet,
     _select_group_level_models_cutoffs_values,
