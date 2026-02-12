@@ -83,11 +83,9 @@ class BidsDatabase:
 
         tags = self.database.tags(file_path)
         if not isinstance(tags, dict):
-            logger.error(
-                'BidsDatabase.put-> file has no tags: "%s"',
-                file_path,
+            raise ValueError(
+                f'BidsDatabase.put-> file has no tags: "{file_path}"'
             )
-            raise ValueError(f'File "{file_path}" has no tags')
 
         logger.debug(
             "BidsDatabase.put-> source tags=%s",
@@ -155,12 +153,10 @@ class BidsDatabase:
             )
 
         if bids_path_result is None:
-            logger.error(
-                "BidsDatabase.put-> failed to build path for %s (tags=%s)",
-                file_path,
-                bids_tags,
+            raise ValueError(
+                f'BidsDatabase.put-> Unable to build BIDS-compliant path for '
+                f'"{file_path}" with tags "{bids_tags}"'
             )
-            raise ValueError(f'Unable to build BIDS-compliant path for "{file_path}" with tags "{bids_tags}"')
 
         bids_path = str(bids_path_result)
 
@@ -171,12 +167,10 @@ class BidsDatabase:
 
         if bids_path in self.file_paths:
             if self.file_paths[bids_path] != str(file_path):
-                logger.error(
-                    "BidsDatabase.put-> path collision: %s already mapped to %s",
-                    bids_path,
-                    self.file_paths[bids_path],
+                raise ValueError(
+                    f"BidsDatabase.put-> path collision: {bids_path} already mapped to "
+                    f"{self.file_paths[bids_path]}"
                 )
-                raise ValueError("Cannot assign different files to the same BIDS path")
 
         self.bids_paths[file_path] = str(bids_path)
         self.file_paths[bids_path] = str(file_path)
