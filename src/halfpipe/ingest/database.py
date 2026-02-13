@@ -15,10 +15,17 @@ from .resolve import ResolvedSpec
 
 class Database:
     def __init__(self, spec: Spec | ResolvedSpec, bids_database_dir: Path | None = None) -> None:
+        logger.info("Database initialization started")
+
         resolved_spec = None
         if isinstance(spec, ResolvedSpec):
+            logger.debug("Database.__init__: using provided ResolvedSpec")
             resolved_spec = spec
         elif isinstance(spec, Spec):
+            logger.debug(
+                "Database.__init__: resolving Spec (bids_database_dir=%s)",
+                bids_database_dir,
+            )
             resolved_spec = ResolvedSpec(spec, bids_database_dir=bids_database_dir)
         else:
             raise ValueError("Need to initialize Database with a Spec or ResolvedSpec")
@@ -29,8 +36,20 @@ class Database:
         self.filepaths_by_tags: dict[str, dict[str, set[str]]] = dict()
         self.tags_by_filepaths: dict[str, dict[str, str]] = dict()
 
-        for file_obj in self.resolved_spec.resolved_files:
+        logger.info(
+            "Indexing %d resolved files",
+            len(list(self.resolved_spec.resolved_files)),
+        )
+
+        for idx, file_obj in enumerate(self.resolved_spec.resolved_files, start=1):
+            logger.debug(
+                "Database.__init__: indexing file %d: %s",
+                idx,
+                file_obj.path,
+            )
             self.index(file_obj)
+
+        logger.info("Database initialization completed")
 
     def __hash__(self):
         return hash(tuple(self.tags_by_filepaths.keys()))
@@ -43,17 +62,46 @@ class Database:
         return hash.hexdigest()
 
     def put(self, spec_fileobj):
+        logger.debug("Database.put-> spec_fileobj.path=%s", spec_fileobj.path)
+
         resolved_files = self.resolved_spec.put(spec_fileobj)
-        for resolved_fileobj in resolved_files:
+
+        logger.debug(
+            "Database.put-> resolved %d files from spec file",
+            len(resolved_files),
+        )
+
+        for idx, resolved_fileobj in enumerate(resolved_files, start=1):
+            logger.debug(
+                "Database.put-> indexing resolved file %d/%d: %s",
+                idx,
+                len(resolved_files),
+                resolved_fileobj.path,
+            )
             self.index(resolved_fileobj)
-            logger.debug(f"Database.put->resolved_fileobj.tags:{resolved_fileobj.tags}")
+            logger.debug(
+                "Database.put-> resolved_fileobj.tags=%s",
+                resolved_fileobj.tags,
+            )
 
     def index(self, fileobj):
+        logger.debug("Database.index-> start path=%s", fileobj.path)
+
         def add_tag_to_index(filepath, entity, tagval):
             if tagval is None:
+                logger.debug(
+                    "Database.index-> skip tag %s=None for %s",
+                    entity,
+                    filepath,
+                )
                 return
 
-            logger.debug(f"Adding tag {entity}={tagval} for {filepath}")
+            logger.debug(
+                "Database.index-> adding tag %s=%s for %s",
+                entity,
+                tagval,
+                filepath,
+            )
 
             if entity not in self.filepaths_by_tags:
                 self.filepaths_by_tags[entity] = dict()
@@ -76,11 +124,23 @@ class Database:
         if hasattr(fileobj, "extension"):
             tagdict.update(dict(extension=fileobj.extension))
 
+        logger.debug(
+            "Database.index-> base tagdict=%s",
+            tagdict,
+        )
+
         self.tags_by_filepaths[filepath] = dict(**tagdict)
 
+        # ---- IntendedFor handling ---------------------------------------------
         if hasattr(fileobj, "intended_for"):
             intended_for = fileobj.intended_for
             if intended_for is not None:
+                logger.debug(
+                    "Database.index-> processing intended_for for %s: %s",
+                    filepath,
+                    intended_for,
+                )
+
                 for k, newvaluelist in intended_for.items():
                     from_entity, from_tagval = k.split(".")
 
@@ -89,9 +149,19 @@ class Database:
 
                     tagval = tagdict.get(from_entity)
                     if tagval != from_tagval:
+                        logger.debug(
+                            "Database.index-> intended_for mismatch %s=%s (expected %s)",
+                            from_entity,
+                            tagval,
+                            from_tagval,
+                        )
                         continue
 
                     if from_entity in tagdict:
+                        logger.debug(
+                            "Database.index-> removing original tag %s from index",
+                            from_entity,
+                        )
                         del tagdict[from_entity]  # not indexable by old tag
 
                     for v in newvaluelist:
@@ -100,6 +170,8 @@ class Database:
 
         for tagname, tagval in tagdict.items():
             add_tag_to_index(filepath, tagname, tagval)
+
+        logger.debug("Database.index-> completed path=%s", filepath)
 
     def tags(self, filepath):
         """
@@ -127,33 +199,64 @@ class Database:
         return self.filepaths_by_tags.get(entity)
 
     def get(self, **filters: str) -> set[str]:
+        logger.debug("Database.get-> filters=%s", filters)
+
         res = None
-        logger.debug(f"Database.get-> filters:{filters}")
         for tagname, tagval in filters.items():
+            logger.debug(
+                "Database.get-> applying filter %s=%s",
+                tagname,
+                tagval,
+            )
+
             if tagname in self.filepaths_by_tags and tagval in self.filepaths_by_tags[tagname]:
                 cur_set = self.filepaths_by_tags[tagname][tagval]
                 if res is not None:
                     res &= cur_set
                 else:
+                    logger.debug(
+                        "Database.get-> no matches for %s=%s",
+                        tagname,
+                        tagval,
+                    )
                     res = cur_set.copy()
             else:
                 res = None
                 break
+
         logger.debug(f"Database.get-> result:{res}")
         if res is None:
             return set()
         return res
 
     def filter(self, filepaths, **filters: str) -> set[str]:
+        logger.debug(
+            "Database.filter-> start filepaths=%d filters=%s",
+            len(filepaths),
+            filters,
+        )
+
         res = set(filepaths)
 
         for entity, tagval in filters.items():
+            logger.debug(
+                "Database.filter-> applying %s=%s",
+                entity,
+                tagval,
+            )
             if entity not in self.filepaths_by_tags:
+                logger.debug("Database.filter-> entity %s not indexed", entity)
                 return set()
             if tagval not in self.filepaths_by_tags[entity]:
+                logger.debug("Database.filter-> tagval %s not found for %s", tagval, entity)
                 return set()
             cur_set = self.filepaths_by_tags[entity][tagval]
             res &= cur_set
+
+        logger.debug(
+            "Database.filter-> remaining=%d",
+            len(res),
+        )
 
         return res
 
@@ -191,6 +294,11 @@ class Database:
         return res
 
     def associations(self, filepath: str, **filters: str) -> tuple[str, ...] | None:
+        logger.debug(
+            "Database.associations-> start filepath=%s filters=%s",
+            filepath,
+            filters,
+        )
         matching_files = self.get(**filters)
         logger.debug(f"Database.associations-> filepath:{filepath}, \n\n matching_files:{matching_files}")
         for entity in reversed(entities):  # from high to low priority
