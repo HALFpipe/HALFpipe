@@ -5,13 +5,18 @@
 import gc
 import os
 from concurrent.futures import ProcessPoolExecutor
+from copy import deepcopy
 from multiprocessing import cpu_count
 from threading import Thread
+from traceback import format_exception
 from typing import Any
 
 import nipype.pipeline.engine as pe
+import numpy as np
+import psutil
 from matplotlib import pyplot as plt
 from nipype.pipeline import plugins as nip
+from nipype.pipeline.engine.nodes import MapNode
 from nipype.utils.gpu_count import gpu_count
 from nipype.utils.profiler import get_system_total_memory_gb
 from stackprinter import format_current_exception
@@ -19,6 +24,21 @@ from stackprinter import format_current_exception
 from ..logging import logger
 from ..utils.multiprocessing import get_init_args, mp_context
 from .reftracer import PathReferenceTracer
+
+try:
+    from textwrap import indent
+except ImportError:
+
+    def indent(text, prefix):
+        """A textwrap.indent replacement for Python < 3.3"""
+        if not prefix:
+            return text
+        splittext = text.splitlines(True)
+        return prefix + prefix.join(splittext)
+
+
+SEQUENTIAL_MODE_THRESHOLD_GB = 1.5
+RECOVERY_THRESHOLD_GB = 2.0
 
 
 def initializer(
@@ -128,6 +148,8 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         if self._keep != "all":
             self._rt = PathReferenceTracer(self._cwd)
 
+        self._sequential_mode = False
+
     def _postrun_check(self):
         shutdown_thread = Thread(target=self.pool.shutdown, kwargs=dict(wait=True), daemon=True)
         shutdown_thread.start()
@@ -137,6 +159,160 @@ class MultiProcPlugin(nip.MultiProcPlugin):
                 "Shutdown of ProcessPoolExecutor timed out. This may lead to errors "
                 "when the program closes. These error messages can usually be ignored"
             )
+
+    def _check_resources(self, running_tasks):
+        """
+        Make sure there are resources available
+        """
+        free_memory_gb = self.memory_gb
+        free_processors = self.processors
+        for _, jobid in running_tasks:
+            free_memory_gb -= min(self.procs[jobid].mem_gb, free_memory_gb)
+            free_processors -= min(self.procs[jobid].n_procs, free_processors)
+
+        return free_memory_gb, free_processors
+
+    def _send_procs_to_workers(self, updatehash=False, graph=None):
+        """
+        Sends jobs to workers when system resources are available.
+        Dynamically switches between parallel and sequential mode based on memory.
+        """
+        # Check to see if a job is available (jobs with all dependencies run)
+        # See https://github.com/nipy/nipype/pull/2200#discussion_r141605722
+        # See also https://github.com/nipy/nipype/issues/2372
+        jobids = np.flatnonzero(~self.proc_done & (self.depidx.sum(axis=0) == 0).__array__())
+
+        free_memory_gb, free_processors = self._check_resources(self.pending_tasks)
+        # Accurate memory + CPU check
+        free_real_memory_gb = psutil.virtual_memory().available / (1024**3)
+
+        # Switch between sequential and multiproc mode
+        if not getattr(self, "_sequential_mode", False) and free_memory_gb < SEQUENTIAL_MODE_THRESHOLD_GB:
+            self._sequential_mode = True
+            logger.warning("[MultiProc] ⚠️ Low memory (< %.2f GB). Switching to SEQUENTIAL mode.", SEQUENTIAL_MODE_THRESHOLD_GB)
+        elif getattr(self, "_sequential_mode", False) and free_memory_gb > RECOVERY_THRESHOLD_GB:
+            self._sequential_mode = False
+            logger.info("[MultiProc] 🧠 Memory freed (> %.2f GB). Switching back to MULTIPROCESSING.", RECOVERY_THRESHOLD_GB)
+
+        stats = (
+            len(self.pending_tasks),
+            len(jobids),
+            free_memory_gb,
+            self.memory_gb,
+            free_processors,
+            self.processors,
+        )
+        if self._stats != stats:
+            tasks_list_msg = ""
+
+            running_tasks = ["  * %s" % self.procs[jobid].fullname for _, jobid in self.pending_tasks]
+            if running_tasks:
+                tasks_list_msg = "\nCurrently running:\n"
+                tasks_list_msg += "\n".join(running_tasks)
+                tasks_list_msg = indent(tasks_list_msg, " " * 21)
+            logger.info(
+                "[MultiProc] Running %d tasks, and %d jobs ready. Free "
+                "memory (GB): %0.2f/%0.2f, Free processors: %d/%d.%s, Free real memory:%s",
+                len(self.pending_tasks),
+                len(jobids),
+                free_memory_gb,
+                self.memory_gb,
+                free_processors,
+                self.processors,
+                tasks_list_msg,
+                free_real_memory_gb,
+            )
+            self._stats = stats
+
+        if free_memory_gb < 0.01 or free_processors == 0:
+            logger.debug("No resources available")
+            return
+
+        if len(jobids) + len(self.pending_tasks) == 0:
+            logger.debug("No tasks are being run, and no jobs can be submitted to the queue. Potential deadlock")
+            return
+
+        jobids = self._sort_jobs(jobids, scheduler=self.plugin_args.get("scheduler"))
+        gc.collect()
+
+        # Submit jobs
+        for jobid in jobids:
+            if isinstance(self.procs[jobid], MapNode):
+                try:
+                    num_subnodes = self.procs[jobid].num_subnodes()
+                except Exception:
+                    traceback = format_exception(*sys.exc_info())
+                    self._clean_queue(jobid, graph, result={"result": None, "traceback": traceback})
+                    self.proc_pending[jobid] = False
+                    continue
+                if num_subnodes > 1:
+                    submit = self._submit_mapnode(jobid)
+                    if not submit:
+                        continue
+
+            # Check requirements of this job
+            next_job_gb = min(self.procs[jobid].mem_gb, self.memory_gb)
+            next_job_th = min(self.procs[jobid].n_procs, self.processors)
+
+            can_fit = (next_job_gb <= free_memory_gb) and (next_job_th <= free_processors)
+
+            if not self._sequential_mode and not can_fit:
+                logger.debug("Cannot allocate job %d (%0.2fGB, %d threads).", jobid, next_job_gb, next_job_th)
+                continue
+
+            free_memory_gb -= next_job_gb
+            free_processors -= next_job_th
+            logger.debug(
+                "Allocating %s ID=%d (%0.2fGB, %d threads). Free: %0.2fGB, %d threads.",
+                self.procs[jobid].fullname,
+                jobid,
+                next_job_gb,
+                next_job_th,
+                free_memory_gb,
+                free_processors,
+            )
+
+            # change job status in appropriate queues
+            self.proc_done[jobid] = True
+            self.proc_pending[jobid] = True
+
+            # If cached and up-to-date just retrieve it, don't run
+            if self._local_hash_check(jobid, graph):
+                continue
+
+            # Run on master thread — either explicitly or due to low memory
+            if updatehash or self.procs[jobid].run_without_submitting or self._sequential_mode:
+                logger.debug("Running node %s on master thread (sequential=%s)", self.procs[jobid], self._sequential_mode)
+                try:
+                    self.procs[jobid].run(updatehash=updatehash)
+                except Exception:
+                    traceback = format_exception(*sys.exc_info())
+                    self._clean_queue(jobid, graph, result={"result": None, "traceback": traceback})
+
+                # Release resources
+                self._task_finished_cb(jobid)
+                self._remove_node_dirs()
+                free_memory_gb += next_job_gb
+                free_processors += next_job_th
+                # Display stats next loop
+                self._stats = None
+
+                # Clean up any debris from running node in main process
+                gc.collect()
+                continue
+
+            # Task should be submitted to workers
+            # Send job to task manager and add to pending tasks
+            if self._status_callback:
+                self._status_callback(self.procs[jobid], "start")
+            tid = self._submit_job(deepcopy(self.procs[jobid]), updatehash=updatehash)
+            if tid is None:
+                self.proc_done[jobid] = False
+                self.proc_pending[jobid] = False
+            else:
+                self.pending_tasks.insert(0, (tid, jobid))
+            # Display stats next loop
+            self._stats = None
 
     def _submit_job(self, node, updatehash=False):
         self._taskid += 1
