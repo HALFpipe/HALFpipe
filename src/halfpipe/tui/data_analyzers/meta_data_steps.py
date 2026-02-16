@@ -376,7 +376,7 @@ class SetMetadataStep:
                     id="set_value_modal",
                 )
             )
-            await self.next(choice)
+            return await self.next(choice)
 
         elif isinstance(field, fields.Float):
             self.input_view.append("this requires a number input from the user")
@@ -391,7 +391,7 @@ class SetMetadataStep:
                     id="select_value_modal",
                 )
             )
-            await self.next(choice)
+            return await self.next(choice)
 
         else:
             raise ValueError(f'Unsupported metadata field "{field}"')
@@ -542,6 +542,8 @@ class CheckMetadataStep:
 
     show_summary: ClassVar[bool] = True
 
+    allow_cancel = False
+
     def _should_skip(self, _):
         return False
 
@@ -670,8 +672,6 @@ class CheckMetadataStep:
         if self.is_missing is False:
             self._append_view.append("Proceed with these values?")
             self.input_view.append("users yes/no choice")
-            # here i need to rise modal with yes/no
-            # self._append_view(self.input_view)
 
         if self.show_summary is True or self.is_missing is False:
             pass
@@ -706,8 +706,9 @@ class CheckMetadataStep:
                 " ".join(self._append_view),
                 left_button_text="YES",
                 right_button_text="NO",
-                left_button_variant="error",
-                right_button_variant="success",
+                extra_button_text="Cancel" if self.allow_cancel else None,
+                # left_button_variant="error",
+                # right_button_variant="success",
                 title="Check meta data",
                 id="check_meta_data_modal",
                 classes="confirm_warning",
@@ -716,7 +717,10 @@ class CheckMetadataStep:
             # Ensure the modal widget is actually removed from the DOM before continuing.
             while check_meta_data_modal.is_attached:
                 await asyncio.sleep(1)
-            await self.next(choice)
+            if choice is None:
+                return "cancel"
+            else:
+                await self.next(choice)
 
     async def next(self, choice):
         """
@@ -736,7 +740,7 @@ class CheckMetadataStep:
                 sub_id_key=self.sub_id_key,
                 current_specfileobj=self.current_specfileobj,
             )
-            await next_step_instance.run()
+            return await next_step_instance.run()
 
         elif choice is True and self.next_step_type is None:
             return self.callback(self.callback_message)
@@ -755,9 +759,9 @@ class CheckMetadataStep:
                 sub_id_key=self.sub_id_key,
                 current_specfileobj=self.current_specfileobj,
             )
-            await set_instance_step.run()
+            return await set_instance_step.run()
         else:
-            pass
+            return "cancel"
 
 
 class CheckPhaseDiffEchoTime2Step(CheckMetadataStep):
@@ -1183,6 +1187,8 @@ class CheckBoldSliceTimingStep(CheckMetadataStep):
     key = "slice_timing"
     filters = {"datatype": "func", "suffix": "bold"}
 
+    allow_cancel = True
+
     def _should_skip(self, ctx):
         if self.key in ctx.already_checked:
             return True
@@ -1217,6 +1223,7 @@ class CheckBoldSliceEncodingDirectionStep(CheckMetadataStep):
     filters = {"datatype": "func", "suffix": "bold"}
 
     next_step_type = CheckBoldSliceTimingStep
+    allow_cancel = True
 
 
 class CheckSpaceStep(CheckMetadataStep):

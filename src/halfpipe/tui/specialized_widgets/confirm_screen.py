@@ -65,6 +65,7 @@ class Confirm(DraggableModalScreen):
         classes: str | None = None,
         width=None,
         message_widget=Static,
+        extra_button_text=None,
     ) -> None:
         """
         Initializes the Confirm modal with provided parameters.
@@ -120,6 +121,10 @@ class Confirm(DraggableModalScreen):
                 Button(left_button_text, variant=left_button_variant, classes="button ok", id="ok_left_button"),
                 Button(right_button_text, variant=right_button_variant, classes="button cancel", id="cancel_right_button"),
             ]
+        self.extra_button = False
+        if extra_button_text is not None:
+            self.buttons.append(Button(extra_button_text, classes="button extra", id="extra_button"))
+            self.extra_button = True
 
     def on_resize(self):
         """
@@ -166,7 +171,24 @@ class Confirm(DraggableModalScreen):
         It calls `request_close` to dismiss the modal with a value of
         False.
         """
-        self.request_close()
+        # self.request_close()
+        # Clicking on the 'X' in the draggable window bar, escape key and the close button must always yield the same dismiss
+        # value!
+        if self.active_index == 0:  # default button is the 'Ok' button
+            self.dismiss(True)
+        else:  # default button is the 'Cancel' button or we have bot buttons
+            self.dismiss(False)
+
+    @on(Button.Pressed, "#extra_button")
+    def on_extra_button_pressed(self):
+        """
+        Handles the event when the "Cancel" button is pressed.
+
+        This method is called when the user presses the "Cancel" button.
+        It calls `request_close` to dismiss the modal with a value of
+        False.
+        """
+        self.dismiss(None)
 
     def key_escape(self):
         """
@@ -199,6 +221,8 @@ class Confirm(DraggableModalScreen):
         # value!
         if self.active_index == 0:  # default button is the 'Ok' button
             self.dismiss(True)
+        elif self.extra_button:
+            self.dismiss(None)
         else:  # default button is the 'Cancel' button or we have bot buttons
             self.dismiss(False)
 

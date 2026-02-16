@@ -1,9 +1,28 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import os
 import shutil
 from pathlib import Path
 
 from halfpipe.logging import logger
+
+
+async def click_until_gone(pilot, selector: str, max_failures: int = 3, delay: float = 0.1):
+    """
+    Clicks a UI element repeatedly until it no longer exists.
+
+    Stops only after `max_failures` consecutive exceptions.
+    """
+    failures = 0
+
+    while failures < max_failures:
+        try:
+            await pilot.click(selector)
+            failures = 0
+        except Exception:
+            failures += 1
+
+        await asyncio.sleep(delay)
 
 
 async def _load_data(pilot, data_path) -> None:
@@ -16,11 +35,24 @@ async def _load_data(pilot, data_path) -> None:
         await enter_browse_path(pilot, data_path)
         # click Ok on Modal informing us that the data input is success
         # await pilot.click(offset=(121, 31))
+        # await pilot.pause(3)
+        # await pilot.wait_for_scheduled_animations()
         await pilot.click("#only_one_button")
+        # await pilot.wait_for_scheduled_animations()
         logger.debug("Bids data directory is set.")
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
+    # await pilot.wait_for_scheduled_animations()
+    # this part is to safely dismiss load screen
+    # load_modal = True
+    # while load_modal:
+    #     try:
+    #         load_modal_widget = pilot.app.get_widget_by_id("load_modal_panel")
+    #         await pilot.app.pop_screen()
+    #         load_modal = True
+    #     except NoMatches:
+    #         load_modal = False
 
 
 async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None:
@@ -50,6 +82,7 @@ async def _set_work_dir(pilot, work_dir_path, load_from_spec_file=False) -> None
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
+    await pilot.wait_for_scheduled_animations()
 
 
 async def enter_browse_path(pilot, path):
@@ -69,7 +102,7 @@ async def enter_browse_path(pilot, path):
     # click on the Enter button
     # await pilot.click(offset=(110, 41))
     await pilot.click("#ok_button")
-    logger.debug("UI tests -> The browse path is set.")
+    logger.debug(f"UI tests -> The browse path {path} is set.")
 
 
 async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
@@ -83,15 +116,33 @@ async def _select_covariates_spreadsheet(pilot, spreadsheet_path):
     logger.debug(f"UI tests -> The spreadsheet path: {spreadsheet_path}")
 
     await enter_browse_path(pilot, spreadsheet_path)
-    # set sex as categorical
-    # await pilot.click(offset=(119, 32))
-    await pilot.click(pilot.app.get_widget_by_id("row_radio_sets_3").get_widget_by_id("radio_column_2"))
-    # set site as categorical
-    # await pilot.click(offset=(119, 34))
-    await pilot.click(pilot.app.get_widget_by_id("row_radio_sets_4").get_widget_by_id("radio_column_2"))
+
+    # set sex as categorical  (row 3, column 2)
+    await ensure_radio_selected(pilot, row_index=3, column_index=2)
+    # set site as categorical (row 4, column 2)
+    await ensure_radio_selected(pilot, row_index=4, column_index=2)
+    # await ensure_radio_selected(pilot, row_index=5, column_index=2)
+
     # click Ok
-    # await pilot.click(offset=(129, 43))
     await pilot.click("#ok")
+
+
+async def ensure_radio_selected(pilot, row_index: int, column_index: int, retries: int = 3):
+    """
+    Ensures that the radio button at (row_index, column_index) is selected.
+    Retries a few times because widgets may not be ready on first attempt.
+    """
+    for _ in range(retries):
+        try:
+            row_widget = pilot.app.get_widget_by_id(f"row_radio_sets_{row_index}")
+            radio_widget = row_widget.get_widget_by_id(f"radio_column_{column_index}")
+
+            if not radio_widget.value:
+                await pilot.click(radio_widget)
+
+            return  # success → exit
+        except Exception:
+            pass  # retry on failure
 
 
 async def _select_group_level_models_cutoffs_values(pilot):
@@ -160,7 +211,9 @@ async def add_new_feature(pilot, feature_type=None, label=None, tab_type="f") ->
             await pilot.press(letter)
         # click on Ok button
         # await pilot.click(offset=(100, 30))
-        await pilot.click("#ok")
+        await click_until_gone(pilot, "#only_one_button")
+        await click_until_gone(pilot, "#ok")
+
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
@@ -253,9 +306,8 @@ async def delete_column(pilot) -> None:
 
 async def set_grand_mean_scaling(pilot, value="12345"):
     await pilot.click(pilot.app.get_widget_by_id("grand_mean_scaling").get_widget_by_id("input_switch_input_box"))
-    for _i in range(10):
-        await pilot.press("backspace")
-        await pilot.press("delete")
+    await clear_entry(pilot)
+
     for i in value:
         await pilot.press(i)
 
@@ -276,27 +328,21 @@ async def toggle_bandpass_filter(pilot):
 
 async def set_bandpass_filter_lp_width(pilot, value="8"):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_lp_width").get_widget_by_id("input_switch_input_box"))
-    for _i in range(5):
-        await pilot.press("backspace")
-        await pilot.press("delete")
+    await clear_entry(pilot)
     for v in value:
         await pilot.press(v)
 
 
 async def set_bandpass_filter_hp_width(pilot, value="9"):
     await pilot.click(pilot.app.get_widget_by_id("bandpass_filter_hp_width").get_widget_by_id("input_switch_input_box"))
-    for _i in range(5):
-        await pilot.press("backspace")
-        await pilot.press("delete")
+    await clear_entry(pilot)
     for v in value:
         await pilot.press(v)
 
 
 async def set_smoothing(pilot, value="9"):
     await pilot.click(pilot.app.get_widget_by_id("smoothing").get_widget_by_id("input_switch_input_box"))
-    for _i in range(5):
-        await pilot.press("backspace")
-        await pilot.press("delete")
+    await clear_entry(pilot)
     for v in value:
         await pilot.press(v)
 
@@ -400,12 +446,12 @@ async def add_bold(pilot, bold_pattern_path, set_repetition_time) -> None:
         await pilot.click("#cancel_right_button")
 
         # Specify repetition time in seconds: Click into prompt
-        # await pilot.click(offset=(96, 27))
-        await pilot.click("#input_prompt")
-        # Set time to '9'
+        # await pilot.click(pilot.app.get_widget_by_id("input_prompt"))
+        await clear_entry(pilot)
+        # # Set time to '9'
         await pilot.press("9")
-        # Click Ok to dismiss
-        # await pilot.click(offset=(96, 31))
+        # # Click Ok to dismiss
+        # # await pilot.click(offset=(96, 31))
         await pilot.click("#only_one_button")
     else:
         # click Ok
@@ -440,6 +486,7 @@ async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> No
             # now there should be a modal informing that first echo times are missing, we dismiss it
             await pilot.click("#only_one_button")
             await pilot.click("#input_prompt")
+            await clear_entry(pilot)
             # Set echo time to '1'
             await pilot.press(str(i))
             # Click Ok to dismiss
@@ -453,6 +500,12 @@ async def add_fmap(pilot, phase_diff_fmap_pattern, magnitude_fmap_pattern) -> No
     # await settable_scroll_screen_down(pilot, 10)
 
 
+async def clear_entry(pilot) -> None:
+    for _i in range(20):
+        await pilot.press("backspace")
+        await pilot.press("delete")
+
+
 async def associate_fmaps(pilot) -> None:
     try:
         await pilot.click("#associate_button")
@@ -461,7 +514,9 @@ async def associate_fmaps(pilot) -> None:
         await pilot.click("#only_one_button")
         # enter some value
         await pilot.click("#input_prompt")
+        await clear_entry(pilot)
         await pilot.press(str(9))
+
         await pilot.click("#only_one_button")
         # missing phase encoding direction modal
         # dismiss it
@@ -519,8 +574,10 @@ async def set_non_bids_data(
             await pilot.click("#confirm_non_bids_button")
             # click Ok on Modal informing us that the data input is success
             await pilot.click("#only_one_button")
-            # Click Ok on Modal saying that data and workdir is set and user can proceed further
+            # # Click Ok on Modal saying that data and workdir is set and user can proceed further
             await pilot.click("#only_one_button")
+            await pilot.click("#only_one_button")
+
         except Exception as e:
             pilot.app.save_screenshot()
             logger.info(e)
@@ -646,7 +703,8 @@ async def run_before_for_reho_falff_preproc(
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await pilot.click("#only_one_button")
+    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
+    await click_until_gone(pilot, "#only_one_button")
 
     for task in tasks_by_stage[stage]:
         await task()
@@ -677,6 +735,10 @@ async def add_atlas_or_seed_or_map_file_pattern(pilot, file_pattern, event_file_
         # make choices of the space if it is not an event file pattern
         if event_file_pattern is False:
             await confirm_space_meta_data_after_selecting_file_pattern(pilot)
+
+        await click_until_gone(pilot, "#only_one_button")
+        await click_until_gone(pilot, "#ok")
+
     except Exception as e:
         pilot.app.save_screenshot()
         logger.info(e)
@@ -715,3 +777,21 @@ async def set_minimum_coverage(pilot, value="0.85"):
         await pilot.press("backspace")
     for v in value:
         await pilot.press(v)
+
+
+async def select_file_tags(pilot, which_ones: list[int]):
+    await pilot.click("#file_tag_selection")
+
+    current_pos = 0  # start before first option
+
+    for target in which_ones:
+        # Move down until we reach the desired option
+        moves = target - current_pos
+        for _ in range(moves):
+            await pilot.press("down")
+
+        # Select it
+        await pilot.press("enter")
+
+        # Update current cursor position
+        current_pos = target

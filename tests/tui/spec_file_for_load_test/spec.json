@@ -46,29 +46,11 @@
             "extension": ".nii.gz",
             "tags": {},
             "metadata": {
-                "repetition_time": 9.0,
-                "slice_timing_code": "sequential increasing",
                 "phase_encoding_direction": "lr",
+                "repetition_time": 9.0,
                 "effective_echo_spacing": 66.0,
+                "slice_timing_code": "sequential increasing",
                 "slice_encoding_direction": "is"
-            }
-        },
-        {
-            "path": "/tmp/tui_test/ds002785/sub-{sub}/fmap/sub-{sub}_phasediff.nii.gz",
-            "datatype": "fmap",
-            "suffix": "phasediff",
-            "extension": ".nii.gz",
-            "tags": {},
-            "intended_for": {
-                "acq.null": [
-                    "task.anticipation_acq-seq",
-                    "task.workingmemory_acq-seq",
-                    "task.restingstate_acq-mb3"
-                ]
-            },
-            "metadata": {
-                "echo_time1": 1.0,
-                "echo_time2": 2.0
             }
         },
         {
@@ -79,10 +61,28 @@
             "tags": {},
             "intended_for": {
                 "acq.null": [
+                    "task.restingstate_acq-mb3",
                     "task.anticipation_acq-seq",
-                    "task.workingmemory_acq-seq",
-                    "task.restingstate_acq-mb3"
+                    "task.workingmemory_acq-seq"
                 ]
+            }
+        },
+        {
+            "path": "/tmp/tui_test/ds002785/sub-{sub}/fmap/sub-{sub}_phasediff.nii.gz",
+            "datatype": "fmap",
+            "suffix": "phasediff",
+            "extension": ".nii.gz",
+            "tags": {},
+            "intended_for": {
+                "acq.null": [
+                    "task.restingstate_acq-mb3",
+                    "task.anticipation_acq-seq",
+                    "task.workingmemory_acq-seq"
+                ]
+            },
+            "metadata": {
+                "echo_time1": 1.0,
+                "echo_time2": 2.0
             }
         },
         {
@@ -202,6 +202,7 @@
             "output_image": false
         },
         {
+            "space": "standard",
             "ica_aroma": false,
             "grand_mean_scaling": {
                 "mean": 10000.0
@@ -411,10 +412,12 @@
             "name": "taskBased_1",
             "setting": "taskBased1Setting",
             "type": "task_based",
+            "model_serial_correlations": true,
             "conditions": [
                 "cue_negative",
                 "img_neutral"
             ],
+            "estimation": "multiple_trial",
             "contrasts": [
                 {
                     "type": "t",
@@ -444,6 +447,7 @@
             "smoothing": {
                 "fwhm": 96.0
             },
+            "zscore": true,
             "unfiltered_setting": "fALFF_1UnfilteredSetting"
         },
         {
@@ -467,16 +471,19 @@
         {
             "name": "reHo_1",
             "setting": "reHo1Setting",
-            "type": "reho"
+            "type": "reho",
+            "zscore": true
         },
         {
             "name": "taskBased_2",
             "setting": "taskBased2Setting",
             "type": "task_based",
+            "model_serial_correlations": true,
             "conditions": [
                 "active_nochange",
                 "passive"
             ],
+            "estimation": "multiple_trial",
             "contrasts": [
                 {
                     "type": "t",
@@ -494,6 +501,7 @@
             "name": "fALFF_2",
             "setting": "fAlff2Setting",
             "type": "falff",
+            "zscore": true,
             "unfiltered_setting": "fALFF_2UnfilteredSetting"
         }
     ],
