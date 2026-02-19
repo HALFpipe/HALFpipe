@@ -126,13 +126,9 @@ jobs:
             --follow /dev/null
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Run integration tests
+      - name: Install Freesurfer license
         shell: docker exec test bash -x -e {0}
-        env:
-          # Enable pytest-github-actions-annotate-failures
-          GITHUB_ACTIONS: true
         run: |
-          # Install the Freesurfer license
           cat > ${FREESURFER_HOME}/license.txt <<EOF
           halfpipe@fmri.science
           73053
@@ -140,22 +136,35 @@ jobs:
            FSCA7.lDgNIow
            e1n3o06osRFD3qtBRgsTy9f9bQHGOpY/riIUrHoEx5c=
           EOF
-          failure=0
-          # Run the integration tests
-          # echo "***Running TUI tests***"
-          # py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui
-          echo "***Running backend tests***"
-          py.test -k 'not test_consistency' \
-            --cov --cov-report=xml --dist=load \
-            --numprocesses=2 \
-            --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui"\
-            --ignore=tests/tui
+      - name: Run TUI snapshot tests (informational)
+        continue-on-error: true
+        shell: docker exec test bash -x -e {0}
+        env:
+          GITHUB_ACTIONS: true
+        run: |
+          echo "***Running TUI tests (informational)***"
+          py.test /home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/snapshot_tests
       - name: Upload snapshot report
-        if: ${{ failure() }}
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: snapshot-report
           path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
+          if-no-files-found: ignore
+      - name: Run integration tests
+        shell: docker exec test bash -x -e {0}
+        env:
+          # Enable pytest-github-actions-annotate-failures
+          GITHUB_ACTIONS: true
+        run: |
+          # Run the integration tests
+          echo "***Running backend tests***"
+          py.test -k 'not test_consistency' \
+            --cov --cov-report=xml --dist=load \
+            --numprocesses=2 \
+            --ignore="/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui" \
+            --ignore=tests/tui/snapshot_tests
+
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:

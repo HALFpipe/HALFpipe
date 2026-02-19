@@ -76,6 +76,19 @@ FeatureSelection {
     }
 }
 
+FeatureSelectionModal {
+
+    #draggable_modal_screen_container_wrapper {
+    min-width: 44;
+    height: 28;
+    }
+    #options {
+        margin: 1;
+        min-width: 10;
+        content-align: center middle;
+    }
+}
+
 ReHo {
     #zscore_panel {
         height: 5;

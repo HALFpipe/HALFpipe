@@ -346,31 +346,37 @@ class Preprocessing(Widget):
     @on(Switch.Changed, "#time_slicing_switch")
     async def on_time_slicing_switch_changed(self, message: Message):
         if message.value is True:
-            self.get_widget_by_id("slice_timming_info").styles.visibility = "visible"
-            self.get_widget_by_id("slice_timing").styles.height = "auto"
-
-            ctx.spec.global_settings["slice_timing"] = True
             meta_step_instance = CheckBoldSliceEncodingDirectionStep(self.app, callback=self.callback_func)
-            await meta_step_instance.run()
+            result = await meta_step_instance.run()
+            if result != "cancel":
+                self.get_widget_by_id("slice_timming_info").styles.visibility = "visible"
+                self.get_widget_by_id("slice_timing").styles.height = "auto"
+                ctx.spec.global_settings["slice_timing"] = True
+            else:
+                message.control.value = False
+                self.clear_time_slicing_in_cache()
         else:
             ctx.spec.global_settings["slice_timing"] = False
             self.get_widget_by_id("slice_timming_info").styles.visibility = "hidden"
             self.get_widget_by_id("slice_timing").styles.height = "5"
+            self.clear_time_slicing_in_cache()
 
-            # need to delete in from all the bold filebojs
-            for widget_id, the_dict in ctx.cache.items():
-                # should always be there
-                if "files" in the_dict:
-                    if isinstance(the_dict["files"], File):
-                        is_ok = True
-                        if the_dict["files"].datatype != "func":
-                            is_ok = False
-                        if the_dict["files"].suffix != "bold":
-                            is_ok = False
-                        if is_ok:
-                            # add dict if it does not exist
-                            ctx.cache[widget_id]["files"].metadata.pop("slice_timing_code", None)
-                            ctx.cache[widget_id]["files"].metadata.pop("slice_encoding_direction", None)
+    @staticmethod
+    def clear_time_slicing_in_cache():
+        # need to delete in from all the bold filebojs
+        for widget_id, the_dict in ctx.cache.items():
+            # should always be there
+            if "files" in the_dict:
+                if isinstance(the_dict["files"], File):
+                    is_ok = True
+                    if the_dict["files"].datatype != "func":
+                        is_ok = False
+                    if the_dict["files"].suffix != "bold":
+                        is_ok = False
+                    if is_ok:
+                        # add dict if it does not exist
+                        ctx.cache[widget_id]["files"].metadata.pop("slice_timing_code", None)
+                        ctx.cache[widget_id]["files"].metadata.pop("slice_encoding_direction", None)
 
     def callback_func(self, message_dict: dict):
         """
@@ -411,7 +417,7 @@ class Preprocessing(Widget):
             select_widget.styles.background = "50% green"
             pass
         else:
-            select_widget.value = select_widget.BLANK
+            select_widget.value = select_widget.NULL
             select_widget.styles.background = "40% red"
 
     @on(Input.Changed, "#number_of_remove_initial_volumes")
