@@ -417,7 +417,7 @@ class Preprocessing(Widget):
             select_widget.styles.background = "50% green"
             pass
         else:
-            select_widget.value = select_widget.BLANK
+            select_widget.value = select_widget.NULL
             select_widget.styles.background = "40% red"
 
     @on(Input.Changed, "#number_of_remove_initial_volumes")

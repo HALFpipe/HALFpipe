@@ -7,7 +7,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container, Grid, Horizontal, ScrollableContainer, Vertical
 from textual.widgets import Button, Select, SelectionList, Static
-from textual.widgets._select import BLANK
+from textual.widgets._select import NULL
 from textual.widgets.selection_list import Selection
 
 from ...ingest.spreadsheet import read_spreadsheet
@@ -119,10 +119,10 @@ class LinearModel(ModelTemplate):
         spreadsheet_selection = Select(
             [(i[1], i[0]) for i in self.spreadsheet_filepaths.items()],
             value=next(
-                (key for key, value in self.spreadsheet_filepaths.items() if value == self.model_dict["spreadsheet"]), BLANK
+                (key for key, value in self.spreadsheet_filepaths.items() if value == self.model_dict["spreadsheet"]), NULL
             )
             if self.model_dict["spreadsheet"] is not None
-            else BLANK,
+            else NULL,
             id="spreadsheet_selection",
         )
 
@@ -218,7 +218,7 @@ class LinearModel(ModelTemplate):
         if widget_exists(self, "top_contrast_panel") is True:
             await self.get_widget_by_id("top_contrast_panel").remove()
 
-        if message.value == BLANK:
+        if message.value == NULL:
             self.model_dict.pop("spreadsheet", None)
             self.model_dict["contrasts"] = []
             self.model_dict["filters"] = [
@@ -227,7 +227,7 @@ class LinearModel(ModelTemplate):
             # Pretend that it is a new model because this is what happens when we switch off the spreadsheet file.
             self.is_new = True
 
-        if message.value != BLANK:
+        if message.value != NULL:
             spreadsheet_cache_id = message.value
             metadata_variables = ctx.cache[spreadsheet_cache_id]["files"].metadata["variables"]  # type: ignore
             self.metadata_variables = metadata_variables
