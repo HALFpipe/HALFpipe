@@ -4,7 +4,6 @@ from functools import partial
 from pathlib import Path
 
 import pytest
-
 from tests.tui.spec_file_load_flow import run_before
 
 
