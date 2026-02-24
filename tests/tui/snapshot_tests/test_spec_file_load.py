@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from ..spec_file_load_flow import run_before
+from tests.tui.spec_file_load_flow import run_before
 
 
 @pytest.mark.forked
