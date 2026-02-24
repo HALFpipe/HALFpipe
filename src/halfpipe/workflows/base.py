@@ -78,8 +78,8 @@ def init_workflow(
     # globally initialize reference resolution and space from the global settings
     configurables.reference_res = spec.global_settings.get("reference_res")
     configurables.reference_space = spec.global_settings.get("reference_space")
-    logger.info(f'Reference resolution is set to {configurables.reference_res}')
-    logger.info(f'Reference resolution is set to {configurables.reference_space}')
+    logger.info(f"Reference resolution is set to {configurables.reference_res}")
+    logger.info(f"Reference resolution is set to {configurables.reference_space}")
 
     # create factories
     logger.debug("init_workflow->creating factories")
