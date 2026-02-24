@@ -1,6 +1,8 @@
-from .pilot_functions import _set_work_dir, check_and_run_tab_refresh, click_until_gone, settable_scroll_screen_down
-from halfpipe.logging import logger
 from pathlib import Path
+
+from halfpipe.logging import logger
+
+from .pilot_functions import _set_work_dir, check_and_run_tab_refresh, click_until_gone, settable_scroll_screen_down
 
 widget_label_map = {
     "dualReg_1": "#feature_item_4_flabel",
