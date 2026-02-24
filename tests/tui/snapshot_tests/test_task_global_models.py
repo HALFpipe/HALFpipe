@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from halfpipe.logging import logger
-
 from tests.tui.pilot_functions import (
     _load_data,
     _select_covariates_spreadsheet,

@@ -8,7 +8,6 @@ from pathlib import Path
 import pytest
 
 from halfpipe.logging import logger
-
 from tests.tui.pilot_functions import (
     _set_work_dir,
     add_atlas_or_seed_or_map_file_pattern,
