@@ -76,8 +76,17 @@ def init_workflow(
         raise RuntimeError("Nothing to do. Please specify features to calculate and/or select to output a preprocessed image")
 
     # globally initialize reference resolution and space from the global settings
-    configurables.reference_res = spec.global_settings.get("reference_res", configurables.reference_res)
-    configurables.reference_space = spec.global_settings.get("reference_space", configurables.reference_space)
+    # these values should never be none, they are taken from the global settings, but which check that here
+    # also because of mypy they need to be passed using temporary variable '_value'
+    _value = spec.global_settings.get("reference_res")
+    assert _value is not None
+    configurables.reference_res = _value
+    _value = spec.global_settings.get("reference_space")
+    assert _value is not None
+    configurables.reference_space = _value
+
+    logger.info(f"Reference resolution is set to {configurables.reference_res}")
+    logger.info(f"Reference resolution is set to {configurables.reference_space}")
 
     # create factories
     logger.debug("init_workflow->creating factories")
