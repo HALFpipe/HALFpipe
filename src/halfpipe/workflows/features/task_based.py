@@ -27,65 +27,8 @@ from ...utils.format import format_workflow
 from ...utils.ops import first_float, first_str
 from ..memory import MemoryCalculator
 
-# def _write_trial_file(subject_info, out_file="events.tsv"):
-#     """
-#     Create a BIDS-like events.tsv sorted by onset from a Nipype Bunch.
 
-#     Writes columns:
-#       onset  duration  trial_type  trial_id
-
-#     trial_id is numbered per condition in onset-sorted order:
-#       <condition>_001, <condition>_002, ...
-#     """
-
-#     import csv
-#     from collections import defaultdict
-#     from pathlib import Path
-
-#     from nipype.interfaces.base import Bunch
-
-#     if not isinstance(subject_info, Bunch):
-#         raise TypeError("subject_info must be a Bunch object")
-
-#     # Nipype's Bunch is dict-like, but we’ll use attribute access as in your code.
-#     conditions = subject_info.conditions
-#     onsets_lists = subject_info.onsets
-#     durations_lists = getattr(subject_info, "durations", None)
-
-#     events = []
-#     for i, (cond, onset_list) in enumerate(zip(conditions, onsets_lists, strict=True)):
-#         dur_list = None
-#         if durations_lists is not None:
-#             dur_list = durations_lists[i]
-#         for j, onset in enumerate(onset_list):
-#             if dur_list is None:
-#                 duration = 0.0
-#             else:
-#                 duration = float(dur_list[j])
-#             events.append((float(onset), duration, str(cond)))
-
-#     # Sort by onset
-#     events.sort(key=lambda x: x[0])
-
-#     # Number per condition in sorted order
-#     counters: dict[str, int] = defaultdict(int)
-
-#     # Write TSV
-#     out_path = Path(out_file).absolute()
-#     out_path.parent.mkdir(parents=True, exist_ok=True)
-
-#     with out_path.open("w", newline="") as f:
-#         w = csv.writer(f, delimiter="\t")
-#         w.writerow(["onset", "duration", "trial_type", "trial_id"])
-#         for onset, duration, cond in events:
-#             counters[cond] += 1
-#             trial_id = f"{cond}_{counters[cond]:03d}"
-#             w.writerow([f"{onset:.6f}", f"{duration:.6f}", cond, trial_id])
-
-#     return str(out_path)
-
-
-def _add_temporal_derivative_conditions(hrf, condition_names):
+def _add_temporal_derivative_conditions(hrf: str, condition_names: list[str]) -> list[str]:
     if hrf == "dgamma":
         return condition_names
 
@@ -175,7 +118,7 @@ def _least_squares_single_events(subject_info):
 
 def _group_least_squares_all_parameter_estimates(
     subject_infos: list, param_estimates: list
-) -> tuple[list[str], list[list[str]]]:
+) -> tuple[list[str], list[list[str]], list[list[dict]]]:
     from collections import defaultdict
 
     from nipype.interfaces.base import Bunch
@@ -185,33 +128,45 @@ def _group_least_squares_all_parameter_estimates(
     if not isinstance(subject_info, Bunch):
         raise TypeError("subject_info must be a Bunch object")
 
-    groups: dict[str, list[str]] = defaultdict(list)
+    parameter_estimates: dict[str, list[str]] = defaultdict(list)
+    events: dict[str, list[dict[str, float]]] = defaultdict(list)
 
-    conditions = subject_info.conditions
-    for condition, param_estimate in zip(conditions, param_estimates, strict=False):
+    conditions: list[str] = subject_info.conditions
+    onsets: list[list[float]] = subject_info.onsets
+    durations: list[list[float]] = subject_info.durations
+    for condition, (onset,), (duration,), param_estimate in zip(conditions, onsets, durations, param_estimates, strict=False):
         condition, _ = condition.rsplit("_", 1)  # Get condition name without trial index
-        groups[condition].append(param_estimate)
+        parameter_estimates[condition].append(param_estimate)
+        events[condition].append(dict(onset=onset, duration=duration))
 
-    return list(groups.keys()), list(groups.values())
+    if parameter_estimates.keys() != events.keys():
+        raise ValueError("Mismatch between conditions in parameter estimates and events")
+    return list(parameter_estimates.keys()), list(parameter_estimates.values()), list(events.values())
 
 
 def _group_least_squares_single_parameter_estimates(
     subject_infos: list, param_estimates: list
-) -> tuple[list[str], list[list[str]]]:
+) -> tuple[list[str], list[list[str]], list[list[dict]]]:
     from collections import defaultdict
 
     from nipype.interfaces.base import Bunch
 
-    groups: dict[str, list[str]] = defaultdict(list)
+    parameter_estimates: dict[str, list[str]] = defaultdict(list)
+    events: dict[str, list[dict[str, float]]] = defaultdict(list)
+
     for subject_info, param_estimate in zip(subject_infos, param_estimates, strict=True):
         if not isinstance(subject_info, Bunch):
             raise TypeError("subject_info must be a Bunch object")
 
-        conditions = subject_info.conditions
-        condition, _ = conditions[0].rsplit("_", 1)  # Get condition name without trial index
-        groups[condition].append(param_estimate[0])
+        condition, _ = subject_info.conditions[0].rsplit("_", 1)  # Get condition name without trial index
+        (onset,) = subject_info.onsets[0]
+        (duration,) = subject_info.durations[0]
+        parameter_estimates[condition].append(param_estimate[0])
+        events[condition].append(dict(onset=onset, duration=duration))
 
-    return list(groups.keys()), list(groups.values())
+    if parameter_estimates.keys() != events.keys():
+        raise ValueError("Mismatch between conditions in parameter estimates and events")
+    return list(parameter_estimates.keys()), list(parameter_estimates.values()), list(events.values())
 
 
 def init_task_based_wf(
@@ -271,18 +226,6 @@ def init_task_based_wf(
     apply_condition_offset = pe.Node(ApplyConditionOffset(), name="apply_condition_offset")
     workflow.connect(parse_condition_file, "subject_info", apply_condition_offset, "subject_info")
     workflow.connect(get_scan_start, "scan_start", apply_condition_offset, "scan_start")
-
-    # # write events to BIDS file
-    # write_events_tsv = pe.Node(
-    #     niu.Function(
-    #         input_names=["subject_info", "out_file"],
-    #         output_names=["out_file"],
-    #         function=_write_trial_file,
-    #     ),
-    #     name="write_events_tsv",
-    # )
-    # write_events_tsv.inputs.out_file = "events.tsv"
-    # workflow.connect(apply_condition_offset, "subject_info", write_events_tsv, "subject_info")
 
     # Generate design from first level specification
     if feature.hrf == "dgamma":
@@ -503,30 +446,11 @@ def init_task_based_wf(
             single_trial_least_squares_all=_group_least_squares_all_parameter_estimates,
         )[feature.estimation]
 
-        # # make events output
-        # make_events_resultdicts = pe.Node(
-        #     MakeResultdicts(
-        #         tagkeys=["feature"],
-        #         imagekeys=["events"],
-        #     ),
-        #     name="make_events_resultdicts",
-        # )
-        # make_events_resultdicts.inputs.feature = feature.name
-
-        # workflow.connect(inputnode, "tags", make_events_resultdicts, "tags")
-        # workflow.connect(inputnode, "vals", make_events_resultdicts, "vals")
-        # workflow.connect(inputnode, "metadata", make_events_resultdicts, "metadata")
-
-        # workflow.connect(write_events_tsv, "out_file", make_events_resultdicts, "events")
-
-        # # Merge with the rest so ResultdictDatasink writes it out
-        # workflow.connect(make_events_resultdicts, "resultdicts", merge_resultdicts, "in1")
-
         # Group parameter estimates by condition
         group_parameter_estimates = pe.Node(
             niu.Function(
                 input_names=["subject_infos", "param_estimates"],
-                output_names=["conditions", "param_estimates"],
+                output_names=["conditions", "param_estimates", "events"],
                 function=_group_parameter_estimates,
             ),
             name="group_parameter_estimates",
@@ -547,6 +471,8 @@ def init_task_based_wf(
             MakeResultdicts(
                 tagkeys=["feature", "condition"],
                 imagekeys=["effect", "mask"],
+                metadatakeys=["events"],
+                nobroadcastkeys=["events"],
             ),
             name="make_resultdicts",
         )
@@ -557,6 +483,7 @@ def init_task_based_wf(
         workflow.connect(inputnode, "mask", make_resultdicts, "mask")
 
         workflow.connect(group_parameter_estimates, "conditions", make_resultdicts, "condition")
+        workflow.connect(group_parameter_estimates, "events", make_resultdicts, "events")
         workflow.connect(merge_parameter_estimates, "merged_file", make_resultdicts, "effect")
 
         workflow.connect(make_resultdicts, "resultdicts", merge_resultdicts, "in2")

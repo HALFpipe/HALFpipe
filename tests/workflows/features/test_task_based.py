@@ -255,6 +255,7 @@ def test_task_based(
     feature = feature_schema.load(ddict)
 
     wf = init_task_based_wf(condition_files=(str(condition_file),), condition_units="secs", feature=feature, workdir=workdir)
+    wf.base_dir = str(tmp_path / "nipype")
 
     source_file = simulated_bold_file
     inputnode = wf.get_node("inputnode")
@@ -284,12 +285,10 @@ def test_task_based(
         face_betas = betas[face_mask > 0]
         house_betas = betas[house_mask > 0]
     else:  # Single trial estimation
-        (face_file,) = (
-            resultdict["images"]["effect"] for resultdict in resultdicts if resultdict["tags"]["condition"] == "face"
-        )
-        (house_file,) = (
-            resultdict["images"]["effect"] for resultdict in resultdicts if resultdict["tags"]["condition"] == "house"
-        )
+        (face_resultdict,) = (resultdict for resultdict in resultdicts if resultdict["tags"]["condition"] == "face")
+        (house_resultdict,) = (resultdict for resultdict in resultdicts if resultdict["tags"]["condition"] == "house")
+        face_file = face_resultdict["images"]["effect"]
+        house_file = house_resultdict["images"]["effect"]
 
         face_betas = nib.nifti1.load(face_file).get_fdata()
         house_betas = nib.nifti1.load(house_file).get_fdata()
@@ -300,6 +299,16 @@ def test_task_based(
         n_trials = len(conditions) // 2  # should be 7 if 14 trials
         assert face_betas.shape[-1] == n_trials, "Face betas do not have the expected number of trials"
         assert house_betas.shape[-1] == n_trials, "House betas do not have the expected number of trials"
+
+        events = pd.read_table(condition_file)
+        assert (
+            events.query("trial_type == 'face'")[["onset", "duration"]].to_dict(orient="records")
+            == face_resultdict["metadata"]["events"]
+        )
+        assert (
+            events.query("trial_type == 'house'")[["onset", "duration"]].to_dict(orient="records")
+            == house_resultdict["metadata"]["events"]
+        )
 
     logger.info(f'trial="face"\tbeta={face_betas.mean():.4f}')
     logger.info(f'trial="house"\tbeta={house_betas.mean():.4f}')
