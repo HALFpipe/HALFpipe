@@ -582,8 +582,9 @@ class LinearModel(ModelTemplate):
             for categorical_metadata_item in only_categorical_metadata:
                 categorical_contrast_items = list(
                     filter(
-                        lambda contrast_item: contrast_item["type"] == "t"
-                        and contrast_item["variable"] == [categorical_metadata_item["name"]],
+                        lambda contrast_item: (
+                            contrast_item["type"] == "t" and contrast_item["variable"] == [categorical_metadata_item["name"]]
+                        ),
                         self.model_dict["contrasts"],
                     )
                 )
