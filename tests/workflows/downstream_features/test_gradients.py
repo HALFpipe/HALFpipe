@@ -3,12 +3,13 @@ import os
 import numpy as np
 
 # import pandas as pd
-from halfpipe.model.downstream_feature import DownstreamFeature
+from halfpipe.model.downstream_feature import DownstreamFeature, DownstreamFeatureSchema
 from halfpipe.utils.nipype import run_workflow
 from halfpipe.workflows.downstream_features.gradients import init_gradients_wf
 from halfpipe.workflows.memory import MemoryCalculator
 
 # from traits.trait_errors import TraitError
+downstream_feature_schema = DownstreamFeatureSchema()
 
 
 def test_gradients_wf_input(tmp_path):
@@ -18,23 +19,29 @@ def test_gradients_wf_input(tmp_path):
     # random matrix connectome for now
     correlation_matrix = np.random.randn(50, 50)
 
-    # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be filled by the input spec
+    # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be
+    # filled by the input spec
     # I have many questions about how features are created and validated
-    feat = DownstreamFeature(
-        "gradients",  # name
-        "gradients",  # type
-        # kwargs
-        **{
-            "n_components": None,
-            "approach": None,
-            "kernel": None,
-            "random_state": None,
-            "alignment": None,
-            "gamma": None,
-            "sparsity": None,
-            "n_iter": None,
-            "reference": None,
-        },
+    feat = downstream_feature_schema.load(
+        # "gradients",  # name
+        # "gradients",  # type
+        # # kwargs
+        # **{
+        #     "n_components": None,
+        #     "approach": None,
+        #     "kernel": None,
+        #     "random_state": None,
+        #     "alignment": None,
+        #     "gamma": None,
+        #     "sparsity": None,
+        #     "n_iter": None,
+        #     "reference": None,
+        # },
+        dict(
+            name="gradients",
+            type="gradients",
+            reference=None,
+        )
     )
 
     init_gradients_wf(

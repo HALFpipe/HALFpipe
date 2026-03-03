@@ -28,8 +28,7 @@ def init_atlas_based_connectivity_wf(
     feature: Feature | None = None,
     # harveyaa - list of same length as names in feature of paths
     atlas_files: Sequence[Path | str] | None = None,
-    # harveyaa - needs either "MNI152NLin6Asym"  "MNI152NLin2009cAsym" (ref: src/halfpipe/interfaces/image_maths/resample.py)
-    atlas_spaces: Sequence[str] | None = None,
+    atlas_spaces: Sequence[Literal["MNI152NLin6Asym", "MNI152NLin2009cAsym"]] | None = None,
     space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
@@ -67,7 +66,17 @@ def init_atlas_based_connectivity_wf(
         ),
         name="inputnode",
     )
-    outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
+    outputnode = pe.Node(
+        niu.IdentityInterface(
+            fields=[
+                "resultdicts",
+                "atlas_names",
+                "atlas_files",
+                "atlas_spaces",
+            ]
+        ),
+        name="outputnode",
+    )
 
     min_region_coverage = 1
     if feature is not None:

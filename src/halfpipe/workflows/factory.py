@@ -195,7 +195,8 @@ class Factory(ABC):
     # TODO investigate this function
     def connect_attr(
         self,
-        outputhierarchy,  # what is this? seems like it should be a list of workflow, but stats factory passes what looks like a string
+        outputhierarchy,  # what is this? seems like it should be a list of workflow, but stats factory passes what looks like
+        # a string
         outputnode,
         outattr,
         inputhierarchy,

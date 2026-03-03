@@ -26,6 +26,13 @@ test_online_resources = {
     "Neuromark_fMRI_1.0.nii": "https://github.com/trendscenter/gift/raw/master/GroupICAT/icatb/icatb_templates/Neuromark_fMRI_1.0.nii",
     # Gradients
     "Gradients_Margulies2016.zip": "https://www.neuroconnlab.org/downloads/data/Gradients_Margulies2016.zip",
+    # ???
+    "FIND_ica_maps_2009.nii.gz": "https://drive.google.com/file/d/1XnFGm9aCcTIuXgKZ71fDqATBJWAxkInO/view?usp=drive_link",
+    "tpl-MNI152NLin2009cAsym_atlas-schaefer2011Combined_dseg.nii": "https://drive.google.com/file/d/1CR0rjbznad-tkfVc1vrGKsKJg5_nrf5E/view?usp=drive_link",
+    "tpl-MNI152NLin2009cAsym_atlas-brainnetomeCombined_dseg.nii": "https://drive.google.com/file/d/1MYF4VaZrWmQXL1Jl3ZWMg1tWaKBfPo4W/view?usp=drive_link",
+    "R_vmPFC_seed_2009.nii.gz": "https://drive.google.com/file/d/16L_HXOrrMqw08BdGTOh7RTErNTVytyvS/view?usp=drive_link",
+    "R_vlPFC_pt_seed_2009.nii.gz": "https://drive.google.com/file/d/1fNr8ctHpTN8XJn95mclMxTetKdpbdddV/view?usp=drive_link",
+    "R_vlPFC_po_seed_2009.nii.gz": "https://drive.google.com/file/d/1te1g3tpFaHdjx8GyZ1myMg_ayaHXPYKO/view?usp=drive_link",
 }
 
 

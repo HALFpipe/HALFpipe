@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -16,7 +17,7 @@ from halfpipe.workflows.features.atlas_based_connectivity import init_atlas_base
 
 
 @pytest.fixture(scope="module")
-def test_data(tmp_path_factory):
+def test_data(tmp_path_factory: pytest.TempPathFactory, atlases_maps_seed_images_path: Path) -> tuple[Path, Path, Path]:
     tmp = tmp_path_factory.mktemp("data")
 
     # get template
@@ -40,23 +41,23 @@ def test_data(tmp_path_factory):
     mask_img.to_filename(mask_filename)
 
     # hard coded path within container
-    atlas_filename = "/halfpipe_dev/test_data/atlases/atlas-DesikanKilliany_dseg.nii.gz"
+    atlas_filename = atlases_maps_seed_images_path / "atlas-DesikanKilliany_dseg.nii.gz"
 
-    return atlas_filename, bold_filename, mask_filename, tmp
+    return atlas_filename, bold_filename, mask_filename
 
 
-def test_atlas_based_connectivity_wf(test_data):
-    atlas_filename, bold_filename, mask_filename, tmp = test_data
+def test_atlas_based_connectivity_wf(tmp_path: Path, test_data):
+    atlas_filename, bold_filename, mask_filename = test_data
 
     # Hard coding paths (within container) - no internet on interactive node
     # mask_filename = '/halfpipe_dev/test_data/conn_test/mask.nii.gz'
     # atlas_filename="/halfpipe_dev/test_data/atlases/atlas-DesikanKilliany_dseg.nii.gz"
     # bold_filename = '/halfpipe_dev/test_data/conn_test/resampled_func.nii.gz'
 
-    os.chdir(tmp)
+    os.chdir(tmp_path)
     rng = np.random.default_rng(0)
 
-    workdir = tmp / "workdir"
+    workdir = tmp_path / "workdir"
     workdir.mkdir(exist_ok=True)
 
     feat = Feature(

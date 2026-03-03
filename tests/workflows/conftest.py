@@ -12,7 +12,6 @@ import tempfile
 from math import inf
 from pathlib import Path
 from random import choices, normalvariate, seed
-from typing import Iterator
 from uuid import uuid5
 from zipfile import ZipFile
 
@@ -362,13 +361,6 @@ def fibromyalgia_base_dataset(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def fixed_tmp_path() -> Path:
-    path = Path("/tmp/atlases_and_maps/")
-    path.mkdir(parents=True, exist_ok=True)  # Ensure the path exists
-    return path
-
-
-@pytest.fixture(scope="session")
 def bids_session_expanded_real_test_data(
     request, fibromyalgia_base_dataset, tmp_path_factory, atlases_maps_seed_images_path, covariant_spreadsheet_path
 ):
@@ -483,6 +475,8 @@ def bids_session_expanded_real_test_data(
     save_spec(mock_spec, workdir=workdir_path)
 
     yield data_path, workdir_path
+
+
 @pytest.fixture(scope="function")
 def mock_ctx(
     tmp_path,
