@@ -50,7 +50,7 @@ class GradientsDownstreamFeatureSchema(BaseDownstreamFeatureSchema):
 
     approach = fields.Str(dump_default="dm", validate=validate.OneOf(["dm", "pca", "le"]))
     kernel = fields.Str(
-        dump_default=None,
+        dump_default="normalized_angle",
         allow_none=True,
         validate=validate.OneOf(["pearson", "spearman", "cosine", "normalized_angle", "gaussian"]),
     )

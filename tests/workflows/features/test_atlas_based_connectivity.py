@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-import numpy as np
 import pytest
 from nilearn.datasets import fetch_development_fmri
 from nilearn.image import load_img, resample_to_img
@@ -55,7 +54,7 @@ def test_atlas_based_connectivity_wf(tmp_path: Path, test_data):
     # bold_filename = '/halfpipe_dev/test_data/conn_test/resampled_func.nii.gz'
 
     os.chdir(tmp_path)
-    rng = np.random.default_rng(0)
+    # rng = np.random.default_rng(0)
 
     workdir = tmp_path / "workdir"
     workdir.mkdir(exist_ok=True)
@@ -90,7 +89,7 @@ def test_atlas_based_connectivity_wf(tmp_path: Path, test_data):
     graph = run_workflow(wf)
 
     # Awkward to access node information due to nipype function (runs a copy of workflow)
-    node_names = [n.name for n in graph.nodes]
+    # node_names = [n.name for n in graph.nodes]
     resultdict_datasink = [n for n in graph.nodes if n.name == "resultdict_datasink"][0]
     make_resultdicts = [n for n in graph.nodes if n.name == "make_resultdicts"][0]
 
@@ -98,4 +97,4 @@ def test_atlas_based_connectivity_wf(tmp_path: Path, test_data):
 
     print(make_resultdicts.outputs)
 
-    assert False
+    breakpoint()

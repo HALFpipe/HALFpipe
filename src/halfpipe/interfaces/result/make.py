@@ -59,7 +59,8 @@ class MakeResultdicts(IOBase):
         # files that need to be copied out
         if imagekeys is None:
             imagekeys = list()
-        # things that go into reports viewers (html reports wc related) routes not just to output folder but also to reports folder
+        # things that go into reports viewers (html reports wc related) routes not just to output folder but also to
+        # reports folder
         if reportkeys is None:
             reportkeys = list()
         # metadata of input data (eg TR) what fmri prep gets from bids data

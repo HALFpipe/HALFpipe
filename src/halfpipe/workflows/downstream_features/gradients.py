@@ -19,6 +19,7 @@ from ...interfaces.result.filter import FilterResultdicts
 from ...interfaces.result.make import MakeResultdicts
 from ...model.downstream_feature import DownstreamFeature
 from ...utils.format import format_workflow
+from ...utils.image import nvol
 from ..memory import MemoryCalculator
 
 ##############
@@ -160,28 +161,69 @@ def init_gradients_wf(
     workflow.connect(map_select, "map_file", resample, "reference_image")
     workflow.connect(map_select, "map_space", resample, "reference_space")
 
-    calcmean = pe.MapNode(
+    calc_mean = pe.MapNode(
         CalcMean(),
         iterfield=["in_file", "parcellation"],
-        name="calcmean",
+        name="calc_mean",
         mem_gb=memcalc.series_std_gb,
     )
-    workflow.connect(map_select, "map_file", calcmean, "in_file")
-    workflow.connect(resample, "output_image", calcmean, "parcellation")
+    workflow.connect(map_select, "map_file", calc_mean, "in_file")
+    workflow.connect(resample, "output_image", calc_mean, "parcellation")
+
+    #######################################
+    # Calculate gradients
+    #######################################
+    matrix_select = pe.MapNode(
+        KeySelect(fields=["matrix"]),
+        iterfield="key",
+        name="matrix_select",
+    )
+    workflow.connect(broadcast_references, "atlas", matrix_select, "key")
+    workflow.connect(extract_from_resultdict, "atlas", matrix_select, "keys")
+    workflow.connect(extract_from_resultdict, "matrix", matrix_select, "matrix")
+
+    gradients = pe.MapNode(
+        Gradients(),
+        iterfield=["correlation_matrix", "reference"],
+        name="gradients",
+        mem_gb=memcalc.series_std_gb,
+    )
+    # connect inputnode values
+    workflow.connect([(map_select, gradients, [(("map_file", nvol), "n_components")])])
+    workflow.connect(inputnode, "approach", gradients, "approach")
+    workflow.connect(inputnode, "kernel", gradients, "kernel")
+    # TODO set random state from seed
+    workflow.connect(inputnode, "alignment", gradients, "alignment")
+    workflow.connect(matrix_select, "matrix", gradients, "correlation_matrix")
+    workflow.connect(inputnode, "sparsity", gradients, "sparsity")
+    workflow.connect(inputnode, "n_iter", gradients, "n_iter")
+    workflow.connect(calc_mean, "mean_matrix", gradients, "reference")
+
+    #######################################
+    # Outputs
+    #######################################
 
     # how to know what keys are needed/wanted?
     # here adding new keys to resultdict
     make_resultdicts = pe.Node(
         MakeResultdicts(
             tagkeys=[
-                "downstream_feature",
+                "feature",
                 "map",
             ],  # tag keys go to filename (needs to be changed in model.tags.resultdict.py)
-            imagekeys=["lambdas", "gradients", "aligned"],  # 'aligned' is an optional output so this might be wrong way
+            imagekeys=[
+                "lambdas",
+                "gradients",
+                "aligned",
+            ],  # 'aligned' is an optional output so this might be wrong way
         ),
         name="make_resultdicts",
     )
-    make_resultdicts.inputs.downstream_feature = downstream_feature.name
+    make_resultdicts.inputs.feature = downstream_feature.name
+    # connect resultdicts (how does this interact/correspond w the dictionary tags?)
+    workflow.connect(gradients, "lambdas", make_resultdicts, "lambdas")
+    workflow.connect(gradients, "gradients", make_resultdicts, "gradients")
+    workflow.connect(gradients, "aligned", make_resultdicts, "aligned")
 
     # Connect inputnode values to relevant make_resultdicts outputs
     workflow.connect(inputnode, "tags", make_resultdicts, "tags")
@@ -195,31 +237,5 @@ def init_gradients_wf(
 
     resultdict_datasink = pe.Node(ResultdictDatasink(base_directory=workdir), name="resultdict_datasink")
     workflow.connect(make_resultdicts, "resultdicts", resultdict_datasink, "indicts")
-
-    #######################################
-    # CONNECT I/O NODES W/ GRADIENTS NODE #
-    #######################################
-    gradientsnode = pe.Node(
-        Gradients(),
-        name="gradients",
-        mem_gb=memcalc.series_std_gb,
-    )
-
-    # connect inputnode values
-    workflow.connect(inputnode, "n_components", gradientsnode, "n_components")
-    workflow.connect(inputnode, "approach", gradientsnode, "approach")
-    workflow.connect(inputnode, "kernel", gradientsnode, "kernel")
-    workflow.connect(inputnode, "random_state", gradientsnode, "random_state")
-    workflow.connect(inputnode, "alignment", gradientsnode, "alignment")
-    workflow.connect(inputnode, "correlation_matrix", gradientsnode, "correlation_matrix")
-    workflow.connect(inputnode, "gamma", gradientsnode, "gamma")
-    workflow.connect(inputnode, "sparsity", gradientsnode, "sparsity")
-    workflow.connect(inputnode, "n_iter", gradientsnode, "n_iter")
-    workflow.connect(inputnode, "reference", gradientsnode, "reference")
-
-    # connect resultdicts (how does this interact/correspond w the dictionary tags?)
-    workflow.connect(gradientsnode, "lambdas", make_resultdicts, "lambdas")
-    workflow.connect(gradientsnode, "gradients", make_resultdicts, "gradients")
-    workflow.connect(gradientsnode, "aligned", make_resultdicts, "aligned")
 
     return workflow

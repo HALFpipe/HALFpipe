@@ -1,25 +1,19 @@
 import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
+from brainspace.gradient.utils import make_symmetric
 from traits.trait_errors import TraitError
 
 from halfpipe.interfaces.gradients import Gradients
 
 
-def test_brainspace_install():
-    """Test if brainspace is installed."""
-    try:
-        import brainspace
-    except ImportError:
-        raise ImportError('Install "brainspace".')
-
-
-def test_help(capfd):
+def test_help(capfd: pytest.CaptureFixture[str]):
     """Test if help output distinguishes mandatory and optional inputs."""
     Gradients.help()
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
 
     assert "Mandatory" in out
 
@@ -28,55 +22,38 @@ def test_inputs_string():
     """Test if traits are checking input correctly."""
     g = Gradients()
     with pytest.raises(TraitError):
-        g.inputs.n_components = "fails"
+        g.inputs.n_components = "invalid"
 
 
-def test_inputs_file():
-    """Test if traits are checking input correctly."""
-    g = Gradients()
-
-    g.inputs.correlation_matrix = "/halfpipe_dev/test_data/derivatives/sub-10171/func/task-rest/sub-10171_task-rest_feature-motionParametersGSR_atlas-Schaefer2018Combined_desc-correlation_matrix.tsv"
-
-
-def test_inputs_union(tmp_path):
+def test_inputs_union(tmp_path: Path) -> None:
     """Test if traits are checking input correctly."""
     os.chdir(str(tmp_path))
 
     g = Gradients()
 
     np.savetxt("rand1.txt", np.random.randn(100, 100))
-    np.savetxt("rand2.txt", np.random.randn(100, 100))
-    g.inputs.correlation_matrix = ["rand1.txt", "rand2.txt"]
+    g.inputs.correlation_matrix = "rand1.txt"
 
 
-def test_gradient_single_random_array(tmp_path):
+def test_gradient_single_random_array(tmp_path: Path) -> None:
     """Test brainspace functions on random array & that traits are filling in default values."""
     os.chdir(str(tmp_path))
+    rng = np.random.default_rng(0)
 
     g = Gradients()
 
-    np.savetxt("rand.txt", np.random.randn(100, 100))
-    g.inputs.correlation_matrix = "rand.txt"
+    correlation_matrix_path = tmp_path / "rand.txt"
+    a = rng.normal(size=(1000, 100))
+    c = make_symmetric(a.transpose() @ a)
 
-    g._run_interface("fake runtime")
+    np.savetxt(correlation_matrix_path, c)
+    g.inputs.correlation_matrix = correlation_matrix_path
+    g.inputs.reference = rng.normal(size=(100, 10))
 
-    assert g._gradients.shape[0] == 100
-    assert g._gradients.shape[1] == 10
+    cwd = tmp_path / "gradients"
+    cwd.mkdir()
 
+    result = g.run(cwd=cwd)
 
-def test_outputs(tmp_path):
-    """Test brainspace functions on random array & that traits are filling in default values."""
-    os.chdir(str(tmp_path))
-
-    g = Gradients()
-
-    np.savetxt("rand.txt", np.random.randn(100, 100))
-    g.inputs.correlation_matrix = "rand.txt"
-
-    g._run_interface("fake runtime")
-
-    outputs = g._list_outputs()
-
-    grads = pd.read_csv(outputs["gradients"], delimiter="\t")
-
-    assert grads.shape[1] == 10
+    grads = pd.read_csv(result.outputs.gradients, delimiter="\t", header=None)
+    assert grads.shape == (100, 10)

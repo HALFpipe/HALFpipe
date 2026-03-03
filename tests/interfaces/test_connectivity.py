@@ -28,3 +28,4 @@ def test_connectivity_measure(tmp_path: Path) -> None:
     cm.inputs.atlas_file = "/halfpipe_dev/test_data/conn_test/resampled_atlas.nii.gz"
 
     runtime = cm._run_interface("unsure about this, must be nipype")
+    assert runtime is not None

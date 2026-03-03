@@ -61,7 +61,8 @@ def test_gradients_wf_run(tmp_path):
     np.savetxt("rand1.txt", np.random.randn(100, 100))
     correlation_matrix = os.path.join(tmp_path, "rand1.txt")
 
-    # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be filled by the input spec
+    # unclear how to load a feature to be made like this but I want all these fields to be default None and will then be
+    # filled by the input spec
     # I have many questions about how features are created and validated
     feat = DownstreamFeature(
         "gradients",  # name
@@ -86,8 +87,10 @@ def test_gradients_wf_run(tmp_path):
 
     wf = init_gradients_wf(workdir, correlation_matrix, feat, memcalc)
 
-    # I dont understand why this would be defined here and not in the init_wf but im following halfpipe (atlas_based_connectivity)
+    # I dont understand why this would be defined here and not in the init_wf but im following halfpipe
+    # (atlas_based_connectivity)
     # bc of nested workflows w/ different base_dir
     wf.base_dir = workdir
 
     graph = run_workflow(wf)
+    assert graph is not None
