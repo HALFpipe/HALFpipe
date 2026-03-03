@@ -29,10 +29,10 @@ class Feature:
 
 
 class BaseFeatureSchema(Schema):
-    # how is a name different than type?
+    # The name is the unique identifier of the feature that we can use to reference it from other parts of the code
     name = fields.Str()
 
-    # whats is a setting?
+    # This is the name of the setting that this feature will be based on
     setting = fields.Str()
 
     # why should type be one of these options?

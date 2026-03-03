@@ -88,7 +88,7 @@ def test_atlas_based_connectivity_wf(test_data):
 
     graph = run_workflow(wf)
 
-    # Awkward to access node information due to nipype funtion (runs a copy of workflow)
+    # Awkward to access node information due to nipype function (runs a copy of workflow)
     node_names = [n.name for n in graph.nodes]
     resultdict_datasink = [n for n in graph.nodes if n.name == "resultdict_datasink"][0]
     make_resultdicts = [n for n in graph.nodes if n.name == "make_resultdicts"][0]

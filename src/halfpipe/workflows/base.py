@@ -160,7 +160,7 @@ def init_workflow(
         }
         logger.debug(f"init_workflow->bold_file_paths_dict after filtering: {bold_file_paths_dict}")
 
-        # TODO does this half to be dependent on running fmriprep? cant we check & reuse outputs and do quick halfpipe on top?
+        # TODO Does this have to be dependent on running fmriprep? Can't we check & reuse outputs and do quick halfpipe on top?
         if spec.global_settings.get("run_halfpipe") is True:
             # Post Processing
             logger.debug("init_workflow->going to setup post_processing_factory")
@@ -182,7 +182,7 @@ def init_workflow(
     if spec.global_settings.get("run_mriqc") is True:
         logger.debug("init_workflow->going to setup mriqc_factory")
         mriqc_factory = MriqcFactory(ctx)
-        # why doesnt this raise not implemented error? never run?
+        # Why doesn't this raise not implemented error? never run?
         mriqc_factory.setup(
             workdir,
             list(bold_file_paths_dict.keys()),

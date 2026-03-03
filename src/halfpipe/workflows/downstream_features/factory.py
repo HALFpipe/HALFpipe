@@ -15,7 +15,7 @@ inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
 class DownstreamFeatureFactory(Factory):
-    """Class is reponsible for connecting downstream feature workflows up into rest of halfpipe."""
+    """Class is responsible for connecting downstream feature workflows up into rest of halfpipe."""
 
     def __init__(
         self,
@@ -31,7 +31,7 @@ class DownstreamFeatureFactory(Factory):
 
     # TODO leaving this format to match other factories, but should be renamed _setup and made internal to init
     def setup(self):
-        # modelled of stats factory, not worried about source_files & processing_groups bc going to do a group level anaylsis
+        # modelled of stats factory, not worried about source_files & processing_groups bc going to do a group level analysis
         for downstream_feature in self.ctx.spec.downstream_features:
             self._create(downstream_feature)
 

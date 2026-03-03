@@ -78,7 +78,7 @@ class GradientsInputSpec(BaseInterfaceInputSpec):
 class GradientsOutputSpec(TraitedSpec):
     # Outputs from gradient computation:
     lambdas = traits.Union(
-        traits.File, traits.List(trait=traits.File), desc="Eigenvalues for each datatset, shape = (n_components,)."
+        traits.File, traits.List(trait=traits.File), desc="Eigenvalues for each dataset, shape = (n_components,)."
     )
     gradients = traits.Union(
         traits.File, traits.List(trait=traits.File), desc="Gradients (i.e., eigenvectors), shape = (n_samples, n_components)."

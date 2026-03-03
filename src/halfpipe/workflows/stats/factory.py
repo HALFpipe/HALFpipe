@@ -72,7 +72,7 @@ class StatsFactory(Factory):
             numinputs=len(input_hierarchies),
             variables=variables,
         )
-        # add the nodes of the created worfklow to the "stats_wf" (because its empty)
+        # add the nodes of the created workflow to the "stats_wf" (because its empty)
         parent_workflow.add_nodes([workflow])  # why is it a list of the workflow?
         # why add it again to the hierarchy?
         hierarchy.append(workflow)
