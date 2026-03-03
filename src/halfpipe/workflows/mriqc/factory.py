@@ -12,7 +12,7 @@ class MriqcFactory(Factory):
     def setup(self, workdir, boldfilepaths):
         raise NotImplementedError()
 
-    def get(self, *args, **kwargs):
+    def get_hierarchy(self, *args, **kwargs):
         return super().get(*args, **kwargs)  # type: ignore
 
     def connect(self, nodehierarchy, node, *args, **kwargs):

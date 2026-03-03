@@ -3,6 +3,11 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import re
+from collections import defaultdict
+
+from nipype.pipeline import engine as pe
+
+from halfpipe.model.model import Model
 
 from ...logging import logger
 from ..factory import Factory
@@ -22,7 +27,7 @@ class StatsFactory(Factory):
 
         self.feature_factory = feature_factory
         # TODO should standardize, here its a dict whereas its a list in other factories
-        self.hierarchies = dict()
+        self.hierarchies: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
 
     # TODO rename to _setup and made internal to init
     def setup(self):
@@ -30,7 +35,7 @@ class StatsFactory(Factory):
             self.create(model)
 
     # TODO rename to _create
-    def create(self, model):
+    def create(self, model: Model):
         hierarchy = self._create_hierarchy("stats_wf")  # = [self.ctx.workflow, stats_wf]
         # (first run of create)
         # this call creates a list of workflows, starting w context workflow
@@ -46,24 +51,26 @@ class StatsFactory(Factory):
         # ... list entries get named ouputhierarchy below
         input_hierarchies = []
         # TODO rename w inputhierarchies = []
-        # TODO check what inputname actually is bc here it seems to refer to model inputs whereas in other calls it refers to models & features
+        # TODO check what inputname actually is bc here it seems to refer to model inputs whereas in other calls it refers
+        # to models & features
         for inputname in model.inputs:
             # model.inputs must come from spec somehow, I can't find what they are other than a list of string
             logger.debug(f"StatsFactory->inputname: {inputname}")
-            # Check if inputname is another model is present in spec (if inputname is another model should have been defined previously)
+            # Check if inputname is another model is present in spec (if inputname is another model should have been defined
+            # previously)
             if inputname in [model.name for model in self.ctx.spec.models]:
                 # TODO problematic bc if true will call get on an empty dict for self.hierarchies
                 # always bc model has to be in order, still feels messy
                 input_hierarchies.extend(self.get_hierarchy(inputname))
 
-                logger.debug(f"StatsFactory->extending inputs by self->inputs: {inputs}")
+                logger.debug(f"StatsFactory->extending inputs by self->inputs: {model.inputs}")
             # Check if inputname is a feature
             elif inputname in [feature.name for feature in self.ctx.spec.features]:
-                input_hierarchies.extend(self.feature_factory.get(inputname))
-                logger.debug(f"StatsFactory->extending inputs by feature_factory->inputs: {inputs}")
+                input_hierarchies.extend(self.feature_factory.get_hierarchy(inputname))
+                logger.debug(f"StatsFactory->extending inputs by feature_factory->inputs: {model.inputs}")
             else:
                 raise ValueError(f'Unknown input name "{inputname}"')
-        logger.debug(f"StatsFactory-> all gathered inputs: {inputs}")
+        logger.debug(f"StatsFactory-> all gathered inputs: {model.inputs}")
 
         # create the actual wf
         workflow = init_stats_wf(
@@ -77,10 +84,9 @@ class StatsFactory(Factory):
         # why add it again to the hierarchy?
         hierarchy.append(workflow)
         # hierarchy is now [self.ctx.workflow, stats_wf, workflow]
-        # python question: is the stats_wf in this list filled w the nodes from line 76? if so workflow and stats_wf are the same?
+        # python question: is the stats_wf in this list filled w the nodes from line 76? if so workflow and stats_wf are the
+        # same?
 
-        if model.name not in self.hierarchies:
-            self.hierarchies[model.name] = []
         self.hierarchies[model.name].append(hierarchy)
         # at this self.hierarchies[model.name] is a list of of a list
         # [[self.ctx.workflow, stats_wf, workflow]]

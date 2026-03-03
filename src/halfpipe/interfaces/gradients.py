@@ -4,7 +4,6 @@
 
 from os import path as op
 
-import nibabel as nib
 import numpy as np
 from brainspace.gradient.gradient import GradientMaps
 from nipype.interfaces.base import (
@@ -32,31 +31,33 @@ class GradientsInputSpec(BaseInterfaceInputSpec):
     approach = traits.Str(
         "dm",
         usedefault=True,
-        desc="Embedding approach. Default is ‘dm’. Possible options: {'dm','le','pca'} for diffusion maps, Laplacian eigenmaps, and PCA respectively.",
+        desc="Embedding approach. Default is 'dm'. Possible options: {'dm','le','pca'} for diffusion maps, "
+        "Laplacian eigenmaps, and PCA respectively.",
     )
     kernel = traits.Union(
         None,
         traits.Str,
         usedefault=True,
-        desc="Possible options: {‘pearson’, ‘spearman’, ‘cosine’, ‘normalized_angle’, ‘gaussian’}. If None, use input matrix. Default is None.",
+        desc="Possible options: {'pearson', 'spearman', 'cosine', 'normalized_angle', 'gaussian'}. If None, use input matrix. "
+        "Default is None.",
     )
     random_state = traits.Union(None, traits.Int, usedefault=True, desc="Random state. Default is None.")
     alignment = traits.Union(
         None,
         traits.Str,
         usedefault=True,
-        desc="Alignment approach. Only used when two or more datasets are provided. If None, no alignment is performed. Default is None. "
-        "If ‘procrustes’, datasets are aligned using generalized procrustes analysis. "
-        "If ‘joint’, datasets are embedded simultaneously based on a joint affinity matrix built from the individual datasets. This option is only available for ‘dm’ and ‘le’ approaches.",
+        desc="Alignment approach. Only used when two or more datasets are provided. If None, no alignment is performed. "
+        "Default is None. If 'procrustes', datasets are aligned using generalized procrustes analysis. "
+        "If 'joint', datasets are embedded simultaneously based on a joint affinity matrix built from the individual "
+        "datasets. This option is only available for 'dm' and 'le' approaches.",
     )
 
     # .fit params
-    correlation_matrix = traits.Union(
-        traits.File,
-        traits.List(trait=traits.File),
+    correlation_matrix = traits.File(
+        exists=True,
         mandatory=True,
         desc="Input matrix or list of matrices, shape = (n_samples, n_feat).",
-    )  # TODO shape of output from atlas_based_connectivity_wf?
+    )
     gamma = traits.Union(
         None,
         traits.Float,
@@ -67,11 +68,11 @@ class GradientsInputSpec(BaseInterfaceInputSpec):
         0.9, usedefault=True, desc="Proportion of the smallest elements to zero-out for each row. Default is 0.9."
     )
     n_iter = traits.Int(10, usedefault=True, desc="Number of iterations for procrustes alignment. Default is 10.")
-    reference = traits.Union(
-        None,
-        traits.File,
-        usedefault=True,
-        desc="Initial reference for procrustes alignments, shape = (n_samples, n_feat). Only used when alignment == 'procrustes'. Default is None.",
+    reference = traits.File(
+        exists=True,
+        mandatory=False,
+        desc="Initial reference for procrustes alignments, shape = (n_samples, n_feat). "
+        "Only used when alignment == 'procrustes'. Default is None.",
     )  # update desc
 
 
@@ -97,15 +98,11 @@ class Gradients(BaseInterface):
     output_spec = GradientsOutputSpec
 
     def _run_interface(self, runtime: Bunch) -> Bunch:
-        reference_img = None
-        if self.inputs.reference is not None:
-            reference_img = nib.nifti1.load(self.inputs.reference)
+        # reference_img: nib.nifti1.Nifti1Image | None = None
+        # if self.inputs.reference is not None:
+        #     reference_img = nib.nifti1.load(self.inputs.reference)
 
-        # TODO update load based on file format output of atlas_based_connectivity_wf
-        if isinstance(self.inputs.correlation_matrix, list):
-            correlation_matrix = [np.loadtxt(f) for f in self.inputs.correlation_matrix]
-        else:
-            correlation_matrix = np.loadtxt(self.inputs.correlation_matrix)
+        correlation_matrix = np.loadtxt(self.inputs.correlation_matrix)
 
         gm = GradientMaps(
             n_components=self.inputs.n_components,
