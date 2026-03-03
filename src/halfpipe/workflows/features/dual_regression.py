@@ -274,6 +274,6 @@ def init_dualregression_wf(
     workflow.connect(maxintensity, "out_file", calcmean, "parcellation")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
 
-    workflow.connect(calcmean, "mean", make_resultdicts_b, "mean_component_tsnr")
+    workflow.connect(calcmean, "means", make_resultdicts_b, "mean_component_tsnr")
 
     return workflow

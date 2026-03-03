@@ -157,6 +157,6 @@ def init_atlas_based_connectivity_wf(
     workflow.connect(inputnode, "mask", calcmean, "mask")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
 
-    workflow.connect(calcmean, "mean", make_resultdicts, "mean_atlas_tsnr")
+    workflow.connect(calcmean, "means", make_resultdicts, "mean_atlas_tsnr")
 
     return workflow
