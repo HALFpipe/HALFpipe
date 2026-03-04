@@ -24,7 +24,7 @@ def test_reho_at_features_tab(
         stage="at_features_tab",
         feature_type="reho",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -45,4 +45,4 @@ def test_reho_at_spec_preview(
         feature_type="reho",
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)

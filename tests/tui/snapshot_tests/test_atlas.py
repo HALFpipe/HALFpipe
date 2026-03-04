@@ -14,7 +14,7 @@ from tests.tui.pilot_functions import (
     add_atlas_or_seed_or_map_file_pattern,
     add_new_feature,
     check_and_run_tab_refresh,
-    click_until_gone,
+    dismiss_modals_until_default_screen,
     select_file_tags,
     select_images,
     set_minimum_coverage,
@@ -101,7 +101,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
     await _load_data(pilot, data_path)
 
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await click_until_gone(pilot, "#only_one_button")
+    await dismiss_modals_until_default_screen(pilot)
 
     for task in tasks_by_stage[stage]:
         await task()
@@ -123,7 +123,7 @@ def test_atlas_at_features_tab(
         atlas_file_pattern=atlas_file_pattern,
         stage="at_features_tab",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -141,7 +141,7 @@ def test_atlas_at_spec_preview(
         atlas_file_pattern=atlas_file_pattern,
         stage="at_spec_preview",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -159,7 +159,7 @@ def test_atlas_at_features_duplicate(
         atlas_file_pattern=atlas_file_pattern,
         stage="at_features_duplicate",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -177,4 +177,4 @@ def test_duplicate_at_spec_preview(
         atlas_file_pattern=atlas_file_pattern,
         stage="duplicate_at_spec_preview",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)

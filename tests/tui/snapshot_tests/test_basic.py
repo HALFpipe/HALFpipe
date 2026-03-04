@@ -14,7 +14,7 @@ from tests.tui.pilot_functions import (
     add_fmap,
     associate_fmaps,
     clear_entry,
-    click_until_gone,
+    dismiss_modals_until_default_screen,
     set_non_bids_data,
     settable_scroll_screen_down,
 )
@@ -61,7 +61,7 @@ async def run_before(
         # await pilot.press('w')
         # filename = "{}_after_load_data.svg".format(stage)
         # pilot.app.save_screenshot(filename=filename)
-        await click_until_gone(pilot, "#only_one_button")
+        await dismiss_modals_until_default_screen(pilot)
 
     if stage == "non_bids_data_tab" or stage == "non_bids_data_tab_with_fmaps" or stage == "preproc_settings":
         await _set_work_dir(pilot, work_dir_path)
@@ -168,7 +168,7 @@ def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_d
     run_before_with_extra_args = partial(
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="work_tab"
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -177,7 +177,7 @@ def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downl
     run_before_with_extra_args = partial(
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="bids_data_tab"
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -192,7 +192,7 @@ def test_non_bids_data_input_tab(
         bold_path_pattern=bold_path_pattern,
         stage="non_bids_data_tab",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -215,7 +215,7 @@ def test_non_bids_data_input_tab_with_fmaps(
         phase_diff_fmap_pattern=phase_diff_fmap_pattern,
         stage="non_bids_data_tab_with_fmaps",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -233,4 +233,4 @@ def test_preproc_settings_tab(
         stage="preproc_settings",
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)

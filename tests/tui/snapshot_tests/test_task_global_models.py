@@ -15,7 +15,7 @@ from tests.tui.pilot_functions import (
     _set_work_dir,
     add_new_feature,
     check_and_run_tab_refresh,
-    click_until_gone,
+    dismiss_modals_until_default_screen,
     select_images,
     settable_scroll_screen_down,
 )
@@ -138,7 +138,7 @@ async def run_before(pilot, data_path=None, work_dir_path=None, covariant_spread
     # set data dir
     await _load_data(pilot, data_path)
     # # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await click_until_gone(pilot, "#only_one_button")
+    await dismiss_modals_until_default_screen(pilot)
 
     for task in tasks_by_stage[stage]:
         await task()
@@ -153,7 +153,7 @@ def test_intercept_only_at_global_models_tab(snap_compare, start_app, work_dir_p
         work_dir_path=work_dir_path,
         stage="intercept_only_at_group_level_models_tab",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -167,7 +167,7 @@ def test_intercept_only_at_group_level_models_tab_duplicate(
         work_dir_path=work_dir_path,
         stage="intercept_only_at_group_level_models_tab_duplicate",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -176,7 +176,7 @@ def test_intercept_only_at_spec_preview(snap_compare, start_app, work_dir_path: 
     run_before_with_extra_args = partial(
         run_before, data_path=downloaded_data_path, work_dir_path=work_dir_path, stage="intercept_only_at_spec_preview"
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -191,7 +191,7 @@ def test_linear_model_at_group_level_models_tab(
         covariant_spreadsheet_path=covariant_spreadsheet_path,
         stage="linear_model_at_group_level_models_tab",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 # disable this test until there is solution to make it stable
@@ -207,7 +207,7 @@ def test_linear_model_at_group_level_models_tab(
 #         covariant_spreadsheet_path=covariant_spreadsheet_path,
 #         stage="linear_model_at_group_level_models_tab_duplicate",
 #     )
-#     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+#     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 # disable this test until there is solution to make it stable
 # @pytest.mark.forked
@@ -222,4 +222,4 @@ def test_linear_model_at_group_level_models_tab(
 #         covariant_spreadsheet_path=covariant_spreadsheet_path,
 #         stage="linear_model_at_spec_preview",
 #     )
-#     assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+#     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)

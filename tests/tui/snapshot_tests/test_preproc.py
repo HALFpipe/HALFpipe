@@ -19,7 +19,7 @@ def test_preproc_at_features_tab(snap_compare, start_app, work_dir_path: Path, d
         stage="at_features_tab",
         feature_type="preproc",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -35,4 +35,4 @@ def test_preproc_at_spec_preview(snap_compare, start_app, work_dir_path: Path, d
         feature_type="preproc",
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)

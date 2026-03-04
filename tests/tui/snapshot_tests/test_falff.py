@@ -19,7 +19,7 @@ def test_falff_at_features_tab(snap_compare, start_app, work_dir_path: Path, dow
         stage="at_features_tab",
         feature_type="falff",
     )
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -36,4 +36,4 @@ def test_falff_at_spec_preview(snap_compare, start_app, work_dir_path: Path, dow
         feature_type="falff",
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)

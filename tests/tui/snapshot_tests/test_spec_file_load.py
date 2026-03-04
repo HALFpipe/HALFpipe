@@ -27,7 +27,7 @@ def test_load_from_spec_file_f0(
         feature_label=feature_label,
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -39,7 +39,7 @@ def test_load_from_spec_file_f1(
         run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_label=feature_label
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -51,7 +51,7 @@ def test_load_from_spec_file_f2(
         run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_label=feature_label
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -63,7 +63,7 @@ def test_load_from_spec_file_f3(
         run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_label=feature_label
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -75,7 +75,7 @@ def test_load_from_spec_file_f4(
         run_before, data_path=downloaded_data_path, spec_file_dir_path=spec_file_dir_path, feature_label=feature_label
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -91,7 +91,7 @@ def test_load_from_spec_file_f5(
         scroll_to_remaining_part=True,
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -107,7 +107,7 @@ def test_load_from_spec_file_f6(
         scroll_to_remaining_part=True,
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -123,7 +123,7 @@ def test_load_from_spec_file_f7(
         scroll_to_remaining_part=True,
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 @pytest.mark.forked
@@ -139,10 +139,7 @@ def test_load_from_spec_file_f8(
         scroll_to_remaining_part=True,
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-from pathlib import Path
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
 def test_load_from_spec_file_resave_spec_file(
@@ -156,4 +153,4 @@ def test_load_from_spec_file_resave_spec_file(
         covariant_spreadsheet_path=covariant_spreadsheet_path,
     )
 
-    assert snap_compare(app=start_app, terminal_size=(204, 53), run_before=run_before_with_extra_args)
+    assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
