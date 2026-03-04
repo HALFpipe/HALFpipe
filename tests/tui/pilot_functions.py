@@ -2,9 +2,24 @@
 import asyncio
 import os
 import shutil
+import time
 from pathlib import Path
 
 from halfpipe.logging import logger
+
+
+async def dismiss_modals_until_default_screen(pilot, timeout=10):
+    start = time.monotonic()
+
+    while pilot.app.screen.id != "_default":
+        await pilot.app.pop_screen()
+        if time.monotonic() - start > timeout:
+            stack = [s.id for s in pilot.app.get_screen_stack()]
+            raise TimeoutError(f"Still not on _default. Current: {pilot.app.screen.id}, Stack: {stack}")
+
+        # Let pop_screen + callbacks complete
+        await pilot.pause()
+        await asyncio.sleep(0)
 
 
 async def click_until_gone(pilot, selector: str, max_failures: int = 3, delay: float = 0.1):
@@ -208,7 +223,6 @@ async def add_new_feature(pilot, feature_type=None, label=None, tab_type="f") ->
         for letter in label:
             await pilot.press(letter)
         # click on Ok button
-        # await pilot.click(offset=(100, 30))
         await click_until_gone(pilot, "#only_one_button")
         await click_until_gone(pilot, "#ok")
 
@@ -701,8 +715,7 @@ async def run_before_for_reho_falff_preproc(
     # set data dir
     await _load_data(pilot, data_path)
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await click_until_gone(pilot, "#only_one_button")
+    await dismiss_modals_until_default_screen(pilot)
 
     for task in tasks_by_stage[stage]:
         await task()

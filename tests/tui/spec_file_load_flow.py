@@ -2,7 +2,12 @@ from pathlib import Path
 
 from halfpipe.logging import logger
 
-from .pilot_functions import _set_work_dir, check_and_run_tab_refresh, click_until_gone, settable_scroll_screen_down
+from .pilot_functions import (
+    _set_work_dir,
+    check_and_run_tab_refresh,
+    dismiss_modals_until_default_screen,
+    settable_scroll_screen_down,
+)
 
 widget_label_map = {
     "dualReg_1": "#feature_item_4_flabel",
@@ -46,7 +51,7 @@ async def run_before(
     await _set_work_dir(pilot, work_dir_path, load_from_spec_file=True)
 
     # click Ok on Modal informing us that all data and workdir are set and user can proceed further
-    await click_until_gone(pilot, "#only_one_button", max_failures=7)
+    await dismiss_modals_until_default_screen(pilot)
 
     # For some reason the button remains focussed when I do it locally, but it is not focussed when it runs through CI,
     # the tab should prevent this.
@@ -67,6 +72,7 @@ async def run_before(
         # await settable_scroll_screen_down(pilot, 28)
         # select particular feature tab
         # await pilot.click(offset=(15, feature_number))
+        print("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq", pilot.app.screen.id, pilot.app.get_screen_stack())
         await pilot.click(widget_label_map[feature_label])
         # the features are not loaded in order as they appear on the screen
         # here is the order - features connection
