@@ -12,12 +12,26 @@ from halfpipe.tui.base import MainApp  # Ensure path aligns with your project st
 from ..create_mock_bids_dataset import create_bids_data
 
 
+def pytest_collection_modifyitems(config, items):
+    # Detect snapshot update mode
+    snapshot_update = config.getoption("--snapshot-update", default=False) or config.getoption(
+        "--snapshot-update", default=None
+    )
+
+    if not snapshot_update:
+        return
+
+    for item in items:
+        # Remove forked marker during snapshot update
+        item.own_markers = [m for m in item.own_markers if m.name != "forked"]
+
+
 @pytest.fixture(scope="session", autouse=True)
 def resolved_test_dir_path():
     """Fixture to resolve paths and handle fallback to './' if necessary."""
     source_file = Path("/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/")
     if not source_file.exists():  # Fallback to './' if not found in CURRENT_DIR
-        source_file = Path("./")
+        source_file = Path("../")
     logger.info(f"TUI test directory path is {Path.cwd()}")
     return source_file
 
@@ -27,7 +41,14 @@ def copy_jinja2_file(resolved_test_dir_path):
     """Copy a file before tests start. This is just a hot fix because somehow the resources directory
     is delete during the docker build."""
     source_file = resolved_test_dir_path / "snapshot_report_template.jinja2"
-    destination = Path("/opt/conda/envs/fmriprep/lib/python3.11/site-packages/resources/")
+
+    import pytest_textual_snapshot
+
+    # Path to the module file
+    module_path = Path(pytest_textual_snapshot.__file__)
+
+    # Go up one level (site-packages) and append "resources"
+    destination = module_path.parent / "resources"
 
     try:
         destination.mkdir(parents=True, exist_ok=True)
@@ -58,14 +79,29 @@ def downloaded_data_path(fixed_tmp_path) -> Path:
     return data_path
 
 
-@pytest.fixture(scope="session")
-def work_dir_path(fixed_tmp_path) -> Path:
-    return fixed_tmp_path / "work_dir/"
+# @pytest.fixture(scope="session")
+# def work_dir_path(fixed_tmp_path) -> Path:
+#     return fixed_tmp_path / "work_dir/"
+# import hashlib
+#
+# @pytest.fixture
+# def work_dir_path(fixed_tmp_path, request) -> Path:
+#     test_id = request.node.nodeid
+#     suffix = hashlib.sha1(test_id.encode()).hexdigest()[:8]
+#     return fixed_tmp_path / f"work_dir_{suffix}"
+
+
+@pytest.fixture
+def work_dir_path(fixed_tmp_path, request):
+    name = request.node.name
+    return fixed_tmp_path / f"work_dir_{name}"
 
 
 @pytest.fixture(scope="session")
 def spec_file_dir_path(fixed_tmp_path, resolved_test_dir_path) -> Path:
     source_dir = resolved_test_dir_path / "spec_file_for_load_test"
+    shutil.copy(source_dir / "spec.json", source_dir / "spec_reference.json")
+
     destination_dir = fixed_tmp_path / "spec_file_for_load_test/"
     if os.path.exists(destination_dir):
         shutil.rmtree(destination_dir)
@@ -108,11 +144,24 @@ def phase_diff_fmap_pattern(downloaded_data_path) -> Path:
     return downloaded_data_path / "sub-{subject}/fmap/sub-{subject}_phasediff.nii.gz"
 
 
-@pytest.fixture(scope="function")
+#
+# @pytest.fixture(scope="function")
+# def start_app():
+#     from types import SimpleNamespace
+#
+#     opts = SimpleNamespace()
+#     opts.fs_root = "/"
+#     app = MainApp(opts)
+#     return app
+
+
+@pytest.fixture
 def start_app():
     from types import SimpleNamespace
 
-    opts = SimpleNamespace()
-    opts.fs_root = "/"
-    app = MainApp(opts)
-    return app
+    def make_app():
+        opts = SimpleNamespace()
+        opts.fs_root = "/"
+        return MainApp(opts)
+
+    return make_app

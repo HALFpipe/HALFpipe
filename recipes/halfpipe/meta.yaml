@@ -64,11 +64,14 @@ requirements:
     - marshmallow-enum
     - more-itertools>=8.7.0
     - pytest
+    - pytest-asyncio
     - pytest-cov
     - pytest-env
     - pytest-github-actions-annotate-failures
     - pytest-timeout
     - pytest-xdist
+    - pytest-forked
+    - pytest-rerunfailures
     - python
     - fsl-feat5
     - fsl-film

@@ -137,7 +137,7 @@ offset-x: 1;
     #preprocessing {
         align: center top;
         padding: 1;
-        height: 33;
+        height: 36;
         .switch_with_input_box {
             height: 3;
             color: white;
@@ -155,9 +155,8 @@ offset-x: 1;
     }
         }
         #space_selection_panel {
-offset-x:1;
+            offset-x:1;
             height: 3;
-
         }
 }
     #notes {
