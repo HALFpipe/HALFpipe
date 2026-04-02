@@ -12,7 +12,6 @@ from nipype.interfaces.io import IOBase, add_traits
 from ...model.resultdict import ResultdictSchema
 from ...model.utils import get_schema_entities
 from ...result.base import ResultDict, ResultKey
-from ...utils.copy import deepcopy
 from ...utils.ops import ravel
 from .base import ResultdictsOutputSpec
 
@@ -176,24 +175,6 @@ class MakeResultdicts(IOBase):
                 if k is not None and v not in self._missingvalues:
                     resultdict[f][k] = v
             resultdicts.append(resultdict)
-
-        # apply composite attr rule
-        for i in range(len(resultdicts)):
-            newimages = dict()
-            for k, v in resultdicts[i]["images"].items():
-                m = composite_attr.fullmatch(k)
-                if m is not None:  # apply rule
-                    newresultsdict = deepcopy(resultdicts[i])
-                    k = m.group("attr")
-                    if k in ["ortho"]:
-                        newresultsdict["tags"]["stat"] = m.group("tag")
-                    else:
-                        newresultsdict["tags"]["desc"] = m.group("tag")
-                    newresultsdict["images"] = {k: v}
-                    resultdicts.append(newresultsdict)
-                else:
-                    newimages[k] = v
-            resultdicts[i]["images"] = newimages
 
         # delete keys
         for f, keys in self._keys.items():
