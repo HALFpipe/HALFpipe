@@ -157,7 +157,7 @@ def make_voxelwise_generator(
 def fit(
     cope_files: list[Path],
     var_cope_files: list[Path] | None,
-    mask_files: list[Path],
+    mask_files: list[Path] | None,
     regressors: dict[str, list[float]],
     contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
