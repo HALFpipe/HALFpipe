@@ -68,7 +68,7 @@ class BetweenBase:
         # Extract the relevant keys from the image dictionary
         cope_paths = images["effect"]
         var_cope_paths = images.get("variance")
-        mask_paths = images["mask"]
+        mask_paths = images.get("mask")
         # Create a design tuple
         if design_base.data_frame is not None:
             design = group_design(
@@ -113,7 +113,7 @@ class BetweenBase:
         subjects: list[str],
         cope_paths: list[Path],
         var_cope_paths: list[Path] | None,
-        mask_paths: list[Path],
+        mask_paths: list[Path] | None,
         design: Design,
         result: ResultDict,
         model_name: str | None = None,
@@ -158,7 +158,8 @@ class BetweenBase:
         sources.extend(str(cope_path) for cope_path in cope_paths)
         if var_cope_paths is not None:
             sources.extend(str(var_cope_path) for var_cope_path in var_cope_paths)
-        sources.extend(str(mask_path) for mask_path in mask_paths)
+        if mask_paths is not None:
+            sources.extend(str(mask_path) for mask_path in mask_paths)
         result["metadata"]["sources"] = sources
         result["metadata"]["halfpipe_version"] = __version__
 

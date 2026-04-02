@@ -40,6 +40,8 @@ class ModelAlgorithm(ABC):
         values = series.values.tolist()
 
         shape: list[int] = list(reference_image.shape[:3])
+
+        breakpoint()
         (k,) = set(
             ((1,) if isinstance(value, (int, float)) else (len(value),) if isinstance(value, (list, tuple)) else value.shape)
             for value in values
@@ -62,7 +64,7 @@ class ModelAlgorithm(ABC):
         image.header.set_data_dtype(np.float64)
 
         image_path = Path.cwd() / f"{out_name}.nii.gz"
-        nib.loadsave.save(image, image_path)
+        nib.nifti1.save(image, image_path)
 
         return image_path
 

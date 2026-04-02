@@ -154,7 +154,7 @@ def apply_rename(rename: list[tuple[str, str, str]] | None, results: list[Result
     return results
 
 
-def apply_transforms(design_base: DesignBase) -> None:
+def apply_fisher_z(design_base: DesignBase) -> None:
     for result in design_base.results:
         if "correlation_matrix" not in result["images"]:
             continue
@@ -172,7 +172,7 @@ def apply_transforms(design_base: DesignBase) -> None:
         effect_path = Path.cwd() / f"{tags_str}_effect.nii.gz"
         effect = np.full_like(correlation_matrix, fill_value=np.nan)
         effect[indices] = np.arctanh(correlation_matrix[indices])
-        image = nib.nifti1.Nifti1Image(effect, affine=np.eye(4))
+        image = nib.nifti1.Nifti1Image(np.atleast_3d(effect), affine=np.eye(4))
         nib.nifti1.save(image, effect_path)
         result["images"]["effect"] = effect_path
 
@@ -181,7 +181,7 @@ def apply_transforms(design_base: DesignBase) -> None:
         variance = np.full_like(correlation_matrix, fill_value=np.nan)
         # Standard error of a Fisher z-transformed correlation (Fouladi & Steiger 2008)
         variance[indices] = 1.0 / (number_of_volumes - 3)
-        image = nib.nifti1.Nifti1Image(variance, affine=np.eye(4))
+        image = nib.nifti1.Nifti1Image(np.atleast_3d(variance), affine=np.eye(4))
         nib.nifti1.save(image, variance_path)
         result["images"]["variance"] = variance_path
 
@@ -197,7 +197,7 @@ def apply_design(arguments: Namespace, design_base: DesignBase, output_directory
         TemporaryDirectory(prefix="group-level-") as temporary_directory,
         chdir(temporary_directory),
     ):
-        apply_transforms(design_base)
+        apply_fisher_z(design_base)
 
         # Within-subject aggregation step
         apply_aggregate(design_base, num_threads=arguments.nipype_n_procs)

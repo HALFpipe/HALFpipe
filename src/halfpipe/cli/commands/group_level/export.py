@@ -52,8 +52,8 @@ class Statistic(Enum):
 @dataclass
 class ImagePaths:
     effect: Path
-    mask: Path
 
+    mask: Path | None = None
     variance: Path | None = None
     sigmasquareds: Path | None = None
     t: Path | None = None
@@ -65,12 +65,17 @@ class ImagePaths:
         return nib.nifti1.load(self.effect)
 
     @cached_property
-    def mask_image(self) -> nib.analyze.AnalyzeImage:
+    def mask_image(self) -> nib.analyze.AnalyzeImage | None:
+        if self.mask is None:
+            return None
         return nib.nifti1.load(self.mask)
 
     @property
     def mask_data(self) -> npt.NDArray[np.bool_]:
-        return np.asanyarray(self.mask_image.dataobj, dtype=bool)
+        mask_image = self.mask_image
+        if mask_image is None:
+            return np.isfinite(self.effect_image.get_fdata())
+        return np.asanyarray(mask_image.dataobj, dtype=bool)
 
     def get_data_image(self, statistic: Statistic) -> tuple[Statistic, nib.analyze.AnalyzeImage]:
         if statistic == Statistic.effect:
@@ -181,7 +186,10 @@ class ProbabilisticAtlas(Atlas):
         var_cope_files = None
         if image_paths.variance is not None:
             var_cope_files = [image_paths.variance]
-        cope_img, var_cope_img = load_data([image_paths.effect], var_cope_files, [image_paths.mask], quiet=True)
+        mask_files = None
+        if image_paths.mask is not None:
+            mask_files = [image_paths.mask]
+        cope_img, var_cope_img = load_data([image_paths.effect], var_cope_files, mask_files, quiet=True)
         signals, coverage = mode_signals(cope_img, var_cope_img, self.image, output_coverage=True)
         return AtlasSignals(signals, coverage)
 
@@ -249,7 +257,15 @@ def export(
         statistics_counter: Counter[str | None] = Counter(signal.statistic for signal in signal_column)
         most_common_statistic, _ = statistics_counter.most_common(1)[0]
         if len(statistics_counter) > 1:
-            signal_column = [signal for signal in signal_column if signal.statistic == most_common_statistic]
+            signal_column = [
+                signal
+                if signal.statistic == most_common_statistic
+                else AtlasSignals(
+                    array=np.full_like(signal.array, fill_value=np.nan),
+                    coverages=np.full_like(signal.coverages, fill_value=np.nan),
+                )
+                for signal in signal_column
+            ]
             logger.warning(
                 "Inconsistent statistics were used across subjects. "
                 "Please check that processing completed for all subjects "
