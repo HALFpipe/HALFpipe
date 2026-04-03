@@ -5,9 +5,9 @@
 from argparse import Namespace
 from copy import deepcopy
 from dataclasses import dataclass, field
-from itertools import starmap
+from itertools import chain, starmap
 from pathlib import Path
-from typing import Any, Literal, Sequence
+from typing import Any, Iterable, Literal, Sequence
 
 import pandas as pd
 
@@ -68,7 +68,7 @@ class BetweenBase:
         # Extract the relevant keys from the image dictionary
         cope_paths = images["effect"]
         var_cope_paths = images.get("variance")
-        mask_paths = images["mask"]
+        mask_paths = images.get("mask")
         # Create a design tuple
         if design_base.data_frame is not None:
             design = group_design(
@@ -92,7 +92,7 @@ class BetweenBase:
             mask_paths,
             design,
             result,
-            design_base.model_name,
+            model_name=design_base.model_name,
         )
 
     def apply_export_variables(self, design_base: DesignBase) -> None:
@@ -113,7 +113,7 @@ class BetweenBase:
         subjects: list[str],
         cope_paths: list[Path],
         var_cope_paths: list[Path] | None,
-        mask_paths: list[Path],
+        mask_paths: list[Path] | None,
         design: Design,
         result: ResultDict,
         model_name: str | None = None,
@@ -136,8 +136,8 @@ class BetweenBase:
                 mask_paths,
                 regressor_list,
                 contrast_list,
-                self.arguments.algorithm,
-                self.arguments.nipype_n_procs,
+                algorithms_to_run=self.arguments.algorithm,
+                num_threads=self.arguments.nipype_n_procs,
             )
         )
         # Apply rules from model fit aliases
@@ -154,11 +154,8 @@ class BetweenBase:
             result["tags"]["model"] = model_name
         result["images"] = images
 
-        sources: list[str] = list()
-        sources.extend(str(cope_path) for cope_path in cope_paths)
-        if var_cope_paths is not None:
-            sources.extend(str(var_cope_path) for var_cope_path in var_cope_paths)
-        sources.extend(str(mask_path) for mask_path in mask_paths)
+        source_paths: Iterable[Path] = chain(cope_paths, var_cope_paths or [], mask_paths or [])
+        sources = [str(source_path) for source_path in source_paths if not source_path.is_relative_to(Path.cwd())]
         result["metadata"]["sources"] = sources
         result["metadata"]["halfpipe_version"] = __version__
 
@@ -195,9 +192,9 @@ class BetweenBase:
         if self.arguments.export_modes is not None:
             atlases.extend(starmap(ProbabilisticAtlas.from_args, self.arguments.export_modes))
 
-        logger.info(f"Exporting atlases {atlases}")
         if len(atlases) == 0:
             return
+        logger.info(f"Exporting atlases {atlases}")
 
         regressor_list, contrast_list, _, _ = design
         phenotype_frame, covariate_frame, atlas_coverage_frame = export(
@@ -224,14 +221,14 @@ class BetweenBase:
             phenotype_path = self.output_directory / "phenotypes.tsv"
             phenotype_frame.to_csv(phenotype_path, **csv_kwargs)
         else:
-            logger.warning("No phenotypes were exported")
+            logger.info("No phenotypes were exported")
 
         if len(self.covariate_frames) > 0:
             covariate_frame = combine_first(self.covariate_frames)
             covariate_path = self.output_directory / "covariates.tsv"
             covariate_frame.to_csv(covariate_path, **csv_kwargs)
         else:
-            logger.warning("No covariates were exported")
+            logger.info("No covariates were exported")
 
         if len(self.atlas_coverage_frames) > 0:
             atlas_coverage_frame = combine_first(self.atlas_coverage_frames)
@@ -240,4 +237,4 @@ class BetweenBase:
             coverage_path = self.output_directory / "atlas_coverages.tsv"
             atlas_coverage_frame.to_csv(coverage_path, **csv_kwargs)
         else:
-            logger.warning("No atlas coverages were exported")
+            logger.info("No atlas coverages were exported")

@@ -17,6 +17,7 @@ from ....utils.path import resolve
 from ....workdir import init_workdir
 from .aggregate import apply_aggregate
 from .between import BetweenBase
+from .connectivity import apply_xdf
 from .derived import apply_derived
 from .design import DesignBase, apply_from_arguments, apply_from_spec
 
@@ -158,9 +159,11 @@ def apply_design(arguments: Namespace, design_base: DesignBase, output_directory
         output_directory,
     )
     with (
-        TemporaryDirectory(prefix="group-level") as temporary_directory,
+        TemporaryDirectory(prefix="group-level-") as temporary_directory,
         chdir(temporary_directory),
     ):
+        apply_xdf(design_base, num_threads=arguments.nipype_n_procs)
+
         # Within-subject aggregation step
         apply_aggregate(design_base, num_threads=arguments.nipype_n_procs)
 

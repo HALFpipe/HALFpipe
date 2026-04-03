@@ -46,7 +46,7 @@ class DesignBase:
             self.results,
             filter_dicts=self.filters,
             # Require images we can do statistics on
-            require_one_of_images=["effect", "reho", "falff", "alff"],
+            require_one_of_images=["effect", "reho", "falff", "alff", "timeseries"],
             qc_decision_maker=self.qc_decision_maker,
             spreadsheet=self.data_frame,
             variable_dicts=self.variables,
