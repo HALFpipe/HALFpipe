@@ -8,7 +8,7 @@ from ....model.contrast import ModelContrastSchema
 from ....model.filter import FilterSchema
 from ....model.variable import VariableSchema
 
-aliases: Mapping[str, str] = dict(reho="effect", falff="effect", alff="effect", correlation_matrix="effect")
+aliases: Mapping[str, str] = dict(reho="effect", falff="effect", alff="effect")
 
 variable_schema = VariableSchema()
 contrast_schema = ModelContrastSchema()

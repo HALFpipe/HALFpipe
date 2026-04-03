@@ -13,10 +13,10 @@ from numpy import typing as npt
 from threadpoolctl import threadpool_limits
 from tqdm.auto import tqdm
 
-from ..design import FContrast, TContrast, parse_design
+from ..design import ContrastMatrices, FContrast, TContrast, parse_design
 from ..utils.multiprocessing import make_pool_or_null_context
 from .algorithms import algorithms, make_algorithms_dict
-from .base import ModelAlgorithm
+from .base import ModelAlgorithm, OutputFormat
 
 
 class VoxelData(NamedTuple):
@@ -25,7 +25,7 @@ class VoxelData(NamedTuple):
     effect: npt.NDArray[np.float64]
     design_matrix: npt.NDArray[np.float64]
     variance: npt.NDArray[np.float64]
-    contrast_matrices: dict[str, npt.NDArray[np.float64]]
+    contrast_matrices: ContrastMatrices
 
 
 def voxel_calc(voxel_data: VoxelData) -> dict:
@@ -113,7 +113,7 @@ def make_voxelwise_generator(
     regressors: dict[str, list[float]],
     contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
-) -> tuple[Iterator[VoxelData], dict]:
+) -> tuple[Iterator[VoxelData], ContrastMatrices]:
     shape = copes_img.shape[:3]
 
     copes = copes_img.get_fdata()
@@ -162,6 +162,7 @@ def fit(
     contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
     num_threads: int,
+    output_format: OutputFormat = OutputFormat.NIFTI,
 ) -> dict[str, Sequence[Literal[False] | str]]:
     copes_img, var_copes_img = load_data(
         cope_files,
@@ -180,13 +181,13 @@ def fit(
     cm, iterator = make_pool_or_null_context(voxel_data, voxel_calc, num_threads=num_threads, chunksize=2**9)
     voxel_results: dict[str, dict] = defaultdict(lambda: defaultdict(dict))
     with cm:
-        for x in tqdm(iterator, unit="voxels", desc="model fit"):
-            if x is None:
+        for value in tqdm(iterator, unit="voxels", desc="model fit"):
+            if value is None:
                 continue
-            for algorithm, result in x.items():  # transpose
-                if result is None:
+            for algorithm, voxel_result in value.items():  # transpose
+                if voxel_result is None:
                     continue
-                for k, v in result.items():
+                for k, v in voxel_result.items():
                     if v is None:
                         continue
                     voxel_results[algorithm][k].update(v)
@@ -195,6 +196,6 @@ def fit(
 
     output_files: dict[str, Sequence[Literal[False] | str]] = dict()
     for a, v in voxel_results.items():
-        output_files.update(algorithms[a].write_outputs(ref_image, cmatdict, v))
+        output_files.update(algorithms[a].write_outputs(ref_image, cmatdict, v, output_format))
 
     return output_files

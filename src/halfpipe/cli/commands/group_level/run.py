@@ -8,12 +8,8 @@ from contextlib import chdir
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import nibabel as nib
-import numpy as np
-
 from ....collect.derivatives import collect_halfpipe_derivatives
 from ....logging import logger
-from ....model.tags.schema import entities
 from ....result.aggregate import aggregate_results
 from ....result.base import ResultDict
 from ....utils.format import format_like_bids
@@ -21,6 +17,7 @@ from ....utils.path import resolve
 from ....workdir import init_workdir
 from .aggregate import apply_aggregate
 from .between import BetweenBase
+from .connectivity import apply_xdf
 from .derived import apply_derived
 from .design import DesignBase, apply_from_arguments, apply_from_spec
 
@@ -154,38 +151,6 @@ def apply_rename(rename: list[tuple[str, str, str]] | None, results: list[Result
     return results
 
 
-def apply_fisher_z(design_base: DesignBase) -> None:
-    for result in design_base.results:
-        if "correlation_matrix" not in result["images"]:
-            continue
-        correlation_matrix = np.loadtxt(result["images"].pop("correlation_matrix"))
-
-        # Clip correlation values to avoid infinite values after Fisher z-transformation
-        epsilon = np.finfo(correlation_matrix.dtype).eps
-        correlation_matrix = np.clip(correlation_matrix, -1.0 + epsilon, 1.0 - epsilon)
-
-        (k,) = set(correlation_matrix.shape)
-        indices = np.tril_indices(k, k=-1)
-
-        tags_str = "_".join(f"{key}-{value}" for key in entities[::-1] if (value := result["tags"].get(key)) is not None)
-
-        effect_path = Path.cwd() / f"{tags_str}_effect.nii.gz"
-        effect = np.full_like(correlation_matrix, fill_value=np.nan)
-        effect[indices] = np.arctanh(correlation_matrix[indices])
-        image = nib.nifti1.Nifti1Image(np.atleast_3d(effect), affine=np.eye(4))
-        nib.nifti1.save(image, effect_path)
-        result["images"]["effect"] = effect_path
-
-        number_of_volumes: int = result["metadata"]["number_of_volumes"]
-        variance_path = Path.cwd() / f"{tags_str}_variance.nii.gz"
-        variance = np.full_like(correlation_matrix, fill_value=np.nan)
-        # Standard error of a Fisher z-transformed correlation (Fouladi & Steiger 2008)
-        variance[indices] = 1.0 / (number_of_volumes - 3)
-        image = nib.nifti1.Nifti1Image(np.atleast_3d(variance), affine=np.eye(4))
-        nib.nifti1.save(image, variance_path)
-        result["images"]["variance"] = variance_path
-
-
 def apply_design(arguments: Namespace, design_base: DesignBase, output_directory: Path):
     """The calculations to perform for each model that we run"""
     design_base.results = apply_rename(arguments.rename, design_base.results)
@@ -197,7 +162,7 @@ def apply_design(arguments: Namespace, design_base: DesignBase, output_directory
         TemporaryDirectory(prefix="group-level-") as temporary_directory,
         chdir(temporary_directory),
     ):
-        apply_fisher_z(design_base)
+        apply_xdf(design_base, num_threads=arguments.nipype_n_procs)
 
         # Within-subject aggregation step
         apply_aggregate(design_base, num_threads=arguments.nipype_n_procs)

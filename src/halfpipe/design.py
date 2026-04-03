@@ -5,7 +5,7 @@
 from collections import OrderedDict
 from itertools import product
 from pathlib import Path
-from typing import Literal, NamedTuple, Sequence
+from typing import Literal, Mapping, NamedTuple, Sequence, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -330,13 +330,16 @@ def make_design_tsv(
     return design_tsv, contrast_tsv
 
 
+ContrastMatrices: TypeAlias = Mapping[str, npt.NDArray[np.float64]]
+
+
 def parse_design(
     regressors: dict[str, list[float]],
     contrasts: Sequence[TContrast | FContrast],
-) -> tuple[pd.DataFrame, OrderedDict[str, npt.NDArray]]:
+) -> tuple[pd.DataFrame, ContrastMatrices]:
     design_matrix = pd.DataFrame.from_dict(regressors)
 
-    contrast_matrices: OrderedDict[str, npt.NDArray] = OrderedDict()
+    contrast_matrices: dict[str, npt.NDArray] = OrderedDict()
 
     def make_contrast_matrix(conditions: list[str], weights: list[float]) -> npt.NDArray:
         contrast_matrix: pd.Series = pd.Series(data=weights, index=conditions)[design_matrix.columns]

@@ -10,8 +10,9 @@ import pandas as pd
 import scipy
 from numpy import typing as npt
 
+from ..design import ContrastMatrices
 from ..logging import logger
-from .base import ModelAlgorithm
+from .base import ModelAlgorithm, OutputFiles, OutputFormat, VoxelResult
 from .flame1 import flame1_prepare_data
 
 
@@ -267,8 +268,8 @@ class Heterogeneity(ModelAlgorithm):
         y: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         s: npt.NDArray[np.float64],
-        cmatdict: dict,
-    ) -> dict | None:
+        cmatdict: ContrastMatrices,
+    ) -> VoxelResult | None:
         _ = cmatdict
         y, z, s = flame1_prepare_data(y, z, s)
 
@@ -287,7 +288,13 @@ class Heterogeneity(ModelAlgorithm):
         return voxel_result
 
     @classmethod
-    def write_outputs(cls, reference_image: nib.analyze.AnalyzeImage, contrast_matrices: dict, voxel_results: dict) -> dict:
+    def write_outputs(
+        cls,
+        reference_image: nib.analyze.AnalyzeImage,
+        contrast_matrices: ContrastMatrices,
+        voxel_results: dict,
+        output_format: OutputFormat = OutputFormat.NIFTI,
+    ) -> OutputFiles:
         output_files = dict()
 
         rdf = pd.DataFrame.from_records(voxel_results)
@@ -295,7 +302,7 @@ class Heterogeneity(ModelAlgorithm):
         for map_name, series in rdf.iterrows():
             assert isinstance(map_name, str)
 
-            fname = cls.write_map(reference_image, map_name, series)
+            fname = cls.write_map(reference_image, map_name, series, output_format)
             output_files[map_name] = str(fname)
 
         return output_files

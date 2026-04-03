@@ -3,7 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from collections import defaultdict
-from typing import Any, Literal, NamedTuple
+from typing import Any, Literal, MutableSequence, NamedTuple
 
 import nibabel as nib
 import numpy as np
@@ -12,8 +12,9 @@ import scipy
 from numba import njit
 from numpy import typing as npt
 
+from ..design import ContrastMatrices
 from ..utils.format import format_workflow
-from .base import ModelAlgorithm, demean, listwise_deletion
+from .base import ModelAlgorithm, OutputFiles, OutputFormat, VoxelResult, demean, listwise_deletion
 from .miscmaths import f2z_convert, t2z_convert
 
 
@@ -225,11 +226,11 @@ class FLAME1(ModelAlgorithm):
     @staticmethod
     def voxel_calc(
         coordinate: tuple[int, int, int],
-        y: np.ndarray,
-        z: np.ndarray,
-        s: np.ndarray,
-        cmatdict: dict,
-    ) -> dict | None:
+        y: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        s: npt.NDArray[np.float64],
+        cmatdict: ContrastMatrices,
+    ) -> VoxelResult | None:
         y, z, s = flame1_prepare_data(y, z, s)
 
         npts = y.size
@@ -239,7 +240,7 @@ class FLAME1(ModelAlgorithm):
         except (np.linalg.LinAlgError, ValueError, SystemError):
             return None
 
-        voxel_result: dict[str, dict[tuple[int, int, int], Any]] = defaultdict(dict)
+        voxel_result: VoxelResult = defaultdict(dict)
 
         with np.errstate(all="raise"):
             for name, cmat in cmatdict.items():
@@ -255,10 +256,11 @@ class FLAME1(ModelAlgorithm):
     def write_outputs(
         cls,
         reference_image: nib.analyze.AnalyzeImage,
-        contrast_matrices: dict,
+        contrast_matrices: ContrastMatrices,
         voxel_results: dict,
-    ) -> dict[str, list[Literal[False] | str]]:
-        output_files: dict[str, list[Literal[False] | str]] = dict()
+        output_format: OutputFormat = OutputFormat.NIFTI,
+    ) -> OutputFiles:
+        output_files: dict[str, MutableSequence[Literal[False] | str]] = dict()
 
         for output_name in cls.contrast_outputs:
             output_files[output_name] = [False] * len(contrast_matrices)
@@ -278,7 +280,7 @@ class FLAME1(ModelAlgorithm):
 
             for map_name, series in results_frame.iterrows():
                 output_prefix = f"{map_name}_{i + 1}_{format_workflow(contrast_name)}"
-                fname = cls.write_map(reference_image, output_prefix, series)
+                fname = cls.write_map(reference_image, output_prefix, series, output_format)
 
                 if map_name in frozenset(["dof"]):
                     output_name = str(map_name)
