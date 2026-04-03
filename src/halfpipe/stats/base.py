@@ -3,7 +3,6 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from abc import ABC, abstractmethod
-from enum import Enum
 from pathlib import Path
 from typing import Any, Iterator, Literal, Mapping, Sequence, TypeAlias
 
@@ -18,11 +17,6 @@ from ..interfaces.connectivity import savetxt_argdict
 
 VoxelResult: TypeAlias = Mapping[Any, Any]
 OutputFiles: TypeAlias = Mapping[str, Sequence[Literal[False] | str]]
-
-
-class OutputFormat(Enum):
-    NIFTI = "nifti"
-    TSV = "tsv"
 
 
 class ModelAlgorithm(ABC):
@@ -47,7 +41,6 @@ class ModelAlgorithm(ABC):
         reference_image: nib.analyze.AnalyzeImage,
         contrast_matrices: ContrastMatrices,
         voxel_results: dict,
-        output_format: OutputFormat = OutputFormat.NIFTI,
     ) -> OutputFiles:
         raise NotImplementedError()
 
@@ -57,7 +50,6 @@ class ModelAlgorithm(ABC):
         reference_image: nib.analyze.AnalyzeImage,
         out_name: str,
         series: pd.Series,
-        output_format: OutputFormat = OutputFormat.NIFTI,
     ) -> Path:
         coordinates = series.index.tolist()
         values = series.values.tolist()
@@ -80,7 +72,11 @@ class ModelAlgorithm(ABC):
 
         array[*zip(*coordinates, strict=False)] = np.stack(values).squeeze()
 
-        if output_format == OutputFormat.NIFTI:
+        if len(shape) == 3 and shape[2] == 1:
+            array = array.squeeze(axis=2)
+            image_path = Path.cwd() / f"{out_name}.tsv"
+            np.savetxt(image_path, array, **savetxt_argdict)
+        else:
             image = new_img_like(reference_image, array, copy_header=True)
             if not isinstance(image.header, nib.nifti1.Nifti1Header):
                 raise TypeError("Only nifti1 headers are supported")
@@ -88,9 +84,6 @@ class ModelAlgorithm(ABC):
 
             image_path = Path.cwd() / f"{out_name}.nii.gz"
             nib.loadsave.save(image, image_path)
-        elif output_format == OutputFormat.TSV:
-            image_path = Path.cwd() / f"{out_name}.tsv"
-            np.savetxt(image_path, array, **savetxt_argdict)
 
         return image_path
 

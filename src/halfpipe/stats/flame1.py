@@ -14,7 +14,7 @@ from numpy import typing as npt
 
 from ..design import ContrastMatrices
 from ..utils.format import format_workflow
-from .base import ModelAlgorithm, OutputFiles, OutputFormat, VoxelResult, demean, listwise_deletion
+from .base import ModelAlgorithm, OutputFiles, VoxelResult, demean, listwise_deletion
 from .miscmaths import f2z_convert, t2z_convert
 
 
@@ -258,7 +258,6 @@ class FLAME1(ModelAlgorithm):
         reference_image: nib.analyze.AnalyzeImage,
         contrast_matrices: ContrastMatrices,
         voxel_results: dict,
-        output_format: OutputFormat = OutputFormat.NIFTI,
     ) -> OutputFiles:
         output_files: dict[str, MutableSequence[Literal[False] | str]] = dict()
 
@@ -280,7 +279,7 @@ class FLAME1(ModelAlgorithm):
 
             for map_name, series in results_frame.iterrows():
                 output_prefix = f"{map_name}_{i + 1}_{format_workflow(contrast_name)}"
-                fname = cls.write_map(reference_image, output_prefix, series, output_format)
+                fname = cls.write_map(reference_image, output_prefix, series)
 
                 if map_name in frozenset(["dof"]):
                     output_name = str(map_name)

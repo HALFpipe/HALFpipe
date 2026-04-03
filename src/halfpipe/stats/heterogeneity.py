@@ -12,7 +12,7 @@ from numpy import typing as npt
 
 from ..design import ContrastMatrices
 from ..logging import logger
-from .base import ModelAlgorithm, OutputFiles, OutputFormat, VoxelResult
+from .base import ModelAlgorithm, OutputFiles, VoxelResult
 from .flame1 import flame1_prepare_data
 
 
@@ -293,7 +293,6 @@ class Heterogeneity(ModelAlgorithm):
         reference_image: nib.analyze.AnalyzeImage,
         contrast_matrices: ContrastMatrices,
         voxel_results: dict,
-        output_format: OutputFormat = OutputFormat.NIFTI,
     ) -> OutputFiles:
         output_files = dict()
 
@@ -302,7 +301,7 @@ class Heterogeneity(ModelAlgorithm):
         for map_name, series in rdf.iterrows():
             assert isinstance(map_name, str)
 
-            fname = cls.write_map(reference_image, map_name, series, output_format)
+            fname = cls.write_map(reference_image, map_name, series)
             output_files[map_name] = str(fname)
 
         return output_files

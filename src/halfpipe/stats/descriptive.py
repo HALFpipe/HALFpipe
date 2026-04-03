@@ -12,7 +12,7 @@ from numpy import typing as npt
 
 from ..design import ContrastMatrices
 from ..utils.format import format_workflow
-from .base import ModelAlgorithm, OutputFiles, OutputFormat, VoxelResult, listwise_deletion
+from .base import ModelAlgorithm, OutputFiles, VoxelResult, listwise_deletion
 
 
 class Descriptive(ModelAlgorithm):
@@ -56,7 +56,6 @@ class Descriptive(ModelAlgorithm):
         ref_img: nib.analyze.AnalyzeImage,
         cmatdict: ContrastMatrices,
         voxel_results: dict,
-        output_format: OutputFormat = OutputFormat.NIFTI,
     ) -> OutputFiles:
         output_files: dict[str, MutableSequence[Literal[False] | str]] = dict()
 
@@ -72,7 +71,7 @@ class Descriptive(ModelAlgorithm):
                 assert isinstance(map_name, str)
 
                 out_name = f"{map_name}_{i + 1}_{format_workflow(contrast_name)}"
-                fname = cls.write_map(ref_img, out_name, series, output_format)
+                fname = cls.write_map(ref_img, out_name, series)
 
                 output_name = map_name
                 if output_name in output_files:

@@ -2,7 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-import re
 from collections import defaultdict
 from typing import Any
 
@@ -17,8 +16,6 @@ from .base import ResultdictsOutputSpec
 
 resultdict_schema = ResultdictSchema()
 resultdict_entities = set(get_schema_entities(resultdict_schema))
-
-composite_attr = re.compile(r"(?P<tag>[a-z]+)_(?P<attr>[a-z]+)")
 
 
 class MakeResultdictsOutputSpec(ResultdictsOutputSpec):
