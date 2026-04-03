@@ -5,9 +5,9 @@
 from argparse import Namespace
 from copy import deepcopy
 from dataclasses import dataclass, field
-from itertools import starmap
+from itertools import chain, starmap
 from pathlib import Path
-from typing import Any, Literal, Sequence
+from typing import Any, Iterable, Literal, Sequence
 
 import pandas as pd
 
@@ -19,7 +19,6 @@ from ....result.base import ResultDict
 from ....result.bids.base import make_bids_prefix
 from ....result.bids.images import save_images
 from ....stats.algorithms import modelfit_aliases
-from ....stats.base import OutputFormat
 from ....stats.fit import fit
 from ....utils.data_frame import combine_first
 from ....utils.format import format_tags
@@ -80,10 +79,6 @@ class BetweenBase:
         else:
             design = intercept_only_design(len(subjects))
 
-        # Get output type
-        is_connectivity = result["metadata"].pop("is_connectivity", False)
-        output_format = OutputFormat.TSV if all(is_connectivity) else OutputFormat.NIFTI
-
         self.apply_export(
             subjects,
             images,
@@ -97,7 +92,6 @@ class BetweenBase:
             mask_paths,
             design,
             result,
-            output_format=output_format,
             model_name=design_base.model_name,
         )
 
@@ -122,7 +116,6 @@ class BetweenBase:
         mask_paths: list[Path] | None,
         design: Design,
         result: ResultDict,
-        output_format: OutputFormat,
         model_name: str | None = None,
     ):
         (regressor_list, contrast_list, _, contrast_names) = design
@@ -145,7 +138,6 @@ class BetweenBase:
                 contrast_list,
                 algorithms_to_run=self.arguments.algorithm,
                 num_threads=self.arguments.nipype_n_procs,
-                output_format=output_format,
             )
         )
         # Apply rules from model fit aliases
@@ -162,12 +154,8 @@ class BetweenBase:
             result["tags"]["model"] = model_name
         result["images"] = images
 
-        sources: list[str] = list()
-        sources.extend(str(cope_path) for cope_path in cope_paths)
-        if var_cope_paths is not None:
-            sources.extend(str(var_cope_path) for var_cope_path in var_cope_paths)
-        if mask_paths is not None:
-            sources.extend(str(mask_path) for mask_path in mask_paths)
+        source_paths: Iterable[Path] = chain(cope_paths, var_cope_paths or [], mask_paths or [])
+        sources = [str(source_path) for source_path in source_paths if not source_path.is_relative_to(Path.cwd())]
         result["metadata"]["sources"] = sources
         result["metadata"]["halfpipe_version"] = __version__
 
