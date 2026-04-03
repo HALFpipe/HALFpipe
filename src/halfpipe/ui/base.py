@@ -8,7 +8,7 @@ from pathlib import Path
 from .. import __version__
 from ..logging import logger
 from ..logging.base import LoggingContext
-from ..model.spec import load_spec, save_spec
+from ..model.spec import load_spec, save_spec  # TODO this is super confusing double naming
 from ..workdir import init_workdir
 from .components import (
     App,
@@ -21,11 +21,12 @@ from .components import (
 from .components.config import Config as UIConfig
 from .feature import FeaturesStep
 from .file import BidsStep
-from .model import ModelsStep
+from .model import ModelsStep  # TODO this is super confusing double naming
 from .step import Context, Step
 
 
 class UseExistingSpecStep(Step):
+    # TODO add downstream_features
     options = [
         "Run without modification",
         "Start over at beginning",
@@ -76,6 +77,7 @@ class UseExistingSpecStep(Step):
             files = self.existing_spec.files
             settings = self.existing_spec.settings
             features = self.existing_spec.features
+            # downstream_features = self.existing_spec.downstream_features # TODO test/validate
             models = self.existing_spec.models
 
             if choice_index > 1:
@@ -85,6 +87,7 @@ class UseExistingSpecStep(Step):
             if choice_index > 2:
                 ctx.spec.settings = settings
                 ctx.spec.features = features
+                # ctx.spec.downstream_features = downstream_features # TODO test/validate
 
             if choice_index == 0:
                 ctx.use_existing_spec = True

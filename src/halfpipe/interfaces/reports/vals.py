@@ -25,16 +25,18 @@ from ..connectivity import mean_signals
 
 class CalcMeanInputSpec(TraitedSpec):
     in_file = File(exists=True, mandatory=True)
-    mask = File(exists=True)
-    parcellation = File(exists=True)
-    dseg = File(exists=True)
+    mask = File(exists=True, mandatory=False)
+    parcellation = File(exists=True, mandatory=False)
+    dseg = File(exists=True, mandatory=False)
 
     vals = traits.Dict(traits.Str(), traits.Any())
     key = traits.Str()
 
 
 class CalcMeanOutputSpec(TraitedSpec):
-    mean = traits.Either(traits.Float(), traits.List(traits.Float()))
+    mean = traits.Float()
+    means = traits.List(traits.Float())
+    mean_matrix = traits.Array()
     vals = traits.Dict(traits.Str(), traits.Any())
 
 
@@ -48,6 +50,7 @@ class CalcMean(SimpleInterface):
         if isdefined(self.inputs.mask):
             mask_img = nib.nifti1.load(self.inputs.mask)
 
+        key: str | None = None
         if isdefined(self.inputs.dseg):  # get grey matter only
             atlas_img = nib.nifti1.load(self.inputs.dseg)
             dseg_mean_signals = mean_signals(
@@ -56,24 +59,30 @@ class CalcMean(SimpleInterface):
                 mask_image=mask_img,
             )
             _, gm_mean, _ = np.ravel(dseg_mean_signals).tolist()
-            self._results["mean"] = float(gm_mean)
 
+            key = "mean"
+            self._results[key] = float(gm_mean)
         elif isdefined(self.inputs.parcellation):
             atlas_img = nib.nifti1.load(self.inputs.parcellation)
             parc_mean_signals = mean_signals(in_img, atlas_img, mask_image=mask_img)
-            parc_mean_signals_list = list(map(float, np.ravel(parc_mean_signals).tolist()))
-            self._results["mean"] = parc_mean_signals_list
 
+            if parc_mean_signals.squeeze().ndim == 1:
+                key = "means"
+                self._results[key] = parc_mean_signals.squeeze().tolist()
+            else:
+                key = "mean_matrix"
+                self._results[key] = parc_mean_signals
         elif mask_img is not None:
             mean = mean_signals(in_img, mask_img)
-            self._results["mean"] = float(mean[0].item())
+            key = "mean"
+            self._results[key] = float(mean[0].item())
 
         vals: dict[str, Any] = dict()
         self._results["vals"] = vals
         if isdefined(self.inputs.vals):
             vals.update(self.inputs.vals)
         if isdefined(self.inputs.key):
-            vals[self.inputs.key] = self._results["mean"]
+            vals[self.inputs.key] = self._results[key]
         return runtime
 
 

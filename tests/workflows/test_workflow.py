@@ -28,6 +28,7 @@ from halfpipe.workflows.execgraph import init_execgraph
 def test_empty(tmp_path, mock_spec):
     mock_spec.settings = list()
     mock_spec.features = list()
+    mock_spec.downstream_features = list()
 
     save_spec(mock_spec, workdir=tmp_path)
 
