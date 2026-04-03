@@ -39,10 +39,8 @@ def apply_xdf(design_base: DesignBase, num_threads: int) -> None:
     other_results: list[ResultDict] = list()
     for result in design_base.results:
         if "timeseries" in result["images"]:
-            result["metadata"]["is_connectivity"] = True
             connectivity_results.append(result)
         else:
-            result["metadata"]["is_connectivity"] = False
             other_results.append(result)
 
     if connectivity_results:

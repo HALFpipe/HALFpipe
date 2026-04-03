@@ -16,7 +16,7 @@ from tqdm.auto import tqdm
 from ..design import ContrastMatrices, FContrast, TContrast, parse_design
 from ..utils.multiprocessing import make_pool_or_null_context
 from .algorithms import algorithms, make_algorithms_dict
-from .base import ModelAlgorithm, OutputFormat
+from .base import ModelAlgorithm
 
 
 class VoxelData(NamedTuple):
@@ -162,7 +162,6 @@ def fit(
     contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
     num_threads: int,
-    output_format: OutputFormat = OutputFormat.NIFTI,
 ) -> dict[str, Sequence[Literal[False] | str]]:
     copes_img, var_copes_img = load_data(
         cope_files,
@@ -196,6 +195,6 @@ def fit(
 
     output_files: dict[str, Sequence[Literal[False] | str]] = dict()
     for a, v in voxel_results.items():
-        output_files.update(algorithms[a].write_outputs(ref_image, cmatdict, v, output_format))
+        output_files.update(algorithms[a].write_outputs(ref_image, cmatdict, v))
 
     return output_files
