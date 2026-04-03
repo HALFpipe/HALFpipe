@@ -19,6 +19,7 @@ from ....result.base import ResultDict
 from ....result.bids.base import make_bids_prefix
 from ....result.bids.images import save_images
 from ....stats.algorithms import modelfit_aliases
+from ....stats.base import OutputFormat
 from ....stats.fit import fit
 from ....utils.data_frame import combine_first
 from ....utils.format import format_tags
@@ -79,6 +80,10 @@ class BetweenBase:
         else:
             design = intercept_only_design(len(subjects))
 
+        # Get output type
+        is_connectivity = result["metadata"].pop("is_connectivity", False)
+        output_format = OutputFormat.TSV if all(is_connectivity) else OutputFormat.NIFTI
+
         self.apply_export(
             subjects,
             images,
@@ -92,7 +97,8 @@ class BetweenBase:
             mask_paths,
             design,
             result,
-            design_base.model_name,
+            output_format=output_format,
+            model_name=design_base.model_name,
         )
 
     def apply_export_variables(self, design_base: DesignBase) -> None:
@@ -116,6 +122,7 @@ class BetweenBase:
         mask_paths: list[Path] | None,
         design: Design,
         result: ResultDict,
+        output_format: OutputFormat,
         model_name: str | None = None,
     ):
         (regressor_list, contrast_list, _, contrast_names) = design
@@ -136,8 +143,9 @@ class BetweenBase:
                 mask_paths,
                 regressor_list,
                 contrast_list,
-                self.arguments.algorithm,
-                self.arguments.nipype_n_procs,
+                algorithms_to_run=self.arguments.algorithm,
+                num_threads=self.arguments.nipype_n_procs,
+                output_format=output_format,
             )
         )
         # Apply rules from model fit aliases
