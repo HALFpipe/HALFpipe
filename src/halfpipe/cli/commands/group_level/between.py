@@ -192,9 +192,9 @@ class BetweenBase:
         if self.arguments.export_modes is not None:
             atlases.extend(starmap(ProbabilisticAtlas.from_args, self.arguments.export_modes))
 
-        logger.info(f"Exporting atlases {atlases}")
         if len(atlases) == 0:
             return
+        logger.info(f"Exporting atlases {atlases}")
 
         regressor_list, contrast_list, _, _ = design
         phenotype_frame, covariate_frame, atlas_coverage_frame = export(
@@ -221,14 +221,14 @@ class BetweenBase:
             phenotype_path = self.output_directory / "phenotypes.tsv"
             phenotype_frame.to_csv(phenotype_path, **csv_kwargs)
         else:
-            logger.warning("No phenotypes were exported")
+            logger.info("No phenotypes were exported")
 
         if len(self.covariate_frames) > 0:
             covariate_frame = combine_first(self.covariate_frames)
             covariate_path = self.output_directory / "covariates.tsv"
             covariate_frame.to_csv(covariate_path, **csv_kwargs)
         else:
-            logger.warning("No covariates were exported")
+            logger.info("No covariates were exported")
 
         if len(self.atlas_coverage_frames) > 0:
             atlas_coverage_frame = combine_first(self.atlas_coverage_frames)
@@ -237,4 +237,4 @@ class BetweenBase:
             coverage_path = self.output_directory / "atlas_coverages.tsv"
             atlas_coverage_frame.to_csv(coverage_path, **csv_kwargs)
         else:
-            logger.warning("No atlas coverages were exported")
+            logger.info("No atlas coverages were exported")
