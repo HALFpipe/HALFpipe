@@ -31,6 +31,12 @@ def inner(result: ResultDict) -> ResultDict:
     nib.nifti1.save(image, variance_path)
     result["images"]["variance"] = variance_path
 
+    mask_path = Path.cwd() / f"{tags_str}_mask.nii.gz"
+    mask = np.logical_and(np.isfinite(effect), np.isfinite(variance)).astype(np.int8)
+    image = nib.nifti1.Nifti1Image(np.atleast_3d(mask), affine=np.eye(4))
+    nib.nifti1.save(image, mask_path)
+    result["images"]["mask"] = mask_path
+
     return result
 
 
