@@ -23,6 +23,7 @@ from .sidecar import load_sidecar, save_sidecar
 statmap_keys: frozenset[str] = frozenset(["effect", "variance", "z", "t", "f", "dof", "sigmasquareds"])
 boldmap_keys: frozenset[str] = frozenset(["tsnr"])
 matrix_keys: frozenset[str] = frozenset(["correlation_matrix", "covariance_matrix"])
+regressors_keys: frozenset[str] = frozenset(["confounds_regressors"])
 has_sidecar_keys: frozenset[str] = frozenset(["effect", "reho", "falff", "alff", "bold", "timeseries"])
 has_sidecar_extensions: frozenset[str] = frozenset([".nii", ".nii.gz", ".tsv"])
 
@@ -56,6 +57,8 @@ def _to_bids_derivatives(key: str, inpath: Path, tags: dict[str, str]) -> Path:
         return make_bids_path(inpath, "image", tags, suffix="boldmap", stat=key)
     elif key in matrix_keys:
         return make_bids_path(inpath, "image", tags, suffix="matrix", desc=key.removesuffix("_matrix"))
+    elif key in regressors_keys:
+        return make_bids_path(inpath, "image", tags, suffix="regressors", desc=key.removesuffix("_regressors"))
 
     elif key in algorithms["heterogeneity"].model_outputs:
         key = re.sub(r"^het", "", key)
