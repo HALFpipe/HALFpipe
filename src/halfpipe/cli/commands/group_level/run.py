@@ -159,7 +159,10 @@ def apply_design(arguments: Namespace, design_base: DesignBase, output_directory
         output_directory,
     )
     with (
-        TemporaryDirectory(prefix="group-level-") as temporary_directory,
+        TemporaryDirectory(
+            prefix="group-level-",
+            delete=(not arguments.debug),
+        ) as temporary_directory,  # type: ignore[call-overload]
         chdir(temporary_directory),
     ):
         apply_xdf(design_base, num_threads=arguments.nipype_n_procs)
