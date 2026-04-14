@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
 from contextlib import chdir
 from pathlib import Path
 
@@ -76,6 +77,9 @@ def map_fixed_effects_aggregate(result: ResultDict, exist_ok: bool = False) -> R
     cope_files = images.pop("effect")
     var_cope_files = images.pop("variance")
     mask_files = images.pop("mask")
+
+    if "FSLOUTPUTTYPE" not in os.environ:
+        os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
     with chdir(model_directory):
         cope_file = merge(cope_files, "t")
