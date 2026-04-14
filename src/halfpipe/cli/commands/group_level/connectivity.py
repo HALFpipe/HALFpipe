@@ -12,30 +12,31 @@ from halfpipe.xdf import xdf
 
 
 def inner(result: ResultDict) -> ResultDict:
-    if "timeseries" not in result["images"]:
+    images = result["images"]
+
+    if "effect" in images and "variance" in images:
+        effect = np.loadtxt(images["effect"])
+        variance = np.loadtxt(images["variance"])
+    elif "timeseries" in images:
+        timeseries = np.loadtxt(images.pop("timeseries"))
+        effect, variance = xdf(timeseries.transpose())
+    else:
         return result
-
-    timeseries = np.loadtxt(result["images"].pop("timeseries"))
-
-    effect, variance = xdf(timeseries.transpose())
 
     tags_str = "_".join(f"{key}-{value}" for key in entities[::-1] if (value := result["tags"].get(key)) is not None)
 
     effect_path = Path.cwd() / f"{tags_str}_effect.nii.gz"
-    image = nib.nifti1.Nifti1Image(np.atleast_3d(effect), affine=np.eye(4))
-    nib.nifti1.save(image, effect_path)
-    result["images"]["effect"] = effect_path
+    nib.nifti1.save(nib.nifti1.Nifti1Image(effect, affine=np.eye(4)), effect_path)
+    images["effect"] = effect_path
 
     variance_path = Path.cwd() / f"{tags_str}_variance.nii.gz"
-    image = nib.nifti1.Nifti1Image(np.atleast_3d(variance), affine=np.eye(4))
-    nib.nifti1.save(image, variance_path)
-    result["images"]["variance"] = variance_path
+    nib.nifti1.save(nib.nifti1.Nifti1Image(variance, affine=np.eye(4)), variance_path)
+    images["variance"] = variance_path
 
     mask_path = Path.cwd() / f"{tags_str}_mask.nii.gz"
     mask = np.logical_and(np.isfinite(effect), np.isfinite(variance)).astype(np.int8)
-    image = nib.nifti1.Nifti1Image(np.atleast_3d(mask), affine=np.eye(4))
-    nib.nifti1.save(image, mask_path)
-    result["images"]["mask"] = mask_path
+    nib.nifti1.save(nib.nifti1.Nifti1Image(mask, affine=np.eye(4)), mask_path)
+    images["mask"] = mask_path
 
     return result
 
