@@ -42,10 +42,10 @@ def _from_bids_derivatives(tags: Mapping[str, str | None]) -> str | None:
                 return f"{algorithm}{stat}"
 
         return stat
-    elif suffix == "matrix":
+    elif suffix in ["matrix", "regressors"]:
         if "desc" not in tags:
             return None
-        return f"{tags['desc']}_matrix"
+        return f"{tags['desc']}_{suffix}"
 
     return suffix
 

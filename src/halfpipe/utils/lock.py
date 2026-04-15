@@ -65,8 +65,9 @@ class AdaptiveLock:
             if not isinstance(self.flufl_lock, FluflLock):
                 raise ValueError("Lock instance is not a FluflLock")
             self.flufl_lock.unlock(unconditionally=True)  # Do not raise errors in unlock
-            self.lock_instance = None
+            self.flufl_lock = None
         elif self.methods[0] == "fcntl":
             if not isinstance(self.fcntl_lock, FcntlLock):
                 raise ValueError("Lock instance is not an FcntlLock")
             self.fcntl_lock.release()  # type: ignore
+            self.fcntl_lock = None

@@ -103,7 +103,8 @@ def xdf(
     variance = np.full_like(effect, fill_value=np.nan)
 
     triangular_indices = np.vstack(np.tril_indices(indices.size, k=-1))
-    for i, j in np.array_split(triangular_indices, triangular_indices.shape[1] // 100, axis=1):
+    count = max(1, triangular_indices.shape[1] // 100)
+    for i, j in np.array_split(triangular_indices, count, axis=1):
         correlation_vector, variance_vector = calculate_variance(
             time_series[i],
             time_series[j],
