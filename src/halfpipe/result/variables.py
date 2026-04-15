@@ -28,32 +28,32 @@ class Continuous:
     n_missing: int
 
     @classmethod
-    def load(cls, o: Any) -> Continuous | None:
-        if isinstance(o, Continuous):
-            return o
+    def load(cls, obj: Any) -> Continuous | None:
+        if isinstance(obj, Continuous):
+            return obj
 
-        if isinstance(o, Mapping):
-            mean = o.get("mean")
-            std = o.get("std")
-            n_observations = o.get("n_observations")
-            n_missing = o.get("n_missing")
+        if isinstance(obj, Mapping):
+            mean = obj.get("mean")
+            std = obj.get("std")
+            n_observations = obj.get("n_observations")
+            n_missing = obj.get("n_missing")
 
             if (
-                isinstance(mean, float)
-                and isinstance(std, float)
+                isinstance(mean, (float, int))
+                and isinstance(std, (float, int))
                 and isinstance(n_observations, int)
                 and isinstance(n_missing, int)
             ):
                 return cls(mean, std, n_observations, n_missing)
 
-        elif isinstance(o, str):
-            parse_result = parse(continuous_format, o)
+        elif isinstance(obj, str):
+            parse_result = parse(continuous_format, obj)
             if isinstance(parse_result, ParseResult):
                 return cls.load(parse_result.named)
 
-        elif isinstance(o, (float, int, np.number)):
-            if isfinite(o):
-                return cls(float(o), nan, 1, 0)
+        elif isinstance(obj, (float, int, np.number)):
+            if isfinite(obj):
+                return cls(float(obj), nan, 1, 0)
             else:
                 return cls(nan, nan, 0, 1)
 
@@ -67,13 +67,13 @@ class Continuous:
             n_missing=self.n_missing,
         )
 
-    def __eq__(self, o: object) -> bool:
-        if isinstance(o, Continuous):
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Continuous):
             return (
-                isclose(self.mean, o.mean)
-                and isclose(self.std, o.std)
-                and self.n_observations == o.n_observations
-                and self.n_missing == o.n_missing
+                isclose(self.mean, other.mean)
+                and isclose(self.std, other.std)
+                and self.n_observations == other.n_observations
+                and self.n_missing == other.n_missing
             )
         return False
 
@@ -82,10 +82,9 @@ class Continuous:
         means = list(value.mean for value in values if value is not None and isfinite(value.mean))
         if len(means) == 0:
             return None
-
-        first_mean = means[0]
-        if all(isclose(first_mean, mean) for mean in means):
-            return first_mean
+        elif len(means) == 1:
+            (mean,) = means
+            return mean
 
         mean = statistics.mean(means)
         std = statistics.stdev(means)
@@ -100,31 +99,31 @@ class Categorical:
     counter: Counter
 
     @classmethod
-    def load(cls, oo: Any) -> Categorical | None:
-        if isinstance(oo, Categorical):
-            return oo
+    def load(cls, objects: Any) -> Categorical | None:
+        if isinstance(objects, Categorical):
+            return objects
 
-        elif isinstance(oo, Mapping):
-            if isinstance(oo, Counter):
-                return cls(oo)
+        elif isinstance(objects, Mapping):
+            if isinstance(objects, Counter):
+                return cls(objects)
 
-        elif isinstance(oo, Sequence):
+        elif isinstance(objects, Sequence):
             counter: Counter | None = None
 
-            for o in oo:
-                if isinstance(o, Categorical):
+            for obj in objects:
+                if isinstance(obj, Categorical):
                     if counter is None:
                         counter = Counter()
-                    counter.update(o.counter)
+                    counter.update(obj.counter)
 
-                elif isinstance(o, Mapping):
-                    if "value" not in o:
+                elif isinstance(obj, Mapping):
+                    if "value" not in obj:
                         break
-                    value = o["value"]
+                    value = obj["value"]
                     if not isinstance(value, Hashable):
                         value = freeze(value)
 
-                    count = o.get("count")
+                    count = obj.get("count")
                     if not isinstance(count, int):
                         break
 
@@ -138,10 +137,10 @@ class Categorical:
             if counter is not None:
                 return cls(counter)
 
-        if not isinstance(oo, Hashable):
-            oo = freeze(oo)
+        if not isinstance(objects, Hashable):
+            objects = freeze(objects)
 
-        return cls(Counter([oo]))
+        return cls(Counter([objects]))
 
     @staticmethod
     def summarize(oo: list[Categorical | None]) -> Any | None:
@@ -168,9 +167,5 @@ class Categorical:
             count_list.append(dict(value=thaw(a), count=count))
 
             seen.update(merge)
-
-        if len(count_list) == 1:
-            (d,) = count_list
-            return d["value"]
 
         return count_list

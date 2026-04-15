@@ -4,12 +4,19 @@
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Iterator, Literal
+from typing import Any, Iterator, Literal, Mapping, Sequence, TypeAlias
 
 import nibabel as nib
 import numpy as np
 import pandas as pd
 from nilearn.image import new_img_like
+from numpy import typing as npt
+
+from ..design import ContrastMatrices
+from ..interfaces.connectivity import savetxt_argdict
+
+VoxelResult: TypeAlias = Mapping[Any, Any]
+OutputFiles: TypeAlias = Mapping[str, Sequence[Literal[False] | str]]
 
 
 class ModelAlgorithm(ABC):
@@ -19,50 +26,64 @@ class ModelAlgorithm(ABC):
     @staticmethod
     @abstractmethod
     def voxel_calc(
-        coordinate: tuple[int, int, int],
-        y: np.ndarray,
-        z: np.ndarray,
-        s: np.ndarray,
-        cmatdict: dict,
-    ) -> dict | None:
+        coordinate: tuple[int, ...],
+        y: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        s: npt.NDArray[np.float64],
+        cmatdict: ContrastMatrices,
+    ) -> VoxelResult | None:
         raise NotImplementedError()
 
     @classmethod
     @abstractmethod
     def write_outputs(
-        cls, reference_image: nib.analyze.AnalyzeImage, contrast_matrices: dict, voxel_results: dict
-    ) -> dict[str, list[Literal[False] | str]]:
+        cls,
+        reference_image: nib.analyze.AnalyzeImage,
+        contrast_matrices: ContrastMatrices,
+        voxel_results: dict,
+    ) -> OutputFiles:
         raise NotImplementedError()
 
     @classmethod
-    def write_map(cls, reference_image: nib.analyze.AnalyzeImage, out_name: str, series: pd.Series) -> Path:
+    def write_map(
+        cls,
+        reference_image: nib.analyze.AnalyzeImage,
+        out_name: str,
+        series: pd.Series,
+    ) -> Path:
         coordinates = series.index.tolist()
         values = series.values.tolist()
 
         shape: list[int] = list(reference_image.shape[:3])
+
         (k,) = set(
-            ((1,) if isinstance(value, (int, float)) else (len(value),) if isinstance(value, (list, tuple)) else value.shape)
+            (value.shape if hasattr(value, "shape") else (len(value),) if isinstance(value, Sequence) else ())
             for value in values
         )
         shape.extend(k)
 
-        if len(shape) == 4 and shape[-1] == 1:
-            shape = shape[:3]  # squeeze
+        if shape[-1] == 1:
+            # Squeeze size 1 dimension
+            shape = shape[:-1]
 
         if out_name.startswith("mask"):
             array = np.full(shape, False, dtype=np.bool_)
         else:
             array = np.full(shape, np.nan, dtype=np.float64)
 
-        array[*zip(*coordinates, strict=False)] = np.stack(values).squeeze()
+        array[*zip(*coordinates, strict=True)] = np.stack(values).squeeze()
 
-        image = new_img_like(reference_image, array, copy_header=True)
-        if not isinstance(image.header, nib.nifti1.Nifti1Header):
-            raise TypeError("Only nifti1 headers are supported")
-        image.header.set_data_dtype(np.float64)
+        if len(shape) == 2:
+            image_path = Path.cwd() / f"{out_name}.tsv"
+            np.savetxt(image_path, array, **savetxt_argdict)
+        else:
+            image = new_img_like(reference_image, array, copy_header=True)
+            if not isinstance(image.header, nib.nifti1.Nifti1Header):
+                raise TypeError("Only nifti1 headers are supported")
+            image.header.set_data_dtype(np.float64)
 
-        image_path = Path.cwd() / f"{out_name}.nii.gz"
-        nib.loadsave.save(image, image_path)
+            image_path = Path.cwd() / f"{out_name}.nii.gz"
+            nib.loadsave.save(image, image_path)
 
         return image_path
 

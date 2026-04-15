@@ -5,7 +5,7 @@
 from collections import OrderedDict
 from itertools import product
 from pathlib import Path
-from typing import Literal, NamedTuple, Sequence
+from typing import Literal, Mapping, NamedTuple, Sequence, TypeAlias
 
 import numpy as np
 import pandas as pd
@@ -330,13 +330,16 @@ def make_design_tsv(
     return design_tsv, contrast_tsv
 
 
+ContrastMatrices: TypeAlias = Mapping[str, npt.NDArray[np.float64]]
+
+
 def parse_design(
     regressors: dict[str, list[float]],
     contrasts: Sequence[TContrast | FContrast],
-) -> tuple[pd.DataFrame, OrderedDict[str, npt.NDArray]]:
+) -> tuple[pd.DataFrame, ContrastMatrices]:
     design_matrix = pd.DataFrame.from_dict(regressors)
 
-    contrast_matrices: OrderedDict[str, npt.NDArray] = OrderedDict()
+    contrast_matrices: dict[str, npt.NDArray] = OrderedDict()
 
     def make_contrast_matrix(conditions: list[str], weights: list[float]) -> npt.NDArray:
         contrast_matrix: pd.Series = pd.Series(data=weights, index=conditions)[design_matrix.columns]
@@ -352,8 +355,8 @@ def parse_design(
         if statistic == "F":
             child_contrast_matrices = list()
 
-            for child_contrast_name, _, conditions, weights in contrast[2]:  # type: ignore
-                child_contrast_matrix = make_contrast_matrix(conditions, weights)
+            for child_contrast_name, _, conditions, weights in contrast[2]:  # type: ignore[str-unpack, misc]
+                child_contrast_matrix = make_contrast_matrix(conditions, weights)  # type: ignore[arg-type]
                 if child_contrast_name in contrast_matrices:
                     assert np.allclose(contrast_matrices[child_contrast_name], child_contrast_matrix)
                     del contrast_matrices[child_contrast_name]
@@ -361,8 +364,8 @@ def parse_design(
             contrast_matrix = np.concatenate(child_contrast_matrices, axis=0)
 
         elif statistic == "T":
-            conditions = contrast[2]
-            weights = contrast[3]  # type: ignore
+            conditions = contrast[2]  # type: ignore[assignment]
+            weights = contrast[3]  # type: ignore[misc]
             contrast_matrix = make_contrast_matrix(conditions, weights)  # type: ignore[arg-type]
 
         if contrast_matrix is not None:

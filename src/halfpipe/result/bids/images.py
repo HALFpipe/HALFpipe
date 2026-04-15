@@ -20,8 +20,10 @@ from ..base import ResultDict
 from .base import make_bids_path
 from .sidecar import load_sidecar, save_sidecar
 
-boldmap_keys: frozenset[str] = frozenset(["tsnr"])
 statmap_keys: frozenset[str] = frozenset(["effect", "variance", "z", "t", "f", "dof", "sigmasquareds"])
+boldmap_keys: frozenset[str] = frozenset(["tsnr"])
+matrix_keys: frozenset[str] = frozenset(["correlation_matrix", "covariance_matrix"])
+regressors_keys: frozenset[str] = frozenset(["confounds_regressors"])
 has_sidecar_keys: frozenset[str] = frozenset(["effect", "reho", "falff", "alff", "bold", "timeseries"])
 has_sidecar_extensions: frozenset[str] = frozenset([".nii", ".nii.gz", ".tsv"])
 
@@ -40,15 +42,23 @@ def _from_bids_derivatives(tags: Mapping[str, str | None]) -> str | None:
                 return f"{algorithm}{stat}"
 
         return stat
+    elif suffix in ["matrix", "regressors"]:
+        if "desc" not in tags:
+            return None
+        return f"{tags['desc']}_{suffix}"
 
     return suffix
 
 
 def _to_bids_derivatives(key: str, inpath: Path, tags: dict[str, str]) -> Path:
-    if key in statmap_keys:  # apply rule
+    if key in statmap_keys:
         return make_bids_path(inpath, "image", tags, suffix="statmap", stat=key)
-    elif key in boldmap_keys:  # apply rule
+    elif key in boldmap_keys:
         return make_bids_path(inpath, "image", tags, suffix="boldmap", stat=key)
+    elif key in matrix_keys:
+        return make_bids_path(inpath, "image", tags, suffix="matrix", desc=key.removesuffix("_matrix"))
+    elif key in regressors_keys:
+        return make_bids_path(inpath, "image", tags, suffix="regressors", desc=key.removesuffix("_regressors"))
 
     elif key in algorithms["heterogeneity"].model_outputs:
         key = re.sub(r"^het", "", key)
@@ -109,7 +119,7 @@ def _load_result(file_index: FileIndex, tags: Mapping[str, str | None]) -> Resul
 
 
 def load_images(file_index: FileIndex, num_threads: int = 1) -> list[ResultDict]:
-    image_group_entities = set(entities) - {"stat", "algorithm"}
+    image_group_entities = set(entities) - {"stat", "algorithm", "desc"}
 
     groups = file_index.get_tag_groups(image_group_entities)
 
@@ -124,7 +134,7 @@ def load_images(file_index: FileIndex, num_threads: int = 1) -> list[ResultDict]
     with cm:
         for result in tqdm(
             iterator,
-            desc="loading image metadata",
+            desc="Loading image metadata",
             total=len(groups),
         ):
             if result is None:

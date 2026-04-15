@@ -2,6 +2,7 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import os
 from contextlib import chdir
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from nipype.interfaces import fsl
 from tqdm.auto import tqdm
 
 from ....design import intercept_only_design
+from ....ingest.resolve import entity_shortnames
 from ....interfaces.image_maths.merge import merge, merge_mask
 from ....logging import logger
 from ....result.aggregate import aggregate_results, summarize_metadata
@@ -28,6 +30,9 @@ def apply_aggregate(
 
     results = design.results
     for aggregate_key in design.aggregate:
+        if aggregate_key in entity_shortnames:
+            aggregate_key = entity_shortnames[aggregate_key]
+
         results, other_results = aggregate_results(results, aggregate_key)
 
         logger.info(f'Will run {len(results):d} models at level "{aggregate_key}"')
@@ -41,7 +46,7 @@ def apply_aggregate(
                 tqdm(
                     iterator,
                     total=len(results),
-                    desc=f'aggregate "{aggregate_key}"',
+                    desc=f'Aggregate across "{aggregate_key}"',
                 )
             )
 
@@ -76,6 +81,9 @@ def map_fixed_effects_aggregate(result: ResultDict, exist_ok: bool = False) -> R
     cope_files = images.pop("effect")
     var_cope_files = images.pop("variance")
     mask_files = images.pop("mask")
+
+    if "FSLOUTPUTTYPE" not in os.environ:
+        os.environ["FSLOUTPUTTYPE"] = "NIFTI_GZ"
 
     with chdir(model_directory):
         cope_file = merge(cope_files, "t")

@@ -6,12 +6,14 @@ import warnings
 
 import numpy as np
 import statsmodels.api as sm
+from numpy import typing as npt
 from statsmodels.tools.sm_exceptions import (
     PerfectSeparationError,
     PerfectSeparationWarning,
 )
 
-from .base import demean
+from ..design import ContrastMatrices
+from .base import VoxelResult, demean
 from .heterogeneity import Heterogeneity
 from .miscmaths import chisq2z_convert
 
@@ -22,12 +24,12 @@ class MCARTest(Heterogeneity):
 
     @staticmethod
     def voxel_calc(
-        coordinate: tuple[int, int, int],
-        y: np.ndarray,
-        z: np.ndarray,
-        s: np.ndarray,
-        cmatdict: dict,
-    ) -> dict | None:
+        coordinate: tuple[int, ...],
+        y: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        s: npt.NDArray[np.float64],
+        cmatdict: ContrastMatrices,
+    ) -> VoxelResult | None:
         z = demean(z)
 
         is_available = np.isfinite(y) & np.isfinite(s)
