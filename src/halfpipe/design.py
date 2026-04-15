@@ -355,8 +355,8 @@ def parse_design(
         if statistic == "F":
             child_contrast_matrices = list()
 
-            for child_contrast_name, _, conditions, weights in contrast[2]:  # type: ignore
-                child_contrast_matrix = make_contrast_matrix(conditions, weights)
+            for child_contrast_name, _, conditions, weights in contrast[2]:  # type: ignore[str-unpack, misc]
+                child_contrast_matrix = make_contrast_matrix(conditions, weights)  # type: ignore[arg-type]
                 if child_contrast_name in contrast_matrices:
                     assert np.allclose(contrast_matrices[child_contrast_name], child_contrast_matrix)
                     del contrast_matrices[child_contrast_name]
@@ -364,8 +364,8 @@ def parse_design(
             contrast_matrix = np.concatenate(child_contrast_matrices, axis=0)
 
         elif statistic == "T":
-            conditions = contrast[2]
-            weights = contrast[3]  # type: ignore
+            conditions = contrast[2]  # type: ignore[assignment]
+            weights = contrast[3]  # type: ignore[misc]
             contrast_matrix = make_contrast_matrix(conditions, weights)  # type: ignore[arg-type]
 
         if contrast_matrix is not None:
