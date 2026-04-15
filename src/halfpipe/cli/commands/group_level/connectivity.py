@@ -61,7 +61,7 @@ def apply_xdf(design_base: DesignBase, num_threads: int) -> None:
                 tqdm(
                     iterator,
                     total=len(connectivity_results),
-                    desc="loading connectivity",
+                    desc="Loading connectivity",
                     unit="matrices",
                 )
             )

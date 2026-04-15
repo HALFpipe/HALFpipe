@@ -26,7 +26,7 @@ class ModelAlgorithm(ABC):
     @staticmethod
     @abstractmethod
     def voxel_calc(
-        coordinate: tuple[int, int, int],
+        coordinate: tuple[int, ...],
         y: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         s: npt.NDArray[np.float64],
@@ -57,23 +57,23 @@ class ModelAlgorithm(ABC):
         shape: list[int] = list(reference_image.shape[:3])
 
         (k,) = set(
-            ((1,) if isinstance(value, (int, float)) else (len(value),) if isinstance(value, (list, tuple)) else value.shape)
+            (value.shape if hasattr(value, "shape") else (len(value),) if isinstance(value, Sequence) else ())
             for value in values
         )
         shape.extend(k)
 
-        if len(shape) == 4 and shape[-1] == 1:
-            shape = shape[:3]  # squeeze
+        if shape[-1] == 1:
+            # Squeeze size 1 dimension
+            shape = shape[:-1]
 
         if out_name.startswith("mask"):
             array = np.full(shape, False, dtype=np.bool_)
         else:
             array = np.full(shape, np.nan, dtype=np.float64)
 
-        array[*zip(*coordinates, strict=False)] = np.stack(values).squeeze()
+        array[*zip(*coordinates, strict=True)] = np.stack(values).squeeze()
 
-        if len(shape) == 3 and shape[2] == 1:
-            array = array.squeeze(axis=2)
+        if len(shape) == 2:
             image_path = Path.cwd() / f"{out_name}.tsv"
             np.savetxt(image_path, array, **savetxt_argdict)
         else:
