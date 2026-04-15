@@ -36,7 +36,7 @@ def get_schema_entities(schema):
 
 def get_type_schema(base_schema: Type[OneOfSchema], database, file_path) -> Type[Schema]:
     # traverse schemas to find subclass
-    schema: Type[OneOfSchema] = base_schema
+    schema: Type[Schema] = base_schema
     while hasattr(schema, "type_field") and hasattr(schema, "type_schemas"):
         type_field = schema.type_field
         type_schemas = schema.type_schemas

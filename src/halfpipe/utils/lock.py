@@ -14,19 +14,20 @@ from flufl.lock._lockfile import TimeOutError
 
 
 class AdaptiveLock:
-    def __init__(self, timeout: int = 180):
+    def __init__(self, timeout: int = 180) -> None:
         self.timeout = timeout
 
         self.methods: List[str] = ["fcntl", "hard_links", "delay"]
 
-        self.lock_instance: FcntlLock | FluflLock | None = None
+        self.fcntl_lock: FcntlLock | None = None
+        self.flufl_lock: FluflLock | None = None
 
-    def lock(self, lock_file):
+    def lock(self, lock_file: str) -> None:
         if self.methods[0] == "hard_links":
-            self.lock_instance = FluflLock(lock_file, lifetime=self.timeout)  # seconds after which the lock is broken
+            self.flufl_lock = FluflLock(lock_file, lifetime=self.timeout)  # seconds after which the lock is broken
 
             try:
-                self.lock_instance.lock(timeout=self.timeout)  # try for a long time
+                self.flufl_lock.lock(timeout=self.timeout)  # try for a long time
                 return
             except (FluflLockError, TimeOutError):  # timeouts etc.
                 pass
@@ -39,9 +40,9 @@ class AdaptiveLock:
             self.lock(lock_file)
 
         elif self.methods[0] == "fcntl":
-            self.lock_instance = FcntlLock(lock_file)
+            self.fcntl_lock = FcntlLock(lock_file)
 
-            acquired = self.lock_instance.acquire(timeout=self.timeout, delay=1)
+            acquired = self.fcntl_lock.acquire(timeout=self.timeout, delay=1)
 
             if acquired:
                 return
@@ -57,15 +58,15 @@ class AdaptiveLock:
             if delay > 0:
                 sleep(delay)
 
-    def unlock(self):
-        if self.lock_instance is None:
+    def unlock(self) -> None:
+        if self.flufl_lock is None and self.fcntl_lock is None:
             raise ValueError("Lock instance is None")
         if self.methods[0] == "hard_links":
-            if not isinstance(self.lock_instance, FluflLock):
+            if not isinstance(self.flufl_lock, FluflLock):
                 raise ValueError("Lock instance is not a FluflLock")
-            self.lock_instance.unlock(unconditionally=True)  # Do not raise errors in unlock
+            self.flufl_lock.unlock(unconditionally=True)  # Do not raise errors in unlock
             self.lock_instance = None
         elif self.methods[0] == "fcntl":
-            if not isinstance(self.lock_instance, FcntlLock):
+            if not isinstance(self.fcntl_lock, FcntlLock):
                 raise ValueError("Lock instance is not an FcntlLock")
-            self.lock_instance.release()  # type: ignore
+            self.fcntl_lock.release()  # type: ignore
