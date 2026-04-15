@@ -134,7 +134,7 @@ def load_images(file_index: FileIndex, num_threads: int = 1) -> list[ResultDict]
     with cm:
         for result in tqdm(
             iterator,
-            desc="loading image metadata",
+            desc="Loading image metadata",
             total=len(groups),
         ):
             if result is None:

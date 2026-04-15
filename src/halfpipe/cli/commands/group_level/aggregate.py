@@ -10,6 +10,7 @@ from nipype.interfaces import fsl
 from tqdm.auto import tqdm
 
 from ....design import intercept_only_design
+from ....ingest.resolve import entity_shortnames
 from ....interfaces.image_maths.merge import merge, merge_mask
 from ....logging import logger
 from ....result.aggregate import aggregate_results, summarize_metadata
@@ -29,6 +30,9 @@ def apply_aggregate(
 
     results = design.results
     for aggregate_key in design.aggregate:
+        if aggregate_key in entity_shortnames:
+            aggregate_key = entity_shortnames[aggregate_key]
+
         results, other_results = aggregate_results(results, aggregate_key)
 
         logger.info(f'Will run {len(results):d} models at level "{aggregate_key}"')
@@ -42,7 +46,7 @@ def apply_aggregate(
                 tqdm(
                     iterator,
                     total=len(results),
-                    desc=f'aggregate "{aggregate_key}"',
+                    desc=f'Aggregate across "{aggregate_key}"',
                 )
             )
 
