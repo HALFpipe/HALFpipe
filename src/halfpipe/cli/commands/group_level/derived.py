@@ -156,7 +156,7 @@ class ImagingVariables:
             for subject, jacobian_path in tqdm(
                 iterator,
                 total=len(tasks),
-                desc="calculating jacobians",
+                desc="Calculating jacobians",
                 unit="subjects",
             ):
                 if subject is None:
@@ -223,7 +223,7 @@ class ImagingVariables:
         data: dict[str, float] = dict()
         for brain_mask_path in tqdm(
             brain_mask_paths,
-            desc="calculating total intracranial volume",
+            desc="Calculating total intracranial volume",
             unit="subjects",
         ):
             subject = index.get_tag_value(brain_mask_path, "sub")

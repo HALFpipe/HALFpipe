@@ -189,7 +189,7 @@ class ProbabilisticAtlas(Atlas):
         mask_files = None
         if image_paths.mask is not None:
             mask_files = [image_paths.mask]
-        cope_img, var_cope_img = load_data([image_paths.effect], var_cope_files, mask_files, quiet=True)
+        cope_img, var_cope_img = load_data([image_paths.effect], var_cope_files, mask_files)
         signals, coverage = mode_signals(cope_img, var_cope_img, self.image, output_coverage=True)
         return AtlasSignals(signals, coverage)
 
@@ -242,7 +242,7 @@ def export(
     with cm:
         # Top list level is subjects, second level is atlases
         signal_rows: list[list[AtlasSignals]] = list(
-            tqdm(iterator, unit="images", desc="extracting signals", total=num_inputs)
+            tqdm(iterator, unit="images", desc="Extracting signals", total=num_inputs)
         )
 
     if isinstance(cm, Pool):

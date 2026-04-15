@@ -75,8 +75,8 @@ def parse(path: AnyPath) -> dict[str, str] | None:
 
 class BIDSIndex(FileIndex):
     def put(self, root: AnyPath) -> Self:
-        it = recursive_list_directory(root)
-        for path in tqdm(it, desc=f'indexing files from "{root}"', unit="files"):
+        iterator = recursive_list_directory(root)
+        for path in tqdm(iterator, desc=f'Indexing files from "{root}"', unit="files"):
             tags = parse(path)
 
             if tags is None:

@@ -264,7 +264,7 @@ class Heterogeneity(ModelAlgorithm):
 
     @staticmethod
     def voxel_calc(
-        coordinate: tuple[int, int, int],
+        coordinate: tuple[int, ...],
         y: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         s: npt.NDArray[np.float64],

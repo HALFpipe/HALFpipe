@@ -6,7 +6,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from itertools import chain
 from operator import attrgetter
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable, Mapping, Sequence
 
 from more_itertools import collapse
 from pyrsistent import freeze, pmap, thaw
@@ -19,12 +19,7 @@ from .variables import Categorical, Continuous
 
 Index = Mapping[str, str]
 
-source_keys = [
-    ("metadata", "sources"),
-    ("metadata", "Sources"),
-    ("metadata", "raw_sources"),
-    ("metadata", "RawSources"),
-]
+source_attribute_names = ["sources", "Sources", "raw_sources", "RawSources"]
 
 
 @dataclass(frozen=True)
@@ -74,7 +69,7 @@ def group_expand(groups: dict[Index, set[Element]]) -> dict[Index, set[Element]]
     for index, elements in groups.items():
         expanded_groups[index] |= elements
 
-    with tqdm(desc="expanding groups", total=len(indices)) as progress_bar:
+    with tqdm(desc="Expanding groups", total=len(indices)) as progress_bar:
         while len(indices) > 0:
             target = indices.pop()
 
@@ -120,7 +115,7 @@ def merge_data(elements: Iterable[Element]) -> ResultDict:
     for key in keys:
         values = [element.data.get(key) for element in sorted_elements]
         field_name, attribute_name = key
-        if key in source_keys or field_name in ["images"]:
+        if field_name in ["images"] or attribute_name in source_attribute_names:
             values = list(collapse(values))
 
         result[field_name][attribute_name] = thaw(values)
@@ -162,7 +157,7 @@ def aggregate_results(
     return aggregated_results, other_results
 
 
-def summarize(values: list[Any]) -> Any:
+def summarize(values: Sequence[Any]) -> Any:
     """
     Summarizes a list of values, which can be either continuous or categorical.
 
@@ -175,8 +170,10 @@ def summarize(values: list[Any]) -> Any:
         of the categorical values, which are the counts of each level.
     """
     continuous_values = list(map(Continuous.load, values))
-    if all(x is None or y is not None for x, y in zip(values, continuous_values, strict=False)):
+    if all(x is None or y is not None for x, y in zip(values, continuous_values, strict=True)):
         return Continuous.summarize(continuous_values)
+    elif isinstance(values, str):
+        return values
     else:
         categorical_values = list(map(Categorical.load, values))
         return Categorical.summarize(categorical_values)
@@ -186,17 +183,26 @@ def summarize_metadata(
     result: ResultDict,
 ) -> ResultDict:
     result = deepcopy(result)
-    for field_name, attribute_dict in result.items():
+    for field_name, attributes in result.items():
         if field_name in ["tags", "images"]:
             continue
-        if not isinstance(attribute_dict, dict):
-            raise ValueError("Expected attribute_dict to be a dict")
-        for attribute_name in attribute_dict.keys():
-            key = (field_name, attribute_name)
-            if key in source_keys:
+        for attribute_name, value in attributes.items():
+            if not isinstance(value, Sequence):
                 continue
-            value = attribute_dict[attribute_name]
-            if not isinstance(value, list):
+            # Special handling for some attributes
+            if attribute_name in source_attribute_names:
                 continue
-            attribute_dict[attribute_name] = summarize(value)
+            if all(isinstance(item, list) for item in value):
+                if attribute_name in ["coverage", "mean_atlas_tsnr", "mean_component_tsnr"]:
+                    # Transpose
+                    attributes[attribute_name] = [summarize(value) for value in zip(*value, strict=True)]
+                    continue
+                elif attribute_name in ["confound_regressors"]:
+                    attributes[attribute_name] = [
+                        sorted(confound_regressors)
+                        if all(isinstance(confound_regressor, str) for confound_regressor in confound_regressors)
+                        else confound_regressors
+                        for confound_regressors in value
+                    ]
+            attributes[attribute_name] = summarize(value)
     return result

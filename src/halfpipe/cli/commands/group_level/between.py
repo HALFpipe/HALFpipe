@@ -155,8 +155,9 @@ class BetweenBase:
         result["images"] = images
 
         source_paths: Iterable[Path] = chain(cope_paths, var_cope_paths or [], mask_paths or [])
-        sources = [str(source_path) for source_path in source_paths if not source_path.is_relative_to(Path.cwd())]
-        result["metadata"]["sources"] = sources
+        sources = [str(source_path) for source_path in source_paths if not source_path.is_relative_to(Path.cwd().parent)]
+        if sources:
+            result["metadata"]["sources"] = sources
         result["metadata"]["halfpipe_version"] = __version__
 
         results.append(result)

@@ -21,7 +21,7 @@ from .base import ModelAlgorithm
 
 class VoxelData(NamedTuple):
     algorithm_dict: dict[str, Type[ModelAlgorithm]]
-    coordinate: tuple[int, int, int]
+    coordinate: tuple[int, ...]
     effect: npt.NDArray[np.float64]
     design_matrix: npt.NDArray[np.float64]
     variance: npt.NDArray[np.float64]
@@ -46,7 +46,6 @@ def load_data(
     cope_files: list[Path],
     var_cope_files: list[Path] | None,
     mask_files: list[Path] | None,
-    quiet: bool | None = None,
 ) -> tuple[nib.analyze.AnalyzeImage, nib.analyze.AnalyzeImage]:
     # Load cope images
     cope_imgs = [nib.funcs.squeeze_image(nib.nifti1.load(cope_file)) for cope_file in cope_files]
@@ -55,7 +54,7 @@ def load_data(
     shape = volume_shape + (len(cope_imgs),)
 
     cope_data = np.zeros(shape, dtype=float)
-    for i, cope_img in enumerate(tqdm(cope_imgs, desc="loading cope images", leave=False, disable=quiet)):
+    for i, cope_img in enumerate(cope_imgs):
         cope_data[..., i] = cope_img.get_fdata()
 
     # Load mask images
@@ -65,7 +64,7 @@ def load_data(
             raise ValueError(
                 f"Number of cope files ({len(cope_files)}) does not match number of mask files ({len(mask_files)})"
             )
-        for i, mask_file in enumerate(tqdm(mask_files, desc="loading mask images", leave=False, disable=quiet)):
+        for i, mask_file in enumerate(mask_files):
             mask_data[..., i] = np.asanyarray(nib.funcs.squeeze_image(nib.nifti1.load(mask_file)).dataobj).astype(bool)
 
     # Load varcope images.
@@ -75,14 +74,7 @@ def load_data(
             raise ValueError(
                 f"Number of var_cope files ({len(var_cope_files)}) does not match number of cope files ({len(cope_files)})"
             )
-        for i, var_cope_file in enumerate(
-            tqdm(
-                var_cope_files,
-                desc="loading var_cope images",
-                leave=False,
-                disable=quiet,
-            )
-        ):
+        for i, var_cope_file in enumerate(var_cope_files):
             if var_cope_file is None:
                 raise ValueError(f'Missing var_cope file corresponding to "{cope_files[i]}"')
             var_cope_data[..., i] = nib.funcs.squeeze_image(nib.nifti1.load(var_cope_file)).get_fdata()
@@ -114,7 +106,7 @@ def make_voxelwise_generator(
     contrasts: Sequence[TContrast | FContrast],
     algorithms_to_run: list[str],
 ) -> tuple[Iterator[VoxelData], ContrastMatrices]:
-    shape = copes_img.shape[:3]
+    shape = copes_img.shape[:-1]
 
     copes = copes_img.get_fdata()
     var_copes = var_copes_img.get_fdata()
@@ -131,20 +123,20 @@ def make_voxelwise_generator(
 
     # prepare voxelwise generator
     def gen_voxel_data():
-        for x, y, z in np.ndindex(*shape):
-            effect = ensure_row_vector(copes[x, y, z])
+        for coordinate in np.ndindex(*shape):
+            effect = ensure_row_vector(copes[*coordinate])
 
             sample_count = np.count_nonzero(np.isfinite(effect))
             # Skip if we don't have at least three degrees of freedom
             if sample_count < regressor_count + 3:
                 continue
 
-            variance = ensure_row_vector(var_copes[x, y, z])
+            variance = ensure_row_vector(var_copes[*coordinate])
             design_matrix = dmat.to_numpy(dtype=float)
 
             yield VoxelData(
                 algorithm_dict=algorithm_dict,
-                coordinate=(x, y, z),
+                coordinate=coordinate,
                 effect=effect,
                 design_matrix=design_matrix,
                 variance=variance,
@@ -180,7 +172,7 @@ def fit(
     cm, iterator = make_pool_or_null_context(voxel_data, voxel_calc, num_threads=num_threads, chunksize=2**9)
     voxel_results: dict[str, dict] = defaultdict(lambda: defaultdict(dict))
     with cm:
-        for value in tqdm(iterator, unit="voxels", desc="model fit"):
+        for value in tqdm(iterator, unit="voxels", desc="Model fit"):
             if value is None:
                 continue
             for algorithm, voxel_result in value.items():  # transpose
