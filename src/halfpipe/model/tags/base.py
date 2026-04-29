@@ -31,8 +31,12 @@ class RunTagsSchema(BaseTagsSchema):
     run = fields.Str()
 
 
-class ScanTagsSchema(SubTagsSchema, RunTagsSchema):
+class SesTagsSchema(BaseTagsSchema):
     ses = fields.Str()
+
+
+class ScanTagsSchema(SubTagsSchema, RunTagsSchema, SesTagsSchema):
+    pass
 
 
 schemas = [SubTagsSchema, ScanTagsSchema, AcqTagsSchema, DirTagsSchema]

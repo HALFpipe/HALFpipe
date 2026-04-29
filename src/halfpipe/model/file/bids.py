@@ -2,14 +2,14 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-""" """
-
 from marshmallow import fields, validate
 
 from ..metadata import BoldMetadataSchema
+from ..tags.bids import BidsTagsSchema
 from .base import BaseFileSchema
 
 
 class BidsFileSchema(BaseFileSchema):
     datatype = fields.Str(dump_default="bids", validate=validate.Equal("bids"))
     metadata = fields.Nested(BoldMetadataSchema())
+    tags = fields.Nested(BidsTagsSchema(), dump_default=dict())

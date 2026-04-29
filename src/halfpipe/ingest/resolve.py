@@ -28,7 +28,7 @@ file_schema = FileSchema()
 entity_shortnames = {v: k for k, v in entity_longnames.items()}
 
 
-def to_fileobj(obj: BIDSFile, basemetadata: dict) -> File | None:
+def to_fileobj(obj: BIDSFile, base_metadata: dict[str, Any], base_tags: dict[str, str]) -> File | None:
     entitydict: dict = obj.get_entities()
 
     datatype: str | None = entitydict.get("datatype")
@@ -49,10 +49,10 @@ def to_fileobj(obj: BIDSFile, basemetadata: dict) -> File | None:
 
     path: str = obj.path
 
-    metadata: dict = dict(**basemetadata)
+    metadata: dict = dict(**base_metadata)
     metadata.update(obj.get_metadata())
 
-    tags: dict = dict()
+    tags: dict = base_tags.copy()
     for k, v in entitydict.items():
         entity = entity_shortnames[k] if k in entity_shortnames else k
         if entity in entities:
@@ -192,14 +192,14 @@ class ResolvedSpec:
 
         # ---- Resolve files ---------------------------------------------------
         resolved_files: list[File] = []
-        layout_files = list(layout.get_files().values())
+        layout_files: list[BIDSFile] = list(layout.get_files().values())
 
         logger.info("Found %d files in BIDS layout", len(layout_files))
 
         for idx, obj in enumerate(layout_files, start=1):
             logger.debug("Processing layout file %d/%d: %s", idx, len(layout_files), obj)
 
-            file = to_fileobj(obj, basemetadata)
+            file = to_fileobj(obj, basemetadata, fileobj.tags)
             if file is None:
                 logger.debug("→ Skipped (to_fileobj returned None)")
                 continue
