@@ -8,25 +8,41 @@ from ..logging import logger
 from ..utils.format import inflect_engine as pe
 
 
-def check_pes(epi_fmaps, pe_dir):
-    """Check whether there are images with matched PE.
-    Note: Function backported from sdcworkflows 1.3.5."""
-    opposed_pe = False
-    matched_pe = False
+def _pe_axis_sign(pe: str) -> tuple[str, str]:
+    """
+    Return (axis, sign) where sign is '+' or '-'.
+    Treat 'j' as 'j+' (BIDS allows 'j' with no minus).
+    """
+    if not pe:
+        raise ValueError("Empty PhaseEncodingDirection")
+    axis = pe[0]
+    sign = '-' if pe.endswith('-') else '+'
+    return axis, sign
+
+
+def has_opposing_pe(epi_fmaps, bold_pe_dir: str) -> bool:
+    bold_axis, bold_sign = _pe_axis_sign(bold_pe_dir)
+
+    any_same_axis = False
+    any_opposed = False
 
     for _, fmap_pe in epi_fmaps:
-        if fmap_pe == pe_dir:
-            matched_pe = True
-        elif fmap_pe[0] == pe_dir[0]:
-            opposed_pe = True
+        fmap_axis, fmap_sign = _pe_axis_sign(fmap_pe)
 
-    if not opposed_pe:
-        raise ValueError("""\
-None of the discovered fieldmaps has the right phase encoding direction. \
-This is possibly a problem with metadata. If not, rerun with \
-``--ignore fieldmaps`` to skip the distortion correction step.""")
+        if fmap_axis != bold_axis:
+            continue  # wrong axis, unusable for topup-style pairing
 
-    return matched_pe
+        any_same_axis = True
+        if fmap_sign != bold_sign:
+            any_opposed = True
+
+    if not any_same_axis:
+        raise ValueError(
+            "None of the discovered fieldmaps share the BOLD PE axis "
+            "(e.g., BOLD is 'j' but fieldmaps are 'i'/'k'). Check metadata."
+        )
+
+    return any_opposed
 
 
 def collect_pe_dir(database: Database, c: str) -> str:
@@ -101,27 +117,21 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
 
         epi_fmaps.append((c, collect_pe_dir(database, c)))
 
-    if len(epi_fmaps) > 0:
-        bold_pe_dir: str | None = None
-        try:
-            bold_pe_dir = collect_pe_dir(database, bold_file_path)
-        except ValueError:
-            logger.warning(
-                f'Could not detect phase encoding direction for BOLD image "{bold_file_path}". Cannot use PEPOLAR '
-                "field maps for this image. Please review BOLD metadata"
-            )
-        has_set_of_opposing_pe_dirs: bool = False
-        if bold_pe_dir is not None:
-            try:
-                has_set_of_opposing_pe_dirs = check_pes(epi_fmaps, bold_pe_dir)
-            except ValueError:
-                if silent is not True:
-                    incomplete_str = pe.join(sorted(f'"{c}" with direction "{dir}"' for c, dir in epi_fmaps))
-                    logger.info(
-                        f"Skipping field maps {incomplete_str} because they do not have "
-                        f'a set of opposing phase encoding directions to the BOLD image with direction "{bold_pe_dir}"'
-                    )
-        if not has_set_of_opposing_pe_dirs:
+    try:
+        bold_pe_dir = collect_pe_dir(database, bold_file_path)
+    except ValueError:
+        logger.warning(...)
+        candidates -= set(c for c, _ in epi_fmaps)
+    else:
+        has_opposing = has_opposing_pe(epi_fmaps, bold_pe_dir)
+        if not has_opposing:
             candidates -= set(c for c, _ in epi_fmaps)
+        else:
+            bold_axis, bold_sign = _pe_axis_sign(bold_pe_dir)
+            candidates &= set(
+                c for c, pe in epi_fmaps
+                if _pe_axis_sign(pe)[0] == bold_axis
+                and _pe_axis_sign(pe)[1] != bold_sign
+            )
 
     return sorted(candidates)
