@@ -16,7 +16,7 @@ def _pe_axis_sign(pe: str) -> tuple[str, str]:
     if not pe:
         raise ValueError("Empty PhaseEncodingDirection")
     axis = pe[0]
-    sign = '-' if pe.endswith('-') else '+'
+    sign = "-" if pe.endswith("-") else "+"
     return axis, sign
 
 
@@ -136,9 +136,7 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
         else:
             bold_axis, bold_sign = _pe_axis_sign(bold_pe_dir)
             candidates &= set(
-                c for c, pe in epi_fmaps
-                if _pe_axis_sign(pe)[0] == bold_axis
-                and _pe_axis_sign(pe)[1] != bold_sign
+                c for c, pe in epi_fmaps if _pe_axis_sign(pe)[0] == bold_axis and _pe_axis_sign(pe)[1] != bold_sign
             )
 
     return sorted(candidates)
