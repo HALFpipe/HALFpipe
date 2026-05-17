@@ -85,20 +85,27 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
         "phase1": ["magnitude1", "magnitude2"],
         "phase2": ["magnitude1", "magnitude2"],
         "phasediff": ["magnitude1", "magnitude2"],
-        "fieldmap": ["magnitude"],
+        "fieldmap": ["magnitude", "magnitude1", "magnitude2"],
     }
 
     incomplete: set[str] = set()
-    for c in candidates:
-        suffix = database.tagval(c, "suffix")
+
+    for fmap_path in candidates:
+        suffix = database.tagval(fmap_path, "suffix")
         assert isinstance(suffix, str)
+
         if suffix not in magnitude_map:
             continue
-        magnitude: list[str] = magnitude_map[suffix]
 
-        has_magnitude = any(database.tagval(c, "suffix") in magnitude for c in candidates)
-        if not has_magnitude:
-            incomplete.add(c)
+        valid_magnitude_suffixes = magnitude_map[suffix]
+
+        has_magnitude = any(
+            database.tagval(candidate_path, "suffix") in valid_magnitude_suffixes
+            for candidate_path in candidates
+        )
+
+    if not has_magnitude:
+        incomplete.add(fmap_path)
 
     if len(incomplete) > 0:
         if silent is not True:
