@@ -100,8 +100,7 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
         valid_magnitude_suffixes = magnitude_map[suffix]
 
         has_magnitude = any(
-            database.tagval(candidate_path, "suffix") in valid_magnitude_suffixes
-            for candidate_path in candidates
+            database.tagval(candidate_path, "suffix") in valid_magnitude_suffixes for candidate_path in candidates
         )
 
         if not has_magnitude:
