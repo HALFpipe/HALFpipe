@@ -104,8 +104,8 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
             for candidate_path in candidates
         )
 
-    if not has_magnitude:
-        incomplete.add(fmap_path)
+        if not has_magnitude:
+            incomplete.add(fmap_path)
 
     if len(incomplete) > 0:
         if silent is not True:
