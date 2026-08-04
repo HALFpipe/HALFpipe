@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# conftest.py
-import os
 import shutil
 from pathlib import Path
 
@@ -27,20 +25,10 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def resolved_test_dir_path():
-    """Fixture to resolve paths and handle fallback to './' if necessary."""
-    source_file = Path("/home/runner/actions-runner/_work/HALFpipe/HALFpipe/tests/tui/")
-    if not source_file.exists():  # Fallback to './' if not found in CURRENT_DIR
-        source_file = Path("../")
-    logger.info(f"TUI test directory path is {Path.cwd()}")
-    return source_file
-
-
-@pytest.fixture(scope="session", autouse=True)
-def copy_jinja2_file(resolved_test_dir_path):
+def copy_jinja2_file() -> None:
     """Copy a file before tests start. This is just a hot fix because somehow the resources directory
     is delete during the docker build."""
-    source_file = resolved_test_dir_path / "snapshot_report_template.jinja2"
+    source_file = Path(__file__).parent / "snapshot_report_template.jinja2"
 
     import pytest_textual_snapshot
 
@@ -68,7 +56,7 @@ def fixed_tmp_path() -> Path:
 
 # Define the fixture with module scope, one subject, three tasks
 @pytest.fixture(scope="session")
-def downloaded_data_path(fixed_tmp_path) -> Path:
+def downloaded_data_path(fixed_tmp_path: Path) -> Path:
     tasks_conditions_dict = {
         "anticipation_acq-seq": ["cue_negative", "cue_neutral", "img_negative", "img_neutral"],
         "workingmemory_acq-seq": ["active_change", "active_nochange", "passive"],
@@ -98,25 +86,11 @@ def work_dir_path(fixed_tmp_path, request):
 
 
 @pytest.fixture(scope="session")
-def spec_file_dir_path(fixed_tmp_path, resolved_test_dir_path) -> Path:
-    source_dir = resolved_test_dir_path / "spec_file_for_load_test"
-    shutil.copy(source_dir / "spec.json", source_dir / "spec_reference.json")
-
-    destination_dir = fixed_tmp_path / "spec_file_for_load_test/"
-    if os.path.exists(destination_dir):
-        shutil.rmtree(destination_dir)
-    shutil.copytree(source_dir, destination_dir)
+def spec_file_dir_path(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    source_dir = Path(__file__).parent / "spec_file_for_load_test/"
+    destination_dir = tmp_path_factory.mktemp("spec")
+    shutil.copytree(source_dir, destination_dir, dirs_exist_ok=True)
     return destination_dir
-
-
-@pytest.fixture(scope="session")
-def covariant_spreadsheet_path(fixed_tmp_path, resolved_test_dir_path) -> Path:
-    source_file = resolved_test_dir_path / "Covariates.xlsx"
-    destination_file = fixed_tmp_path / "Covariates.xlsx"
-    if os.path.exists(destination_file):
-        os.remove(destination_file)
-    shutil.copy(source_file, destination_file)
-    return destination_file
 
 
 @pytest.fixture(scope="session")

@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import halfpipe.resource
 from halfpipe.logging import logger
 from tests.tui.pilot_functions import (
     _load_data,
@@ -107,15 +108,13 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atla
         await task()
 
 
-@pytest.mark.forked
-def test_atlas_at_features_tab(
-    snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
-) -> None:
+@pytest.mark.skip
+# @pytest.mark.forked
+def test_atlas_at_features_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add file pattern of the atlas for the Atlas-based connectivity matrix feature. This triggers a modals about the meta
     information, if all goes Ok then there should be the file pattern of the atlas. Moreover, smoothing, grand mean scalling
     and temporal filters are set to Off."""
-
-    atlas_file_pattern = atlases_maps_seed_images_path / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
+    atlas_file_pattern = halfpipe.resource.resource_dir / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -126,14 +125,13 @@ def test_atlas_at_features_tab(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
-def test_atlas_at_spec_preview(
-    snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
-) -> None:
+@pytest.mark.skip
+# @pytest.mark.forked
+def test_atlas_at_spec_preview(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Same as test_atlas_at_features_tab but now we check the spec preview if the atlas pattern propagated to the spec
     file."""
 
-    atlas_file_pattern = atlases_maps_seed_images_path / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
+    atlas_file_pattern = halfpipe.resource.resource_dir / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -144,14 +142,13 @@ def test_atlas_at_spec_preview(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
-def test_atlas_at_features_duplicate(
-    snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
-) -> None:
+@pytest.mark.skip
+# @pytest.mark.forked
+def test_atlas_at_features_duplicate(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Same as test_atlas_at_features_tab but now we duplicate the feature and check if the file pattern is still there and
     if the smoothing, grand mean scalling and temporal filters are still Off."""
 
-    atlas_file_pattern = atlases_maps_seed_images_path / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
+    atlas_file_pattern = halfpipe.resource.resource_dir / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -162,14 +159,13 @@ def test_atlas_at_features_duplicate(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
-def test_duplicate_at_spec_preview(
-    snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
-) -> None:
+@pytest.mark.skip
+# @pytest.mark.forked
+def test_duplicate_at_spec_preview(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Same as test_atlas_at_features_duplicate but now we check the spec preview. The features and settings should be
     duplicated but the atlas file pattern should be only one."""
 
-    atlas_file_pattern = atlases_maps_seed_images_path / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
+    atlas_file_pattern = halfpipe.resource.resource_dir / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,

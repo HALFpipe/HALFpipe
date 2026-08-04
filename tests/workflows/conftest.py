@@ -19,6 +19,7 @@ import pandas as pd
 import pytest
 from nilearn.image import new_img_like
 
+import halfpipe.resource
 from halfpipe.ingest.database import Database
 from halfpipe.logging import logger
 from halfpipe.model.feature import FeatureSchema
@@ -323,21 +324,12 @@ def fibromyalgia_base_dataset(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def fixed_tmp_path() -> Path:
-    path = Path("/tmp/atlases_and_maps/")
-    path.mkdir(parents=True, exist_ok=True)  # Ensure the path exists
-    return path
-
-
-@pytest.fixture(scope="session")
-def bids_session_expanded_real_test_data(
-    request, fibromyalgia_base_dataset, tmp_path_factory, atlases_maps_seed_images_path, covariant_spreadsheet_path
-):
+def bids_session_expanded_real_test_data(request, fibromyalgia_base_dataset, tmp_path_factory, covariant_spreadsheet_path):
     from typing import cast
 
     sessions = int(cast(int, getattr(request, "param", 0)))
 
-    seed_image_file_pattern = atlases_maps_seed_images_path / "{seed}_seed_2009.nii.gz"
+    seed_image_file_pattern = halfpipe.resource.resource_dir / "{seed}_seed_2009.nii.gz"
 
     base_path = tmp_path_factory.mktemp("bids_test")
     bids_label = "multisession-bids"

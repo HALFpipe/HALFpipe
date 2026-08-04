@@ -14,9 +14,9 @@ from halfpipe.result.variables import Categorical, Continuous
 
 
 def test_summarize() -> None:
-    assert summarize(["test"]) == "test"
+    assert summarize(["test"]) == [{"value": "test", "count": 1}]
 
-    assert summarize(["a", "a"]) == "a"
+    assert summarize(["a", "a"]) == [{"value": "a", "count": 2}]
 
     s = summarize([0.5, 1.0, 1.5])
     assert isinstance(s, str)
@@ -64,7 +64,7 @@ def test_summarize_dict() -> None:
 
 
 def test_aggregate_resultdicts() -> None:
-    slice_timing = list(np.linspace(0, 2, 33))
+    slice_timing = np.linspace(0, 2, 33).tolist()
 
     result_a: ResultDict = {
         "tags": dict(sub="a"),
@@ -147,12 +147,10 @@ def test_aggregate_resultdicts() -> None:
     assert len(d.counter) == 2
 
     size = metadata["acquisition_voxel_size"]
-    assert isinstance(size, tuple)
-    assert len(size) == 3
-    assert all(isclose(s, 2.9) for s in size)
+    assert size == [{"count": 3, "value": (2.9, 2.9, 2.9)}]
 
     for i, a in enumerate(slice_timing):
-        assert isclose(a, metadata["slice_timing"][i])
+        assert isclose(a, metadata["slice_timing"][0]["value"][i])
 
 
 def test_aggregate_resultdicts_heterogenous() -> None:

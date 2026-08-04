@@ -2,8 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+import asyncio
 import logging
-from asyncio import Queue, all_tasks, current_task, gather, get_running_loop
 from copy import deepcopy
 from pathlib import Path
 
@@ -18,12 +18,12 @@ from .message import (
 from .writer import FileWriter, PrintWriter, ReportErrorWriter
 
 
-async def listen(queue: Queue) -> None:
+async def listen(queue: asyncio.Queue) -> None:
     from ..base import setup as setup_logging
 
     setup_logging(queue)
 
-    loop = get_running_loop()
+    loop = asyncio.get_running_loop()
 
     print_writer = PrintWriter(levelno=25)  # fmriprep's IMPORTANT
     log_writer = FileWriter(levelno=logging.DEBUG)
@@ -69,14 +69,14 @@ async def listen(queue: Queue) -> None:
 
         elif isinstance(message, TeardownMessage):
             # make sure that all writers have finished writing
-            await gather(*[subscriber.join() for subscriber in subscribers])
+            await asyncio.gather(*[subscriber.join() for subscriber in subscribers])
 
             # then cancel all tasks
-            tasks = [t for t in all_tasks() if t is not current_task()]
+            tasks = [t for t in asyncio.all_tasks() if t is not asyncio.current_task()]
 
             [task.cancel() for task in tasks]
 
-            await gather(*tasks)
+            await asyncio.gather(*tasks)
             loop.stop()
 
             break
