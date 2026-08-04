@@ -1,1 +1,2 @@
 ad7847de-3ca1-4478-b357-d03be44bc4e4 autoenable=true bucket=datalad datacenter=US encryption=none fileprefix=halfpipe host=b7b557172bb5cd20f55ba90d802f9597.eu.r2.cloudflarestorage.com name=public-s3 port=80 protocol=https publicurl=https://datalad.fmri.science region=auto signature=v4 storageclass=STANDARD type=S3 timestamp=1785847876s
+cf13d535-b47c-5df6-8590-0793cb08a90a autoenable=true encryption=none externaltype=datalad name=datalad type=external timestamp=1785848467s
