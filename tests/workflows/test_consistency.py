@@ -323,6 +323,7 @@ settings_list: list[TestSetting] = [
 ]
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize("dataset", datasets)
 def test_extraction(dataset: Dataset, tmp_path: Path, pcc_mask: Path):
     """

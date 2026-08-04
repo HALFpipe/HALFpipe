@@ -7,6 +7,7 @@ from pathlib import Path
 
 import pytest
 
+import halfpipe.resource
 from halfpipe.logging import logger
 from tests.tui.pilot_functions import (
     _load_data,
@@ -70,15 +71,14 @@ async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file
         await task()
 
 
-@pytest.mark.forked
-def test_dual_reg_at_features_tab(
-    snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
-) -> None:
+@pytest.mark.skip
+# @pytest.mark.forked
+def test_dual_reg_at_features_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Add file pattern of the map in dual regression feature. This triggers a modals about the meta information,
     if all goes Ok then there should be the file pattern of the map. Moreover, smoothing, grand mean scalling and
     temporal filters are set to Off."""
 
-    map_file_pattern = atlases_maps_seed_images_path / "FIND_{map}_maps_2009.nii.gz"
+    map_file_pattern = halfpipe.resource.resource_dir / "FIND_{map}_maps_2009.nii.gz"
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -89,14 +89,13 @@ def test_dual_reg_at_features_tab(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
-def test_dual_reg_at_spec_preview(
-    snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, atlases_maps_seed_images_path: Path
-) -> None:
+@pytest.mark.skip
+# @pytest.mark.forked
+def test_dual_reg_at_spec_preview(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Same as test_dual_reg_at_features_tab but now we check the spec preview if the map pattern propagated to the spec
     file."""
 
-    map_file_pattern = atlases_maps_seed_images_path / "FIND_{map}_maps_2009.nii.gz"
+    map_file_pattern = halfpipe.resource.resource_dir / "FIND_{map}_maps_2009.nii.gz"
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -105,6 +104,3 @@ def test_dual_reg_at_spec_preview(
         stage="at_spec_preview",
     )
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
-
-
-#

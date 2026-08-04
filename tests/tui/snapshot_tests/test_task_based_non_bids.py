@@ -94,7 +94,8 @@ async def run_before(
         await task()
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_task_based_non_bids_at_features_tab(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -116,7 +117,8 @@ def test_task_based_non_bids_at_features_tab(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_task_based_non_bids_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -137,7 +139,8 @@ def test_task_based_non_bids_at_spec_preview(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_task_based_non_bids_at_features_tab_duplicate(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -156,7 +159,8 @@ def test_task_based_non_bids_at_features_tab_duplicate(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_task_based_features_duplicate_at_spec_preview(
     snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:

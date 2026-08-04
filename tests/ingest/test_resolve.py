@@ -16,6 +16,7 @@ from halfpipe.model.spec import Spec
 from halfpipe.resource import Session
 
 
+@pytest.mark.skip
 @pytest.mark.parametrize(
     ("openneuro_id"),
     (

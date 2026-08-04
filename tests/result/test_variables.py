@@ -19,7 +19,7 @@ def test_continuous():
     assert c.n_missing == 1
 
     s = Continuous.summarize([c, c])
-    assert isinstance(s, float) and isclose(s, 1)
+    assert s == "1.000000e+00 ± 0.000000e+00 (n = 2, 0 missing)"
 
     d = Continuous.load(2.0)
     s = Continuous.summarize([c, d])

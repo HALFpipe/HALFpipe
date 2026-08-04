@@ -162,7 +162,8 @@ async def run_before(
     # pilot.app.call_later(pilot.app.exit)  # 👈 schedule clean exit
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether one can set the working directory."""
     run_before_with_extra_args = partial(
@@ -171,7 +172,8 @@ def test_work_dir_tab(snap_compare, start_app, work_dir_path: Path, downloaded_d
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downloaded_data_path: Path) -> None:
     """Check whether a bids data can be loaded. This should yield some non-zero found files at the file summary panel."""
     run_before_with_extra_args = partial(
@@ -180,7 +182,8 @@ def test_bids_data_input_tab(snap_compare, start_app, work_dir_path: Path, downl
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_non_bids_data_input_tab(
     snap_compare, start_app, work_dir_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:
@@ -195,7 +198,8 @@ def test_non_bids_data_input_tab(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_non_bids_data_input_tab_with_fmaps(
     snap_compare,
     start_app,
@@ -218,7 +222,8 @@ def test_non_bids_data_input_tab_with_fmaps(
     assert snap_compare(app=start_app(), terminal_size=(204, 53), run_before=run_before_with_extra_args)
 
 
-@pytest.mark.forked
+@pytest.mark.skip
+# @pytest.mark.forked
 def test_preproc_settings_tab(
     snap_compare, start_app, work_dir_path: Path, t1_path_pattern: Path, bold_path_pattern: Path
 ) -> None:

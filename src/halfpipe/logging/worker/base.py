@@ -2,15 +2,15 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from asyncio import get_event_loop
+import asyncio
 
 import stackprinter
 
 from .listener import listen
 
 
-def run(queue):
-    loop = get_event_loop()
+def run(queue: asyncio.Queue) -> None:
+    loop = asyncio.new_event_loop()
 
     try:
         loop.create_task(listen(queue))
