@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-import halfpipe.resource
 from halfpipe.logging import logger
+from tests.resource import get as get_resource
 from tests.tui.pilot_functions import (
     _load_data,
     _set_work_dir,
@@ -21,6 +21,18 @@ from tests.tui.pilot_functions import (
     select_images,
     settable_scroll_screen_down,
 )
+
+
+def get_seed_image_file_pattern() -> Path:
+    seed_image_file = None
+    for file_name in (
+        "R_vmPFC_seed_2009.nii.gz",
+        "R_vlPFC_po_seed_2009.nii.gz",
+        "R_vlPFC_pt_seed_2009.nii.gz",
+    ):
+        seed_image_file = Path(get_resource(file_name))
+    assert seed_image_file is not None
+    return seed_image_file.parent / "{seed}_seed_2009.nii.gz"
 
 
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file_pattern=None) -> None:
@@ -90,7 +102,7 @@ def test_seed_based_at_features_tab(snap_compare, start_app, work_dir_path: Path
     if all goes Ok then there should be the file pattern of the seed image. Moreover, smoothing, grand mean scalling and
     temporal filters are set to Off."""
 
-    seed_image_file_pattern = halfpipe.resource.resource_dir / "{seed}_seed_2009.nii.gz"
+    seed_image_file_pattern = get_seed_image_file_pattern()
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -107,7 +119,7 @@ def test_seed_based_at_spec_preview(snap_compare, start_app, work_dir_path: Path
     """Same as test_seed_based_at_features_tab but now we check the spec preview if the atlas pattern propagated to the spec
     file."""
 
-    seed_image_file_pattern = halfpipe.resource.resource_dir / "{seed}_seed_2009.nii.gz"
+    seed_image_file_pattern = get_seed_image_file_pattern()
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,

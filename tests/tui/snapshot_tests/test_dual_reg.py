@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-import halfpipe.resource
 from halfpipe.logging import logger
+from tests.resource import get as get_resource
 from tests.tui.pilot_functions import (
     _load_data,
     _set_work_dir,
@@ -20,6 +20,11 @@ from tests.tui.pilot_functions import (
     select_images,
     settable_scroll_screen_down,
 )
+
+
+def get_map_file_pattern() -> Path:
+    map_file = Path(get_resource("FIND_ica_maps_2009.nii.gz"))
+    return map_file.parent / "FIND_{map}_maps_2009.nii.gz"
 
 
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, file_pattern=None) -> None:
@@ -78,7 +83,7 @@ def test_dual_reg_at_features_tab(snap_compare, start_app, work_dir_path: Path, 
     if all goes Ok then there should be the file pattern of the map. Moreover, smoothing, grand mean scalling and
     temporal filters are set to Off."""
 
-    map_file_pattern = halfpipe.resource.resource_dir / "FIND_{map}_maps_2009.nii.gz"
+    map_file_pattern = get_map_file_pattern()
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -95,7 +100,7 @@ def test_dual_reg_at_spec_preview(snap_compare, start_app, work_dir_path: Path, 
     """Same as test_dual_reg_at_features_tab but now we check the spec preview if the map pattern propagated to the spec
     file."""
 
-    map_file_pattern = halfpipe.resource.resource_dir / "FIND_{map}_maps_2009.nii.gz"
+    map_file_pattern = get_map_file_pattern()
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,

@@ -8,10 +8,12 @@ source:
 build:
   noarch: python
   number: 0
-  script: "{{ PYTHON }} -m pip install --default-timeout=100 . --no-deps -v"
+  script_env:
+    - halfpipe_version
 
 requirements:
   host:
+    - git-annex
     - python
     - pip
     - setuptools_scm>=6.2
@@ -54,7 +56,6 @@ requirements:
     - stackprinter>=0.2.5
     - line_profiler>=4.0.1
     - pyrsistent>=0.18.1
-    - requests>=2.25.1
     - inflect>=5.3.0
     - inflection>=0.5.1
     - parse>=1.19.0

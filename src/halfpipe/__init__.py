@@ -27,10 +27,7 @@ if os.getenv("IS_DOCKER_8395080871") is not None:
     xdg_cache_home = Path("/var/cache")
     os.environ["XDG_CACHE_HOME"] = str(xdg_cache_home)  # Where matplotlib looks for the font cache.
 
-    halfpipe_resource_dir = xdg_cache_home / "halfpipe"
-    os.environ["HALFPIPE_RESOURCE_DIR"] = str(halfpipe_resource_dir)  # Where halfpipe.resource.get looks for its cache.
-
     templateflow_home = xdg_cache_home / "templateflow"
     os.environ["TEMPLATEFLOW_HOME"] = str(templateflow_home)  # Where templateflow.api looks for its cache.
 
-    del xdg_cache_home, halfpipe_resource_dir, templateflow_home
+    del xdg_cache_home, templateflow_home

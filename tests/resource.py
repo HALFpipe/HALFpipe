@@ -2,35 +2,17 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
+
 from halfpipe import resource
 
-test_online_resources = {
-    "wakemandg_hensonrn_statmaps.tar.gz": "https://api.figshare.com/v2/file/download/25621988",  # browser url: "https://figshare.com/ndownloader/files/25621988",
-    "ds000108fixed.tar.gz": "https://osf.io/download/qh38c",
-    "bids_data.zip": "https://api.figshare.com/v2/file/download/48018256",  # browser url: "https://figshare.com/ndownloader/files/48018256", original url "https://osf.io/download/qrvu4" # noqa: E501
-    "PNAS_Smith09_rsn10.nii.gz": "https://www.nitrc.org/frs/download.php/7729/PNAS_Smith09_rsn10.nii.gz",
-    "HarvardOxford.tgz": "https://www.nitrc.org/frs/download.php/9902/HarvardOxford.tgz",
-    "run_01_spmdef.mat": "ftp://ftp.mrc-cbu.cam.ac.uk/personal/rik.henson/wakemandg_hensonrn/Sub01/BOLD/Trials/run_01_spmdef.mat",
-    "sub-50005_task-rest_Atlas_s0.dtseries.nii": "https://github.com/edickie/ciftify/raw/v2.1.0/tests/data/sub-50005_task-rest_Atlas_s0.dtseries.nii",
-    "sub-50005.L.midthickness.32k_fs_LR.surf.gii": "https://raw.githubusercontent.com/edickie/ciftify/v2.1.0/tests/data/sub-50005.L.midthickness.32k_fs_LR.surf.gii",
-    "sub-50005.R.midthickness.32k_fs_LR.surf.gii": "https://raw.githubusercontent.com/edickie/ciftify/v2.1.0/tests/data/sub-50005.R.midthickness.32k_fs_LR.surf.gii",
-    "sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz": "https://github.com/edickie/ciftify/raw/v2.1.0/tests/data/sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz",
-    "tpl-MNI152NLin2009cAsym_atlas-DiFuMo_desc-1024dimensions_probseg.tsv": "https://download.fmri.science/test_resources/tpl-MNI152NLin2009cAsym_atlas-DiFuMo_desc-1024dimensions_probseg.tsv",
-    "tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz": "https://download.fmri.science/test_resources/tpl-MNI152NLin2009cAsym_res-02_atlas-DiFuMo_desc-1024dimensions_probseg.nii.gz",
-    "sub-0003_fmriprep_derivatives.zip": "https://download.fmri.science/test_resources/sub-0003_fmriprep_derivatives.zip",
-    "atlases.zip": "https://github.com/HALFpipe/Atlases/releases/download/1.0.5/atlases.zip",
-    "bad_quaternion.nii.gz": "https://github.com/spinalcordtoolbox/spinalcordtoolbox/files/8492834/bad_quaternion.nii.gz",
-    "Neuromark_fMRI_1.0.nii": "https://github.com/trendscenter/gift/raw/master/GroupICAT/icatb/icatb_templates/Neuromark_fMRI_1.0.nii",
-    "FIND_ica_maps_2009.nii.gz": "https://drive.google.com/file/d/1XnFGm9aCcTIuXgKZ71fDqATBJWAxkInO/view?usp=drive_link",
-    "tpl-MNI152NLin2009cAsym_atlas-schaefer2011Combined_dseg.nii": "https://drive.google.com/file/d/1CR0rjbznad-tkfVc1vrGKsKJg5_nrf5E/view?usp=drive_link",
-    "tpl-MNI152NLin2009cAsym_atlas-brainnetomeCombined_dseg.nii": "https://drive.google.com/file/d/1MYF4VaZrWmQXL1Jl3ZWMg1tWaKBfPo4W/view?usp=drive_link",
-    "R_vmPFC_seed_2009.nii.gz": "https://drive.google.com/file/d/16L_HXOrrMqw08BdGTOh7RTErNTVytyvS/view?usp=drive_link",
-    "R_vlPFC_pt_seed_2009.nii.gz": "https://drive.google.com/file/d/1fNr8ctHpTN8XJn95mclMxTetKdpbdddV/view?usp=drive_link",
-    "R_vlPFC_po_seed_2009.nii.gz": "https://drive.google.com/file/d/1te1g3tpFaHdjx8GyZ1myMg_ayaHXPYKO/view?usp=drive_link",
-}
+data_dir = Path(__file__).parent / "data"
+resource.register(data_dir)
+
+
+def get(file_name: str | Path) -> str:
+    return resource.get(file_name)
 
 
 def setup():
-    resource.online_resources.update(test_online_resources)
-    for key in test_online_resources.keys():
-        resource.get(key)
+    resource.register(data_dir)

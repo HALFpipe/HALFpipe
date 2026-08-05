@@ -39,5 +39,8 @@ select = [
 [tool.setuptools]
 package-dir = { "" = "src" }
 
+[tool.setuptools.package-data]
+halfpipe = ["data/**/*"]
+
 [tool.setuptools_scm]
 version_scheme = "no-guess-dev"
