@@ -277,9 +277,7 @@ class ResolvedSpec:
         )
 
         # ---- Build entity mappings ------------------------------------------
-        mappings: set[
-            tuple[tuple[str, str], tuple[str, str]]
-        ] = set()
+        mappings: set[tuple[tuple[str, str], tuple[str, str]]] = set()
 
         for func_tags, fmap_tags_list in informed_by.items():
             func_entities = dict(func_tags)
