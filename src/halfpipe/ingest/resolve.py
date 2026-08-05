@@ -277,10 +277,26 @@ class ResolvedSpec:
         )
 
         # ---- Build entity mappings ------------------------------------------
-        mappings: set[tuple[tuple[str, str], tuple[str, str]]] = set()
+        mappings: set[
+            tuple[tuple[str, str], tuple[str, str]]
+        ] = set()
 
         for func_tags, fmap_tags_list in informed_by.items():
+            func_entities = dict(func_tags)
+
             for fmap_tags in fmap_tags_list:
+                fmap_entities = dict(fmap_tags)
+
+                # A run-specific fmap/func pairing is the strongest available rule.
+                if "run" in func_entities and "run" in fmap_entities:
+                    func_run_tag = ("run", func_entities["run"])
+                    fmap_run_tag = ("run", fmap_entities["run"])
+
+                    # Tuple order remains (func_tag, fmap_tag).
+                    mappings.add((func_run_tag, fmap_run_tag))
+                    continue
+
+                # Fallback for datasets without run entities.
                 for func_tag, fmap_tag in product(func_tags, fmap_tags):
                     if "sub" in (func_tag[0], fmap_tag[0]):
                         continue
