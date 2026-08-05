@@ -2,7 +2,6 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
@@ -15,16 +14,21 @@ from halfpipe.model.file.base import File
 from halfpipe.model.spec import Spec
 
 
-@dataclass
-class MockFactory:
-    source_files: set[str]
-
-
 def mock_fillmetadata(key, filepaths) -> bool:
     return True
 
 
-def test_collect_bold_files(tmp_path: Path) -> None:
+def test_get_setting_names():
+    # TODO
+    assert True
+
+
+def test_collect_bold_files():
+    # TODO
+    assert True
+
+
+def test_no_duplicates(tmp_path: Path) -> None:
     image_path_a = str(tmp_path / "a.nii.gz")
     image_path_b = str(tmp_path / "b.nii.gz")
     image_path_t1w = str(tmp_path / "t1w.nii.gz")
@@ -36,10 +40,7 @@ def test_collect_bold_files(tmp_path: Path) -> None:
     image = nib.nifti1.Nifti1Image(np.zeros((64, 64, 64)), np.eye(4))
     nib.save(image, image_path_t1w)
 
-    post_processing_factory = MockFactory({image_path_a})
-    feature_factory = MockFactory({image_path_b})
-
-    empty_spec = Spec(datetime.now(), list())
+    empty_spec = Spec(datetime.now(), list(), settings=[dict(name="foo", output_image=True)])
     database = Database(empty_spec)
     database.fillmetadata = mock_fillmetadata  # type: ignore
 
@@ -50,7 +51,7 @@ def test_collect_bold_files(tmp_path: Path) -> None:
     database.index(File(path=image_path_a, **func_file_base, tags=dict(sub="01", task="rest")))
     database.index(File(path=image_path_b, **func_file_base, tags=dict(sub="01", task="rest")))
 
-    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(database, post_processing_factory, feature_factory)  # type: ignore
+    bold_file_paths_dict: dict[str, list[str]] = collect_bold_files(empty_spec, database)  # type: ignore
 
     # Ensure that the duplicate was removed
     assert len(bold_file_paths_dict) == 1

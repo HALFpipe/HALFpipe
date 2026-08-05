@@ -192,7 +192,6 @@ class AtlasBasedMinRegionCoverageStep(Step):
 
 AtlasBasedConnectivityRefStep = get_ref_steps("atlas", "atlases", "atlas", AtlasBasedMinRegionCoverageStep)
 
-
 SeedBasedConnectivitySettingInitStep = get_setting_init_steps(
     SeedBasedConnectivityRefStep,
     settingdict={"grand_mean_scaling": {"mean": 10000.0}},

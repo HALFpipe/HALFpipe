@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from zipfile import ZipFile
 
 import nibabel as nib
 from nipype.interfaces import fsl
@@ -11,7 +10,7 @@ from halfpipe.resource import get as get_resource
 from ..resource import setup as setup_test_resources
 
 
-def test_gica_cmd(tmp_path: Path) -> None:
+def test_gica_cmd(tmp_path: Path, atlases_maps_seed_images_path: Path) -> None:
     setup_test_resources()
 
     data_path = get_resource("sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz")
@@ -31,10 +30,8 @@ def test_gica_cmd(tmp_path: Path) -> None:
     mask_path = tmp_path / "reference_brain_mask.nii.gz"
     assert mask_path.is_file()
 
-    atlases_path = get_resource("atlases.zip")
-    templates = "atlas-NeuroMark_probseg.nii.gz"
-    with ZipFile(atlases_path) as zip_file:
-        zip_file.extract(templates)
+    templates = atlases_maps_seed_images_path / "atlas-NeuroMark_probseg.nii.gz"
+    assert templates.is_file()
 
     interface = GicaCmd(data=data_path, mask=mask_path, templates=templates)
     result = interface.run()

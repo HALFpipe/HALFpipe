@@ -11,7 +11,6 @@ from nipype.pipeline import engine as pe
 from ...collect.events import collect_events
 from ...collect.metadata import collect_metadata
 from ...logging import logger
-from ...model.feature import FeatureSchema
 from ...model.spec import Spec
 from ..factory import Factory, FactoryContext
 from ..memory import MemoryCalculator
@@ -27,43 +26,33 @@ from .task_based import init_task_based_wf
 inputnode_name = re.compile(r"(?P<prefix>[a-z]+_)?inputnode")
 
 
+# TODO feels like this belongs elsewhere, probably in model > spec.py
 def _find_setting(setting_name: str, spec: Spec) -> dict[str, Any]:
     (setting,) = [setting for setting in spec.settings if setting["name"] == setting_name]
     return setting
 
 
 class FeatureFactory(Factory):
-    def __init__(self, ctx: FactoryContext, fmriprep_factory: Factory, post_processing_factory: PostProcessingFactory) -> None:
+    def __init__(
+        self,
+        ctx: FactoryContext,
+        fmriprep_factory: Factory,
+        post_processing_factory: PostProcessingFactory,
+    ) -> None:
         super().__init__(ctx)
         self.processing_groups: None | list = None
 
         self.fmriprep_factory = fmriprep_factory
         self.post_processing_factory = post_processing_factory
 
-        instance = FeatureSchema()
-        settingnames = set()
-        for feature in self.ctx.spec.features:
-            featuredict = instance.dump(feature)
-            assert isinstance(featuredict, dict)
-            for k, v in featuredict.items():
-                if k.endswith("setting"):
-                    settingnames.add(v)
-        self.source_files = self.post_processing_factory.get_source_files(settingnames)
-
-        self.workflows: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
-
-    def has(self, name):
-        for feature in self.ctx.spec.features:
-            if feature.name == name:
-                return True
-        return False
+        # filled in by .create()
+        self.hierarchies: dict[str, list[list[pe.Workflow]]] = defaultdict(list)
 
     def setup(self, raw_sources_dict: dict | None = None, processing_groups=None):
         logger.debug(f"FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict},processing_groups: {processing_groups}")
-        # pass processing_groups also here so that when later _get_hierarchy is used in create, the processing_groups can
+        # pass processing_groups also here so that when later _create_hierarchy is used in create, the processing_groups can
         # there so that the right workflow can be found
         self.processing_groups = processing_groups
-
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
 
         for feature in self.ctx.spec.features:
@@ -83,7 +72,7 @@ class FeatureFactory(Factory):
 
     def create(self, source_file, feature, raw_sources: list | None = None) -> pe.Workflow | None:
         raw_sources = [] if raw_sources is None else raw_sources
-        hierarchy = self._get_hierarchy("features_wf", source_file=source_file, processing_group=self.processing_groups)
+        hierarchy = self._create_hierarchy("features_wf", source_file=source_file, processing_group=self.processing_groups)
         parent_workflow = hierarchy[-1]
 
         database = self.ctx.database
@@ -173,7 +162,7 @@ class FeatureFactory(Factory):
         parent_workflow.add_nodes([workflow])
         hierarchy.append(workflow)
 
-        self.workflows[feature.name].append(hierarchy)
+        self.hierarchies[feature.name].append(hierarchy)
 
         for node in workflow._graph.nodes:
             m = inputnode_name.fullmatch(node.name)
@@ -215,8 +204,12 @@ class FeatureFactory(Factory):
 
         return workflow
 
-    def get(self, feature_name: str, *_: Any) -> list[list[pe.Workflow]]:
-        return self.workflows[feature_name]
+    def get_hierarchy(
+        self,
+        feature_name: str,
+    ) -> list[list[pe.Workflow]]:
+        """Returns the hierarchy associated with the given feature name."""
+        return self.hierarchies[feature_name]
 
     def connect(self, *args, **kwargs):
         raise NotImplementedError()

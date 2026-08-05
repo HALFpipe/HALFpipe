@@ -4,7 +4,6 @@
 from itertools import chain
 from pathlib import Path
 from typing import Any
-from zipfile import ZipFile
 
 import nibabel as nib
 import numpy as np
@@ -16,14 +15,11 @@ from templateflow.api import get as get_template
 from halfpipe.cli.commands.group_level.export import Statistic
 from halfpipe.cli.parser import parse_args
 from halfpipe.model.global_settings import GlobalSettingsSchema
-from halfpipe.resource import get as get_resource
 from halfpipe.stats.miscmaths import t2z_convert
 from halfpipe.workflows.configurables import configurables
 
-from ....resource import setup as setup_test_resources
 
-
-def test_group_level(tmp_path: Path) -> None:
+def test_group_level(tmp_path: Path, atlases_maps_seed_images_path: Path) -> None:
     # since reference resolution and space are now configurables
     # we need to first initial the globalsettingschema to get out
     # the default values
@@ -44,13 +40,8 @@ def test_group_level(tmp_path: Path) -> None:
     template_mask_image = nib.nifti1.load(template_mask_image_path)
     template_mask = np.asanyarray(template_mask_image.dataobj, dtype=bool)
 
-    setup_test_resources()
-    atlases_path = get_resource("atlases.zip")
-    with ZipFile(atlases_path) as zip_file:
-        zip_file.extractall(tmp_path)
-
-    brainnetome_image_path = tmp_path / "atlas-Brainnetome_dseg.nii.gz"
-    brainnetome_labels_path = tmp_path / "atlas-Brainnetome_dseg.tsv"
+    brainnetome_image_path = atlases_maps_seed_images_path / "atlas-Brainnetome_dseg.nii.gz"
+    brainnetome_labels_path = atlases_maps_seed_images_path / "atlas-Brainnetome_dseg.tsv"
 
     random_number_generator = np.random.default_rng()
 

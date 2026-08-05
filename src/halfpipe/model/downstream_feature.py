@@ -1,0 +1,72 @@
+# -*- coding: utf-8 -*-
+# emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
+# vi: set ft=python sts=4 ts=4 sw=4 et:
+
+from typing import TYPE_CHECKING, Any
+
+from marshmallow import Schema, fields, post_dump, post_load, validate
+from marshmallow_oneofschema import OneOfSchema
+
+# Following HALFpipe format, creating new class for downstream features that will connect to output from feature workflows
+# TODO I would refactor this into subclasses that do a traits check when created
+
+
+class DownstreamFeature:
+    def __init__(self, name, type: str, **kwargs) -> None:
+        self.name = name
+        self.type = type
+
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+    def __hash__(self):
+        return hash(self.name)  # name is unique
+
+    if TYPE_CHECKING:
+
+        def __getattr__(self, attribute: str) -> Any: ...
+
+
+class BaseDownstreamFeatureSchema(Schema):
+    # how is a name different than type?
+    name = fields.Str()
+
+    @post_load
+    def make_object(self, data, **_):
+        return DownstreamFeature(**data)
+
+    @post_dump(pass_many=False)
+    def remove_none(self, data, many):
+        assert many is False
+        return {key: value for key, value in data.items() if value is not None}
+
+
+class GradientsDownstreamFeatureSchema(BaseDownstreamFeatureSchema):
+    type = fields.Str(
+        dump_default="gradients",
+        validate=validate.Equal("gradients"),
+    )
+    maps = fields.List(fields.Str())
+
+    approach = fields.Str(dump_default="dm", validate=validate.OneOf(["dm", "pca", "le"]))
+    kernel = fields.Str(
+        dump_default="normalized_angle",
+        allow_none=True,
+        validate=validate.OneOf(["pearson", "spearman", "cosine", "normalized_angle", "gaussian"]),
+    )
+    n_iter = fields.Int(dump_default=10)
+    alignment = fields.Str(dump_default="procrustes", validate=validate.OneOf(["procrustes"]))
+    sparsity = fields.Float(dump_default=0.9, validate=validate.Range(min=0.0, max=1.0))
+
+
+class DownstreamFeatureSchema(OneOfSchema):
+    type_field = "type"
+    type_field_remove = False
+    type_schemas = {
+        "gradients": GradientsDownstreamFeatureSchema,
+    }
+
+    def get_obj_type(self, obj):
+        if isinstance(obj, DownstreamFeature):
+            return obj.type
+        raise Exception(f"Cannot get type for {obj}")

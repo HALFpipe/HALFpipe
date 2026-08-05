@@ -5,7 +5,6 @@
 import os
 from pathlib import Path
 from typing import Any
-from zipfile import ZipFile
 
 import nibabel as nib
 import numpy as np
@@ -32,9 +31,6 @@ def test_mean_signals(tmp_path: Path, wakemandg_hensonrn_raw: dict[str, list[Any
     assert isinstance(mask_image, nib.analyze.AnalyzeImage)
 
     setup_test_resources()
-    atlases_path = get_resource("atlases.zip")
-    with ZipFile(atlases_path) as zip_file:
-        zip_file.extractall(tmp_path)
 
     brainnetome_path = tmp_path / "atlas-Brainnetome_dseg.nii.gz"
     brainnetome_image = nib.nifti1.load(brainnetome_path)

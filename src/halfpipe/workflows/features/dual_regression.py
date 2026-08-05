@@ -67,9 +67,9 @@ def _contrasts(map_timeseries_file: str | None = None, confounds_file: str | Non
 
 def init_dualregression_wf(
     workdir: str | Path,
-    feature: Feature | None = None,
-    map_files: Sequence[Path | str] | None = None,
-    map_spaces: Sequence[str] | None = None,
+    feature: Feature,
+    map_files: Sequence[Path | str],
+    map_spaces: Sequence[Literal["MNI152NLin6Asym", "MNI152NLin2009cAsym"]],
     space: Literal["standard", "native"] = "standard",
     memcalc: MemoryCalculator | None = None,
 ) -> pe.Workflow:
@@ -105,14 +105,9 @@ def init_dualregression_wf(
     )
     outputnode = pe.Node(niu.IdentityInterface(fields=["resultdicts"]), name="outputnode")
 
-    if feature is not None:
-        inputnode.inputs.map_names = feature.maps
-
-    if map_files is not None:
-        inputnode.inputs.map_files = map_files
-
-    if map_spaces is not None:
-        inputnode.inputs.map_spaces = map_spaces
+    inputnode.inputs.map_names = feature.maps
+    inputnode.inputs.map_files = map_files
+    inputnode.inputs.map_spaces = map_spaces
 
     #
     statmaps = ["effect", "variance", "z", "dof", "mask"]
@@ -274,6 +269,6 @@ def init_dualregression_wf(
     workflow.connect(maxintensity, "out_file", calcmean, "parcellation")
     workflow.connect(tsnr, "tsnr_file", calcmean, "in_file")
 
-    workflow.connect(calcmean, "mean", make_resultdicts_b, "mean_component_tsnr")
+    workflow.connect(calcmean, "means", make_resultdicts_b, "mean_component_tsnr")
 
     return workflow

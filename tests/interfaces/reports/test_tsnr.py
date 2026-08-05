@@ -2,6 +2,8 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from pathlib import Path
+
 import nibabel as nib
 import numpy as np
 from nipype.algorithms import confounds as nac
@@ -12,7 +14,7 @@ from halfpipe.resource import get as get_resource
 from ...resource import setup as setup_test_resources
 
 
-def test_tsnr(tmp_path):
+def test_tsnr(tmp_path: Path) -> None:
     setup_test_resources()
 
     data_file = get_resource("sub-50005_task-rest_bold_space-MNI152NLin2009cAsym_preproc.nii.gz")

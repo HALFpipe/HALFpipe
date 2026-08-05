@@ -7,6 +7,7 @@ import shutil
 import tarfile
 from pathlib import Path
 from typing import Any
+from zipfile import ZipFile
 
 import pytest
 
@@ -43,7 +44,7 @@ def wakemandg_hensonrn_raw(tmp_path_factory: pytest.TempPathFactory) -> dict[str
     subjects = [f"{i + 1:02d}" for i in range(16)]
     suffixes = ["stat-effect_statmap", "stat-variance_statmap", "mask"]
 
-    data = {
+    data: dict[str, Any] = {
         suffix: [
             tmp_path
             / (
@@ -67,25 +68,29 @@ def wakemandg_hensonrn_raw(tmp_path_factory: pytest.TempPathFactory) -> dict[str
 
 
 @pytest.fixture(scope="session")
-def atlases_maps_seed_images_path(fixed_tmp_path) -> Path:
-    # set atlases, seed maps and spatial maps
-    test_online_resources = {
-        "FIND_ica_maps_2009.nii.gz": "https://drive.google.com/file/d/1XnFGm9aCcTIuXgKZ71fDqATBJWAxkInO/view?usp=drive_link",
-        "tpl-MNI152NLin2009cAsym_atlas-schaefer2011Combined_dseg.nii": "https://drive.google.com/file/d/1CR0rjbznad-tkfVc1vrGKsKJg5_nrf5E/view?usp=drive_link",
-        "tpl-MNI152NLin2009cAsym_atlas-brainnetomeCombined_dseg.nii": "https://drive.google.com/file/d/1MYF4VaZrWmQXL1Jl3ZWMg1tWaKBfPo4W/view?usp=drive_link",
-        "R_vmPFC_seed_2009.nii.gz": "https://drive.google.com/file/d/16L_HXOrrMqw08BdGTOh7RTErNTVytyvS/view?usp=drive_link",
-        "R_vlPFC_pt_seed_2009.nii.gz": "https://drive.google.com/file/d/1fNr8ctHpTN8XJn95mclMxTetKdpbdddV/view?usp=drive_link",
-        "R_vlPFC_po_seed_2009.nii.gz": "https://drive.google.com/file/d/1te1g3tpFaHdjx8GyZ1myMg_ayaHXPYKO/view?usp=drive_link",
-    }
+def atlases_maps_seed_images_path() -> Path:
+    path = Path("/tmp/atlases_and_maps/")
+    path.mkdir(parents=True, exist_ok=True)  # Ensure the path exists
 
-    resource.resource_dir = Path(fixed_tmp_path / "atlases_maps_seed_images")
-    resource.resource_dir.mkdir(exist_ok=True, parents=True)
-    resource.online_resources.update(test_online_resources)
+    setup_test_resources()
 
-    for item in test_online_resources:
-        resource.get(item)
+    for item in [
+        "FIND_ica_maps_2009.nii.gz",
+        "tpl-MNI152NLin2009cAsym_atlas-schaefer2011Combined_dseg.nii",
+        "tpl-MNI152NLin2009cAsym_atlas-brainnetomeCombined_dseg.nii",
+        "R_vmPFC_seed_2009.nii.gz",
+        "R_vlPFC_pt_seed_2009.nii.gz",
+        "R_vlPFC_po_seed_2009.nii.gz",
+    ]:
+        target_path = path / item
+        if not target_path.is_file():
+            target_path.symlink_to(resource.get(item))
 
-    return resource.resource_dir
+    atlases_path = get_resource("atlases.zip")
+    with ZipFile(atlases_path) as zip_file:
+        zip_file.extractall(path)
+
+    return path
 
 
 @pytest.fixture(scope="session", autouse=True)
