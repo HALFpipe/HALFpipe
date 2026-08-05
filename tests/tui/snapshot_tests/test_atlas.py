@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-import halfpipe.resource
 from halfpipe.logging import logger
+from tests.resource import get as get_resource
 from tests.tui.pilot_functions import (
     _load_data,
     _set_work_dir,
@@ -23,6 +23,17 @@ from tests.tui.pilot_functions import (
     toggle_bandpass_filter,
     toggle_grand_mean_scaling,
 )
+
+
+def get_atlas_file_pattern() -> Path:
+    atlas_file = None
+    for file_name in (
+        "tpl-MNI152NLin2009cAsym_atlas-brainnetomeCombined_dseg.nii",
+        "tpl-MNI152NLin2009cAsym_atlas-schaefer2011Combined_dseg.nii",
+    ):
+        atlas_file = Path(get_resource(file_name))
+    assert atlas_file is not None
+    return atlas_file.parent / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
 
 
 async def run_before(pilot, data_path=None, work_dir_path=None, stage=None, atlas_file_pattern=None) -> None:
@@ -114,7 +125,7 @@ def test_atlas_at_features_tab(snap_compare, start_app, work_dir_path: Path, dow
     """Add file pattern of the atlas for the Atlas-based connectivity matrix feature. This triggers a modals about the meta
     information, if all goes Ok then there should be the file pattern of the atlas. Moreover, smoothing, grand mean scalling
     and temporal filters are set to Off."""
-    atlas_file_pattern = halfpipe.resource.resource_dir / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
+    atlas_file_pattern = get_atlas_file_pattern()
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -131,7 +142,7 @@ def test_atlas_at_spec_preview(snap_compare, start_app, work_dir_path: Path, dow
     """Same as test_atlas_at_features_tab but now we check the spec preview if the atlas pattern propagated to the spec
     file."""
 
-    atlas_file_pattern = halfpipe.resource.resource_dir / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
+    atlas_file_pattern = get_atlas_file_pattern()
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -148,7 +159,7 @@ def test_atlas_at_features_duplicate(snap_compare, start_app, work_dir_path: Pat
     """Same as test_atlas_at_features_tab but now we duplicate the feature and check if the file pattern is still there and
     if the smoothing, grand mean scalling and temporal filters are still Off."""
 
-    atlas_file_pattern = halfpipe.resource.resource_dir / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
+    atlas_file_pattern = get_atlas_file_pattern()
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,
@@ -165,7 +176,7 @@ def test_duplicate_at_spec_preview(snap_compare, start_app, work_dir_path: Path,
     """Same as test_atlas_at_features_duplicate but now we check the spec preview. The features and settings should be
     duplicated but the atlas file pattern should be only one."""
 
-    atlas_file_pattern = halfpipe.resource.resource_dir / "tpl-MNI152NLin2009cAsym_atlas-{atlas}.nii"
+    atlas_file_pattern = get_atlas_file_pattern()
     run_before_with_extra_args = partial(
         run_before,
         data_path=downloaded_data_path,

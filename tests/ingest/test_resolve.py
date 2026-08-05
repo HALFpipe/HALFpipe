@@ -9,11 +9,11 @@ from pathlib import Path
 import nibabel as nib
 import numpy as np
 import pytest
+import requests
 
 from halfpipe.ingest.resolve import ResolvedSpec
 from halfpipe.model.file.base import File
 from halfpipe.model.spec import Spec
-from halfpipe.resource import Session
 
 
 @pytest.mark.skip
@@ -42,7 +42,7 @@ def test_resolve_bids(tmp_path: Path, openneuro_id: str):
 
     gql_url = "https://openneuro.org/crn/graphql"
 
-    with Session() as session, session.post(gql_url, json={"query": query_example}) as r:
+    with requests.Session() as session, session.post(gql_url, json={"query": query_example}) as r:
         if not r.status_code == 200:
             raise RuntimeError("Could not fetch file listing")
         json_file = json.loads(r.text)
@@ -79,7 +79,7 @@ def test_resolve_bids(tmp_path: Path, openneuro_id: str):
                         }}
                     }}
                 }}"""
-            with Session() as session, session.post(gql_url, json={"query": query}) as r:
+            with requests.Session() as session, session.post(gql_url, json={"query": query}) as r:
                 json_dict = json.loads(r.text)
             recursive_walk_wpath(json_dict, build_path=build_path)
         return file_list

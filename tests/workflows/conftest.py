@@ -19,7 +19,6 @@ import pandas as pd
 import pytest
 from nilearn.image import new_img_like
 
-import halfpipe.resource
 from halfpipe.ingest.database import Database
 from halfpipe.logging import logger
 from halfpipe.model.feature import FeatureSchema
@@ -31,6 +30,7 @@ from halfpipe.resource import get as get_resource
 from halfpipe.utils.image import nvol
 
 from ..create_mock_bids_dataset import create_bids_data
+from ..resource import get as get_test_resource
 from ..resource import setup as setup_test_resources
 from .datasets import Dataset
 from .expand_bids_dataset import expand_bids_dataset
@@ -329,7 +329,15 @@ def bids_session_expanded_real_test_data(request, fibromyalgia_base_dataset, tmp
 
     sessions = int(cast(int, getattr(request, "param", 0)))
 
-    seed_image_file_pattern = halfpipe.resource.resource_dir / "{seed}_seed_2009.nii.gz"
+    seed_image_file = None
+    for file_name in (
+        "R_vmPFC_seed_2009.nii.gz",
+        "R_vlPFC_po_seed_2009.nii.gz",
+        "R_vlPFC_pt_seed_2009.nii.gz",
+    ):
+        seed_image_file = Path(get_test_resource(file_name))
+    assert seed_image_file is not None
+    seed_image_file_pattern = seed_image_file.parent / "{seed}_seed_2009.nii.gz"
 
     base_path = tmp_path_factory.mktemp("bids_test")
     bids_label = "multisession-bids"

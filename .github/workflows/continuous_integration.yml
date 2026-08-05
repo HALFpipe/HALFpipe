@@ -43,6 +43,7 @@ jobs:
             awscli
             boto3
             conda-build
+            datalad
             loguru
             pygithub
             py-rattler
@@ -70,6 +71,7 @@ jobs:
           PUSH: ${{ steps.metadata.outputs.push }}
           PYTHONPATH: "src"
         run: |
+          datalad get src
           printf '%s' '${{ secrets.MATLAB_LICENSE }}' > ${HOME}/license.lic
           python -m build.conda
 
@@ -166,7 +168,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: ./coverage.xml
+          files: ./coverage.xml
           fail_ci_if_error: true
       - name: Stop integration test container
         run: |
