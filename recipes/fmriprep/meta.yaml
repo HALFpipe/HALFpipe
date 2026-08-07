@@ -29,12 +29,12 @@ requirements:
     - nibabel>=5.1.1
     - nipype>=1.9.0
     - nireports>=24.1.0
-    - nitime=0.11.*
+    - nitime=0.11
     - nitransforms>=25.0.1
     - niworkflows>=1.14.2
-    - numpy=2.2.*
+    - numpy=2.2
     - packaging>=24
-    - pandas=2.2.*
+    - pandas=2.2
     - psutil>=5.4
     - pybids>=0.16
     - requests>=2.27
@@ -46,30 +46,30 @@ requirements:
     - toml>=0.10
     - codecarbon>=2
     - APScheduler>=3.10
-    - scipy=1.15.*
-    - matplotlib=3.10.*
-    - h5py=3.13.*
-    - scikit-image=0.25.*
-    - scikit-learn=1.6.*
-    - graphviz=12.2.*
-    - pandoc=3.7.*
+    - scipy=1.15
+    - matplotlib=3.10
+    - h5py=3.13
+    - scikit-image=0.25
+    - scikit-learn=1.6
+    - graphviz=12.2
+    - pandoc=3.7
     # Workflow dependencies: AFNI
     - afni-3dtshift
     - afni-3dunifize
     # Workflow dependencies: ANTs
-    - ants=2.6.*
+    - ants=2.6
     # Workflow dependencies: Convert3d
     - convert3d=1.4
     # Workflow dependencies: Connectome Workbench
-    - connectome-workbench-cli=2.0.*=*qt6*
+    - connectome-workbench-cli=2.0=*qt6*
     # Workflow dependencies: FSL (versions pinned in 6.0.7.13)
-    - fsl-bet2=2111.8.*
-    - fsl-flirt=2111.4.*
-    - fsl-fast4=2111.3.*
-    - fsl-fugue=2201.5.*
-    - fsl-mcflirt=2111.0.*
-    - fsl-miscmaths=2412.4.*
-    - fsl-topup=2203.5.*
+    - fsl-bet2=2111.8
+    - fsl-flirt=2111.4
+    - fsl-fast4=2111.3
+    - fsl-fugue=2201.5
+    - fsl-mcflirt=2111.0
+    - fsl-miscmaths=2412.4
+    - fsl-topup=2203.5
 
 test:
   imports:
