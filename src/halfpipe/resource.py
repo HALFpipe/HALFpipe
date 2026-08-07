@@ -31,7 +31,9 @@ def get(file_name: str | Path) -> str:
     # module does not require it.
     if not path.is_file():
         import datalad.api as dl
+        from datalad.utils import get_dataset_root
 
-        dl.get(path)
+        dataset = get_dataset_root(path)
+        dl.get(path, dataset=dataset)
 
     return str(path)
