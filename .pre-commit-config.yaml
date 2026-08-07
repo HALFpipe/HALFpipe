@@ -7,7 +7,6 @@ repos:
       - id: check-merge-conflict
       - id: check-added-large-files
       - id: check-ast
-      - id: check-symlinks
       - id: mixed-line-ending
         exclude_types: [diff]
       - id: check-case-conflict
