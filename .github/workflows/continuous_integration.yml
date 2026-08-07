@@ -161,6 +161,8 @@ jobs:
           # Enable pytest-github-actions-annotate-failures
           GITHUB_ACTIONS: true
         run: |
+          # Let git-annex get test resources from within the container
+          git config --global --add "safe.directory" "*"
           # Run the integration tests
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=load \
