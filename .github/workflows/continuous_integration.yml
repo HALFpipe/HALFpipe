@@ -60,6 +60,8 @@ jobs:
           REGISTRY: ${{ secrets.REGISTRY }}
           PYTHONPATH: "src"
         run: |
+          git config --global user.name "halfpipe"
+          git config --global user.email "halfpipe@fmri.science"
           python -m build.metadata
 
       - name: Build Conda packages
