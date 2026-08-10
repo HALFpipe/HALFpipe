@@ -65,6 +65,7 @@ jobs:
           python -m build.metadata
 
       - name: Build Conda packages
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -92,9 +93,11 @@ jobs:
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Set up Docker Buildx
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         uses: docker/setup-buildx-action@v4
         id: buildx
       - name: Build container
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         uses: docker/build-push-action@v7
         with:
           builder: ${{ steps.buildx.outputs.name }}
@@ -111,11 +114,13 @@ jobs:
             ${{ steps.metadata.outputs.build_tag }}
 
       - name: Cache data
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         uses: actions/cache@v6
         with:
           key: resource-cache
           path: /home/runner/resource-cache
       - name: Setup integration test container
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         run: |
           docker run \
             --detach \
@@ -131,6 +136,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Freesurfer license
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         shell: docker exec test bash -x -e {0}
         run: |
           cat > ${FREESURFER_HOME}/license.txt <<EOF
@@ -156,6 +162,7 @@ jobs:
       #     path: /home/runner/actions-runner/_work/HALFpipe/HALFpipe/snapshot_report.html
       #     if-no-files-found: ignore
       - name: Run integration tests
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         shell: docker exec test bash -x -e {0}
         env:
           # Enable pytest-github-actions-annotate-failures
@@ -169,12 +176,14 @@ jobs:
             --numprocesses=2
 
       - name: Upload coverage to Codecov
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         uses: codecov/codecov-action@v7
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: true
       - name: Stop integration test container
+        if: ${{ steps.metadata.outputs.run == 'true' }}
         run: |
           docker kill test
 

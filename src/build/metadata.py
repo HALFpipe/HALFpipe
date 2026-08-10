@@ -1,21 +1,36 @@
 import json
 import os
+import subprocess
+from datetime import datetime, timezone
 
 from github import Github
 from setuptools_scm import get_version
 
 github_context = json.loads(os.environ["GITHUB_CONTEXT"])
 
-pushed_at = github_context["event"]["repository"]["pushed_at"]
-ref = github_context["ref"]
-repository = github_context["repository"]
-sha = github_context["sha"]
-url = github_context["event"]["repository"]["html_url"]
-token = github_context["token"]
+pushed_at: str = str(github_context["event"]["repository"]["pushed_at"])
+if pushed_at.isdigit():
+    moment = datetime.fromtimestamp(int(pushed_at), tz=timezone.utc)
+else:
+    moment = datetime.fromisoformat(pushed_at.replace("Z", "+00:00"))
+created: str = moment.astimezone(timezone.utc).isoformat().replace("+00:00", "Z")
+
+url: str = github_context["event"]["repository"]["html_url"]
+
+ref: str = github_context["ref"]
+repository: str = github_context["repository"]
+sha: str = github_context["sha"]
+token: str = github_context["token"]
 
 registry = os.environ["REGISTRY"]
 
-repository_data = Github(token).get_repo(repository)
+prefixes = (
+    "src/",
+    "recipes/",
+    "Dockerfile",
+    "pyproject.toml",
+    ".github/workflows/continuous_integration.yml",
+)
 repository_owner, repository_name = repository.lower().split("/")
 reference, type, name = ref.split("/")[:3]
 if reference != "refs":
@@ -23,25 +38,33 @@ if reference != "refs":
 if type == "heads":
     tag = {"main": "latest"}.get(name, name)
     push = True
+    run = True
 elif type == "tags":
     tag = name
     push = True
+    run = True
 elif type == "pull":
     tag = f"{type}-{name}"
     push = False
+    changed_files: list[str] = subprocess.check_output(
+        ["git", "diff", "--name-only", "HEAD^1", "HEAD"],
+        text=True,
+    ).splitlines()
+    run = any(file.startswith(prefixes) for file in changed_files)
 else:
     raise ValueError(f"Unknown reference type: {type}")
 
+repository_data = Github(token).get_repo(repository)
 path = f"{registry}/{repository_name}"
 cache_from = f"type=registry,ref={path}:buildcache"
 output = dict(
     cache_from=cache_from,
     cache_to=f"{cache_from},compression=zstd,mode=max,ignore-error=true" if push else "",
     labels=[
-        f'org.opencontainers.image.created="{pushed_at}"',
+        f'org.opencontainers.image.created="{created}"',
         'org.opencontainers.image.authors="Lea Waller <lea@fmri.science>"',
         f'org.opencontainers.image.url="{url}"',
-        f'org.opencontainers.image.documentation="{url}"',
+        'org.opencontainers.image.documentation="https://fmri.science/halfpipe/"',
         f'org.opencontainers.image.source="{url}"',
         f'org.opencontainers.image.version="{get_version()}"',
         f'org.opencontainers.image.revision="{sha}"',
@@ -50,6 +73,7 @@ output = dict(
         f'org.opencontainers.image.description="{repository_data.description}"',
     ],
     push=str(push).lower(),
+    run=str(run).lower(),
     build_tag=f"{repository_name}:{tag}",
     push_tags=[
         f"{path}:{tag}",
