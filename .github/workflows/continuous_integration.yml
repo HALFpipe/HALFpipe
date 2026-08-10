@@ -203,6 +203,7 @@ jobs:
             ${{ steps.metadata.outputs.push_tags }}
 
       - name: Set up Apptainer
+        if: ${{ steps.metadata.outputs.push == 'true' }}
         run: |
           sudo add-apt-repository --yes "ppa:apptainer/ppa"
           sudo apt install --yes "apptainer"
