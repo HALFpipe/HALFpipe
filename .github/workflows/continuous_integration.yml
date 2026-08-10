@@ -222,7 +222,7 @@ jobs:
             "${sif_file}" \
             "docker-daemon://${{ steps.metadata.outputs.build_tag }}"
           # Check if the container works
-          apptainer run "${sif_file}" --help
+          apptainer run --userns "${sif_file}" --help
           # Extract Singularity 2.x container
           simg_file="${sif_file%.sif}.simg"
           data_object_id=$(apptainer sif list "${sif_file}" | awk -F"|" '/Squashfs/ {print $1+0}')
