@@ -198,31 +198,6 @@ jobs:
           sudo add-apt-repository --yes "ppa:apptainer/ppa"
           sudo apt install --yes "apptainer"
 
-      - name: Build Singularity 2.x container
-        if: ${{ steps.metadata.outputs.push == 'true' }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
-        run: |
-          mkdir "singularity-2"
-          docker run \
-            --privileged \
-            --rm \
-            --volume="/var/run/docker.sock:/var/run/docker.sock" \
-            --volume="./singularity-2:/output" \
-            "quay.io/singularity/docker2singularity:v2.6" \
-            --name "${{ steps.metadata.outputs.singularity_name }}" \
-            "${{ steps.metadata.outputs.build_tag }}"
-          image_file=$(find "./singularity-2" -type f | head --lines=1)
-          # Check if the container works
-          apptainer run "${image_file}" --help
-          # Upload the container
-          aws s3 mv \
-            --acl public-read \
-            "${image_file}" \
-            "s3://download-fmri-science/singularity/"
-
       - name: Build Apptainer container
         if: ${{ steps.metadata.outputs.push == 'true' }}
         env:
@@ -231,15 +206,21 @@ jobs:
           AWS_ENDPOINT_URL: ${{ secrets.AWS_ENDPOINT_URL }}
         run: |
           mkdir "singularity"
+          sif_file="./singularity/${{ steps.metadata.outputs.singularity_name }}"
           apptainer build \
             --disable-cache \
-            "./singularity/${{ steps.metadata.outputs.singularity_name }}" \
+            "${sif_file}" \
             "docker-daemon://${{ steps.metadata.outputs.build_tag }}"
-          image_file=$(find "./singularity" -type f | head --lines=1)
           # Check if the container works
-          apptainer run "${image_file}" --help
-          # Upload the container
-          aws s3 mv \
-            --acl public-read \
-            "${image_file}" \
-            "s3://download-fmri-science/singularity/"
+          apptainer run "${sif_file}" --help
+          # Extract Singularity 2.x container
+          simg_file="${sif_file%.sif}.simg"
+          data_object_id=$(apptainer sif list "${sif_file}" | awk -F"|" '/Squashfs/ {print $1+0}')
+          apptainer sif dump "${data_object_id}" "${sif_file}" > "${simg_file}"
+          # Upload the containers
+          for file in "${sif_file}" "${simg_file}"; do
+            aws s3 mv \
+              --acl public-read \
+              "${file}" \
+              "s3://download-fmri-science/singularity/"
+          done
