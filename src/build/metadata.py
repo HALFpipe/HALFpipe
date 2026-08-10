@@ -27,6 +27,7 @@ registry = os.environ["REGISTRY"]
 prefixes = (
     "src/",
     "recipes/",
+    "tests/",
     "Dockerfile",
     "pyproject.toml",
     ".github/workflows/continuous_integration.yml",
