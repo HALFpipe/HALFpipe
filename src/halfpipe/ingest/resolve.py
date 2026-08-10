@@ -300,7 +300,6 @@ class ResolvedSpec:
                         continue
                     if func_tag[0] == fmap_tag[0]:
                         continue
-
                     mappings.add((func_tag, fmap_tag))
 
         logger.debug("Derived %d entity mappings", len(mappings))
