@@ -3,12 +3,13 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 import json
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 
 import marshmallow.exceptions
 from inflection import underscore
 from marshmallow import EXCLUDE
+from sdcflows.utils.epimanip import get_trt
 
 from ...model.file.base import File
 from ...model.metadata import MetadataSchema
@@ -18,7 +19,7 @@ from .base import Loader
 
 class SidecarMetadataLoader(Loader):
     @staticmethod
-    @lru_cache(maxsize=None)
+    @cache
     def load_json(file_path) -> dict:
         stem, _ = split_ext(file_path)
         sidecar_file_path = Path(file_path).parent / f"{stem}.json"
@@ -32,12 +33,11 @@ class SidecarMetadataLoader(Loader):
         return json.loads(sidecar_file_contents)
 
     @classmethod
-    @lru_cache(maxsize=None)
+    @cache
     def load(cls, file_path) -> dict:
         try:
-            in_data = cls.load_json(file_path)
-
-            in_data = {underscore(k): v for k, v in in_data.items()}
+            json_data = cls.load_json(file_path)
+            in_data = {underscore(k): v for k, v in json_data.items()}
             sidecar = MetadataSchema().load(in_data, unknown=EXCLUDE)
 
         except marshmallow.exceptions.ValidationError:
@@ -47,8 +47,14 @@ class SidecarMetadataLoader(Loader):
 
     def fill(self, fileobj: File, key: str) -> bool:
         sidecar = self.load(fileobj.path)
-
         value = sidecar.get(key)
+
+        if key == "total_readout_time" and value is None:
+            sidecar = self.load_json(fileobj.path)
+            try:
+                value = get_trt(sidecar, in_file=fileobj.path)
+            except Exception:
+                pass
 
         if value is None:
             return False

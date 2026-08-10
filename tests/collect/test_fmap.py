@@ -3,6 +3,7 @@
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
 from datetime import datetime
+from typing import Any
 
 import pytest
 
@@ -64,124 +65,213 @@ def _mock_bold_file(metadata_phase_encoding_direction: str | None = None, dir: s
     )
 
 
-def _mock_epi_file(path: str, metadata_phase_encoding_direction: str, dir: str | None = None) -> File:
+def _mock_epi_file(
+    path: str,
+    dir: str | None = None,
+    phase_encoding_direction: str | None = None,
+    total_readout_time: float | None = 0.05,
+) -> File:
     tags = dict(sub="01")
     if dir is not None:
         tags["dir"] = dir
+    metadata: dict[str, Any] = dict()
+    if phase_encoding_direction is not None:
+        metadata["phase_encoding_direction"] = phase_encoding_direction
+    if total_readout_time is not None:
+        metadata["total_readout_time"] = total_readout_time
     return File(
         path=path,
         datatype="fmap",
         suffix="epi",
         extension=".nii.gz",
         tags=tags,
-        metadata=dict(phase_encoding_direction=metadata_phase_encoding_direction),
+        metadata=metadata,
     )
 
 
-def _mock_fmap_file(suffix: str) -> File:
+def _mock_fmap_file(suffix: str, metadata: dict) -> File:
     return File(
         path=suffix + ".nii.gz",
         datatype="fmap",
         suffix=suffix,
         extension=".nii.gz",
         tags=dict(sub="01"),
+        metadata=dict(metadata),  # copy so shared parametrization dicts are never mutated
     )
 
 
-def _collect(database: Database, *files: File) -> list[str]:
-    for file in files:
-        database.put(file)
-    return collect_fieldmaps(database, bold_file_path)
-
-
 @pytest.mark.parametrize(
-    "bold_pe_dir, epi_pe_dirs, expected",
+    "bold_pe_dir, epi_pe_dirs, total_readout_time, expected",
     [
-        # Opposing pair
-        ("j", {"ap.nii.gz": "j", "pa.nii.gz": "j-"}, ["ap.nii.gz", "pa.nii.gz"]),
-        # All same direction
-        ("j", {"ap.nii.gz": "j", "pa.nii.gz": "j"}, []),
-        # Different axis
-        ("j", {"i.nii.gz": "i", "i-.nii.gz": "i-"}, []),
-        # Opposing pair and different axis
-        ("j", {"ap.nii.gz": "j", "pa.nii.gz": "j-", "lr.nii.gz": "i"}, ["ap.nii.gz", "pa.nii.gz"]),
+        pytest.param(
+            "j",
+            {"ap.nii.gz": "j", "pa.nii.gz": "j-"},
+            0.05,
+            ["ap.nii.gz", "pa.nii.gz"],
+            id="opposing-pair",
+        ),
+        pytest.param(
+            "j",
+            {"ap.nii.gz": "j", "pa.nii.gz": "j"},
+            0.05,
+            [],
+            id="same-direction",
+        ),
+        pytest.param(
+            "j",
+            {"i.nii.gz": "i", "i-.nii.gz": "i-"},
+            0.05,
+            [],
+            id="different-axis",
+        ),
+        pytest.param(
+            "j",
+            {"ap.nii.gz": "j", "pa.nii.gz": "j-", "lr.nii.gz": "i"},
+            0.05,
+            ["ap.nii.gz", "pa.nii.gz"],
+            id="opposing-pair-and-different-axis",
+        ),
+        pytest.param(
+            "j",
+            {"ap.nii.gz": "j", "pa.nii.gz": "j-"},
+            None,
+            [],
+            id="missing-readout-time",
+        ),
     ],
 )
 @pytest.mark.parametrize("use_dir_tag", [True, False])
-def test_collect_fieldmaps_epi(bold_pe_dir: str, epi_pe_dirs: dict[str, str], expected: list[str], use_dir_tag: bool) -> None:
+def test_collect_fieldmaps_epi(
+    bold_pe_dir: str,
+    epi_pe_dirs: dict[str, str],
+    total_readout_time: float | None,
+    expected: list[str],
+    use_dir_tag: bool,
+) -> None:
     database = Database(Spec(datetime.now(), list()))
 
-    files = [_mock_bold_file(metadata_phase_encoding_direction=bold_pe_dir, dir="ap" if use_dir_tag else None)]
-    files += [
-        _mock_epi_file(path, pe_dir, dir=path.removesuffix(".nii.gz") if use_dir_tag else None)
-        for path, pe_dir in epi_pe_dirs.items()
-    ]
+    database.put(_mock_bold_file(metadata_phase_encoding_direction=bold_pe_dir, dir="ap" if use_dir_tag else None))
+    for path, pe_dir in epi_pe_dirs.items():
+        database.put(
+            _mock_epi_file(
+                path,
+                dir=path.removesuffix(".nii.gz") if use_dir_tag else None,
+                phase_encoding_direction=pe_dir,
+                total_readout_time=total_readout_time,
+            )
+        )
 
-    assert sorted(_collect(database, *files)) == sorted(expected)
+    assert collect_fieldmaps(database, bold_file_path) == sorted(expected)
 
 
 @pytest.mark.parametrize(
-    "case1_suffix, case1_count",
+    "field_maps, expected",
     [
-        (["", "", ""], 0),
-        (["", "", "phasediff"], 0),
-        (["magnitude1", "", "phasediff"], 2),
-        (["", "magnitude2", "phasediff"], 2),
-        (["magnitude1", "magnitude2", "phasediff"], 3),
+        ## phasediff
+        pytest.param(
+            [
+                ("magnitude1", {}),
+                ("phasediff", dict(echo_time1=0.00492, echo_time2=0.00738)),
+            ],
+            ["magnitude1.nii.gz", "phasediff.nii.gz"],
+            id="phasediff-with-magnitude1",
+        ),
+        pytest.param(
+            [
+                ("magnitude2", {}),
+                ("phasediff", dict(echo_time1=0.00492, echo_time2=0.00738)),
+            ],
+            ["magnitude2.nii.gz", "phasediff.nii.gz"],
+            id="phasediff-with-magnitude2",
+        ),
+        pytest.param(
+            [
+                ("magnitude1", {}),
+                ("magnitude2", {}),
+                ("phasediff", dict(echo_time1=0.00492, echo_time2=0.00738)),
+            ],
+            ["magnitude1.nii.gz", "magnitude2.nii.gz", "phasediff.nii.gz"],
+            id="phasediff-with-both-magnitudes",
+        ),
+        pytest.param(
+            [
+                ("phasediff", dict(echo_time1=0.00492, echo_time2=0.00738)),
+            ],
+            [],
+            id="phasediff-missing-magnitude",
+        ),
+        pytest.param(
+            [
+                ("magnitude1", {}),
+                ("magnitude2", {}),
+                ("phasediff", {}),
+            ],
+            ["magnitude1.nii.gz", "magnitude2.nii.gz"],
+            id="phasediff-missing-echo-times",
+        ),
+        ## phase1 phase2
+        pytest.param(
+            [
+                ("magnitude1", {}),
+                ("phase1", dict(echo_time=0.00492)),
+                ("phase2", dict(echo_time=0.00738)),
+            ],
+            ["magnitude1.nii.gz", "phase1.nii.gz", "phase2.nii.gz"],
+            id="two-phase-with-magnitude1",
+        ),
+        pytest.param(
+            [
+                ("magnitude2", {}),
+                ("phase1", dict(echo_time=0.00492)),
+                ("phase2", dict(echo_time=0.00738)),
+            ],
+            ["magnitude2.nii.gz", "phase1.nii.gz", "phase2.nii.gz"],
+            id="two-phase-with-magnitude2",
+        ),
+        pytest.param(
+            [
+                ("magnitude1", {}),
+                ("magnitude2", {}),
+                ("phase1", dict(echo_time=0.00492)),
+                ("phase2", dict(echo_time=0.00738)),
+            ],
+            ["magnitude1.nii.gz", "magnitude2.nii.gz", "phase1.nii.gz", "phase2.nii.gz"],
+            id="two-phase-with-both-magnitudes",
+        ),
+        pytest.param(
+            [("phase1", dict(echo_time=0.00492)), ("phase2", dict(echo_time=0.00738))],
+            [],
+            id="two-phase-missing-magnitude",
+        ),
+        pytest.param(
+            [("magnitude1", {}), ("phase1", {}), ("phase2", {})],
+            ["magnitude1.nii.gz"],
+            id="two-phase-missing-echo-times",
+        ),
+        ## fieldmap
+        pytest.param(
+            [("fieldmap", dict(units="Hz")), ("magnitude", {})],
+            ["fieldmap.nii.gz", "magnitude.nii.gz"],
+            id="fieldmap-with-magnitude",
+        ),
+        pytest.param(
+            [("fieldmap", dict(units="Hz"))],
+            [],
+            id="fieldmap-missing-magnitude",
+        ),
+        pytest.param(
+            [("fieldmap", {}), ("magnitude", {})],
+            ["magnitude.nii.gz"],
+            id="fieldmap-missing-units",
+        ),
     ],
 )
 @pytest.mark.parametrize("bold_pe_dir", [None, "j"])
-def test_collect_fieldmaps_phasediff(bold_pe_dir, case1_suffix, case1_count):
+def test_collect_fieldmaps_non_epi(bold_pe_dir: str | None, field_maps: list[tuple[str, dict]], expected: list[str]) -> None:
     database = Database(Spec(datetime.now(), list()))
 
-    suffixes = ["magnitude1", "magnitude2", "phasediff"]
-    files = [_mock_fmap_file(suffix) for suffix in case1_suffix if suffix in suffixes]
-    files.append(_mock_bold_file(metadata_phase_encoding_direction=bold_pe_dir))
-    if len(files) < 3:
-        files.clear()
+    database.put(_mock_bold_file(metadata_phase_encoding_direction=bold_pe_dir))
+    for suffix, metadata in field_maps:
+        database.put(_mock_fmap_file(suffix, metadata))
 
-    assert len(_collect(database, *files)) == case1_count
-
-
-@pytest.mark.parametrize(
-    "case2_suffix, case2_count",
-    [
-        (["", "", "", ""], 0),
-        (["", "", "phase1", ""], 0),
-        (["", "", "phase1", "phase2"], 0),
-        (["magnitude1", "", "phase1", "phase2"], 3),
-        (["", "magnitude2", "phase1", "phase2"], 3),
-        (["magnitude1", "magnitude2", "phase1", "phase2"], 4),
-    ],
-)
-def test_collect_fieldmaps_twophase(case2_suffix, case2_count):
-    database = Database(Spec(datetime.now(), list()))
-
-    suffixes = ["magnitude1", "magnitude2", "phase1", "phase2"]
-    files = [_mock_fmap_file(suffix) for suffix in case2_suffix if suffix in suffixes]
-    files.append(_mock_bold_file())
-    if len(files) < 4:
-        files.clear()
-
-    assert len(_collect(database, *files)) == case2_count
-
-
-@pytest.mark.parametrize(
-    "case3_suffix, case3_count",
-    [
-        (["fieldmap", "magnitude"], 2),
-        (["fieldmap", ""], 0),
-        (["", "magnitude"], 0),
-        (["", ""], 0),
-    ],
-)
-def test_collect_fieldmaps_direct(case3_suffix, case3_count):
-    database = Database(Spec(datetime.now(), list()))
-
-    suffixes = ["fieldmap", "magnitude"]
-    files = [_mock_fmap_file(suffix) for suffix in case3_suffix if suffix in suffixes]
-    files.append(_mock_bold_file())
-    if len(files) < 3:  # clear files if expected count will be 0 (counting bold file as well here)
-        files.clear()
-
-    assert len(_collect(database, *files)) == case3_count
+    assert collect_fieldmaps(database, bold_file_path) == sorted(expected)
