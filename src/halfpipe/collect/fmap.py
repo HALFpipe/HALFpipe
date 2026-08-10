@@ -8,47 +8,45 @@ from ..logging import logger
 from ..utils.format import inflect_engine as pe
 
 
-def _pe_axis_sign(pe: str) -> tuple[str, str]:
-    """
-    Return (axis, sign) where sign is '+' or '-'.
-    Treat 'j' as 'j+' (BIDS allows 'j' with no minus).
-    """
-    if not pe:
-        raise ValueError("Empty PhaseEncodingDirection")
-    axis = pe[0]
-    sign = "-" if pe.endswith("-") else "+"
-    return axis, sign
+class PhaseEncodingDirection(str):
+    @property
+    def axis(self) -> str:
+        """
+        Axis of the phase encoding direction
+        """
+        if not self:
+            raise ValueError("Empty PhaseEncodingDirection")
+        return self[0]
+
+    @property
+    def sign(self) -> str:
+        """
+        Sign of the phase encoding direction
+        """
+        return "-" if self.endswith("-") else "+"
 
 
-def has_opposing_pe(epi_fmaps, bold_pe_dir: str) -> bool:
-    bold_axis, bold_sign = _pe_axis_sign(bold_pe_dir)
+def check_opposing_pe(
+    epi_fmaps: list[tuple[str, PhaseEncodingDirection]], bold_pe_dir: PhaseEncodingDirection
+) -> tuple[bool, bool]:
+    has_same_axis = False
+    has_opposing_pe = False
 
-    any_same_axis = False
-    any_opposed = False
+    for _, fmap_pe_dir in epi_fmaps:
+        if fmap_pe_dir.axis != bold_pe_dir.axis:
+            continue
+        has_same_axis = True
+        if fmap_pe_dir.sign != bold_pe_dir.sign:
+            has_opposing_pe = True
 
-    for _, fmap_pe in epi_fmaps:
-        fmap_axis, fmap_sign = _pe_axis_sign(fmap_pe)
-
-        if fmap_axis != bold_axis:
-            continue  # wrong axis, unusable for topup-style pairing
-
-        any_same_axis = True
-        if fmap_sign != bold_sign:
-            any_opposed = True
-
-    if not any_same_axis:
-        raise ValueError(
-            "None of the discovered fieldmaps share the BOLD PE axis "
-            "(e.g., BOLD is 'j' but fieldmaps are 'i'/'k'). Check metadata."
-        )
-
-    return any_opposed
+    return has_opposing_pe, has_same_axis
 
 
-def collect_pe_dir(database: Database, c: str) -> str:
-    database.fillmetadata("phase_encoding_direction", [c])
-    pe_dir = canonicalize_direction_code(database.metadata(c, "phase_encoding_direction"), c)
-    return pe_dir
+def collect_pe_dir(database: Database, candidate: str) -> PhaseEncodingDirection:
+    database.fillmetadata("phase_encoding_direction", [candidate])
+    return PhaseEncodingDirection(
+        canonicalize_direction_code(database.metadata(candidate, "phase_encoding_direction"), candidate)
+    )
 
 
 def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = False) -> list[str]:
@@ -112,30 +110,50 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
             logger.info(f"Skipping field maps {incomplete_str} due to missing magnitude images")
         candidates -= incomplete
 
-    # Filter pepolar
-    epi_fmaps = list()
-    for c in candidates:
-        suffix = database.tagval(c, "suffix")
+    # Filter EPI (blip-up blip-down)
+    epi_fmaps: list[tuple[str, PhaseEncodingDirection]] = list()
+    for candidate in candidates:
+        suffix = database.tagval(candidate, "suffix")
         if not isinstance(suffix, str):
             continue
         if suffix != "epi":
             continue
 
-        epi_fmaps.append((c, collect_pe_dir(database, c)))
+        epi_fmaps.append((candidate, collect_pe_dir(database, candidate)))
 
-    try:
-        bold_pe_dir = collect_pe_dir(database, bold_file_path)
-    except ValueError:
-        logger.warning(...)
-        candidates -= set(c for c, _ in epi_fmaps)
-    else:
-        has_opposing = has_opposing_pe(epi_fmaps, bold_pe_dir)
-        if not has_opposing:
-            candidates -= set(c for c, _ in epi_fmaps)
-        else:
-            bold_axis, bold_sign = _pe_axis_sign(bold_pe_dir)
-            candidates &= set(
-                c for c, pe in epi_fmaps if _pe_axis_sign(pe)[0] == bold_axis and _pe_axis_sign(pe)[1] != bold_sign
+    if epi_fmaps:
+        has_opposing_pe = False
+        message: str = ""
+        incomplete_str = pe.join(sorted(f'"{c}" with direction "{dir}"' for c, dir in epi_fmaps))
+        try:
+            bold_pe_dir = collect_pe_dir(database, bold_file_path)
+        except ValueError:
+            message = (
+                f'Could not detect phase encoding direction for BOLD image "{bold_file_path}", so EPI (blip-up blip-down) '
+                f"field maps {incomplete_str} cannot be used. Please check the metadata of the BOLD image"
             )
+        else:  # No error
+            has_opposing_pe, has_same_axis = check_opposing_pe(epi_fmaps, bold_pe_dir)
+            if not has_same_axis:
+                message = (
+                    f"Skipping EPI (blip-up blip-down) field maps {incomplete_str} because they do not share "
+                    f'the same phase encoding axis as the BOLD image "{bold_file_path}" with direction "{bold_pe_dir}"'
+                )
+            elif not has_opposing_pe:
+                message = (
+                    f"Skipping EPI (blip-up blip-down) field maps {incomplete_str} because they do not have "
+                    f'a set of opposing phase encoding directions to the BOLD image "{bold_file_path}" with '
+                    f'direction "{bold_pe_dir}"'
+                )
+
+        if has_opposing_pe:
+            # Keep only EPI (blip-up blip-down)  field maps on the BOLD phase encoding axis
+            candidates.difference_update(
+                candidate for candidate, candidate_pe_dir in epi_fmaps if candidate_pe_dir.axis != bold_pe_dir.axis
+            )
+        else:
+            candidates.difference_update(candidate for candidate, _ in epi_fmaps)
+            if not silent:
+                logger.warning(message)
 
     return sorted(candidates)
