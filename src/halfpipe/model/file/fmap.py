@@ -7,7 +7,7 @@
 from marshmallow import fields, validate
 from marshmallow_oneofschema import OneOfSchema
 
-from ..metadata import PEDirMetadataSchema, PhaseDiffMetadataSchema, TEMetadataSchema
+from ..metadata import FieldMapMetadataSchema, PEDirMetadataSchema, PhaseDiffMetadataSchema, TEMetadataSchema
 from ..tags import EPIFmapTagsSchema, FmapTagsSchema
 from .base import BaseFileSchema, File
 
@@ -44,6 +44,11 @@ class PhaseFmapFileSchema(BaseFmapFileSchema):
     metadata = fields.Nested(TEMetadataSchema())
 
 
+class FieldMapFileSchema(BaseFmapFileSchema):
+    suffix = fields.Str(dump_default="fieldmap", validate=validate.Equal("fieldmap"))
+    metadata = fields.Nested(FieldMapMetadataSchema())
+
+
 class FmapFileSchema(OneOfSchema):
     type_field = "suffix"
     type_field_remove = False
@@ -54,7 +59,7 @@ class FmapFileSchema(OneOfSchema):
         "magnitude": BaseFmapFileSchema,
         "magnitude1": BaseFmapFileSchema,
         "magnitude2": BaseFmapFileSchema,
-        "fieldmap": BaseFmapFileSchema,
+        "fieldmap": FieldMapFileSchema,
         "epi": EPIFmapFileSchema,
     }
 

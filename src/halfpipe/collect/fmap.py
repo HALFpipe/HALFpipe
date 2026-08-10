@@ -49,6 +49,27 @@ def collect_pe_dir(database: Database, candidate: str) -> PhaseEncodingDirection
     )
 
 
+required_metadata: dict[str, list[str]] = {
+    "epi": ["total_readout_time"],
+    "fieldmap": ["units"],
+    "phasediff": ["echo_time1", "echo_time2"],
+    "phase1": ["echo_time"],
+    "phase2": ["echo_time"],
+}
+
+
+def check_required_metadata(database: Database, candidate: str) -> list[str]:
+    suffix = database.tagval(candidate, "suffix")
+    if not isinstance(suffix, str):
+        return list()
+    missing = list()
+    for key in required_metadata.get(suffix, list()):
+        database.fillmetadata(key, [candidate])
+        if database.metadata(candidate, key) is None:
+            missing.append(key)
+    return missing
+
+
 def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = False) -> list[str]:
     bold_file_tags = database.tags(bold_file_path)
     if bold_file_tags is None:
@@ -155,5 +176,16 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
             candidates.difference_update(candidate for candidate, _ in epi_fmaps)
             if not silent:
                 logger.warning(message)
+
+    # Drop field maps that are missing metadata
+    for candidate in list(candidates):
+        missing = check_required_metadata(database, candidate)
+        if not missing:
+            continue
+        candidates.remove(candidate)
+        if not silent:
+            logger.warning(
+                f'Skipping field map "{candidate}" because it is missing the required metadata {pe.join(sorted(missing))}.'
+            )
 
     return sorted(candidates)

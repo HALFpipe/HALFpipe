@@ -149,6 +149,13 @@ class EventsMetadataSchema(BaseMetadataSchema):
     )
 
 
+class FieldMapMetadataSchema(BaseMetadataSchema):
+    units = fields.Str(
+        validate=validate.OneOf(["Hz", "rad/s", "T"]),
+        metadata=dict(description="Measurement units for the associated variable."),
+    )
+
+
 class RefMetadataSchema(Schema):
     space = fields.Str(
         validate=validate.OneOf(templates),
