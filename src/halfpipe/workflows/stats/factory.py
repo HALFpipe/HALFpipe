@@ -41,16 +41,16 @@ class StatsFactory(Factory):
 
         inputs = []
         for inputname in model.inputs:
-            logger.debug(f"StatsFactory->inputname: {inputname}")
+            logger.debug(f"Stats factory is processing input: {inputname}")
             if self.has(inputname):
                 inputs.extend(self.get(inputname))
-                logger.debug(f"StatsFactory->extending inputs by self->inputs: {inputs}")
+                logger.debug(f"Stats factory extended inputs using its own outputs: {inputs}")
             elif self.feature_factory.has(inputname):
                 inputs.extend(self.feature_factory.get(inputname))
-                logger.debug(f"StatsFactory->extending inputs by feature_factory->inputs: {inputs}")
+                logger.debug(f"Stats factory extended inputs using the feature factory's outputs: {inputs}")
             else:
                 raise ValueError(f'Unknown input name "{inputname}"')
-        logger.debug(f"StatsFactory-> all gathered inputs: {inputs}")
+        logger.debug(f"Stats factory gathered all inputs: {inputs}")
 
         vwf = init_stats_wf(
             self.ctx.workdir,

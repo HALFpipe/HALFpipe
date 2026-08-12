@@ -59,7 +59,9 @@ class FeatureFactory(Factory):
         return False
 
     def setup(self, raw_sources_dict: dict | None = None, processing_groups=None):
-        logger.debug(f"FeatureFactory->setup-> raw_sources_dict: {raw_sources_dict},processing_groups: {processing_groups}")
+        logger.debug(
+            f"Feature factory is running setup with raw sources {raw_sources_dict} and processing groups {processing_groups}"
+        )
         # pass processing_groups also here so that when later _get_hierarchy is used in create, the processing_groups can
         # there so that the right workflow can be found
         self.processing_groups = processing_groups
@@ -67,9 +69,9 @@ class FeatureFactory(Factory):
         raw_sources_dict = dict() if raw_sources_dict is None else raw_sources_dict
 
         for feature in self.ctx.spec.features:
-            logger.info(f"FeatureFactory->setup-> feature: {feature}")
+            logger.debug(f"Feature factory is running setup for feature: {feature}")
             source_files = set(raw_sources_dict.keys())
-            logger.info(f"FeatureFactory->setup-> source_files: {source_files}")
+            logger.debug(f"Feature factory is running setup for source files: {source_files}")
 
             setting = _find_setting(feature.setting, self.ctx.spec)
 

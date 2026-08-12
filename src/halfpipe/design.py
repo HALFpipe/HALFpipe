@@ -49,7 +49,7 @@ def prepare_data_frame(
     subjects: list[str] | None = None,
     na_action: Literal["impute"] | None = None,
 ) -> pd.DataFrame:
-    logger.info(f"Checking content of the spreadsheet variable: {spreadsheet}")
+    logger.debug(f"Preparing spreadsheet for design matrix creation: {spreadsheet}")
     # normalize `spreadsheet` into a Path if it is a string
     if isinstance(spreadsheet, str):
         spreadsheet = Path(spreadsheet)

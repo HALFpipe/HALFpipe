@@ -141,7 +141,7 @@ class ResolvedSpec:
             tagdict.update(filedict.get("tags", dict()))
 
             filedict["tags"] = tagdict
-            logger.debug(f"ResolvedSpec._resolve_fileobj_with_tags-> tagdict:{tagdict}")
+            logger.debug(f"Resolved tag dictionary for this file: {tagdict}")
 
             filedict["tmplstr"] = tmplstr
 
@@ -204,7 +204,7 @@ class ResolvedSpec:
         unresolved_paths: list[str] = list()
         layout_files: list[BIDSFile] = list(layout.get_files().values())
 
-        logger.info("Found %d files in BIDS layout", len(layout_files))
+        logger.debug("Found %d files in BIDS layout", len(layout_files))
 
         for idx, obj in enumerate(layout_files, start=1):
             logger.debug("Processing layout file %d/%d: %s", idx, len(layout_files), obj)
@@ -217,19 +217,14 @@ class ResolvedSpec:
                 if datatype is not None and isinstance(obj.path, str) and not obj.path.endswith(".json"):
                     if exists(obj.path):
                         unresolved_paths.append(obj.path)
-                logger.debug("→ Skipped (to_fileobj returned None)")
+                logger.debug("Skipped this BIDS layout file because it could not be converted to a halfpipe file object")
                 continue
 
             self.fileobj_by_filepaths[file.path] = file
             self.specfileobj_by_filepaths[file.path] = file
             resolved_files.append(file)
 
-            logger.debug(
-                "→ Added file: path=%s datatype=%s tags=%s",
-                file.path,
-                file.datatype,
-                file.tags,
-            )
+            logger.debug("Added file %s with datatype %s and tags %s", file.path, file.datatype, file.tags)
 
         logger.debug("Resolved %d files total", len(resolved_files))
 
@@ -302,22 +297,18 @@ class ResolvedSpec:
         return resolved_files
 
     def resolve(self, fileobj: File) -> list[File]:
-        logger.debug(f"ResolvedSpec->resolve: {fileobj.path}")
+        logger.debug(f"Resolving file: {fileobj.path}")
         if len(get_entities_in_path(fileobj.path)) == 0:
             if fileobj.datatype == "bids":
-                logger.debug("ResolvedSpec->resolve: len==0 ->bids")
                 resolved_files = self._resolve_bids(fileobj)
             else:
-                logger.debug("ResolvedSpec->resolve: len==0 -> else")
                 resolved_files = [fileobj]
                 self.fileobj_by_filepaths[fileobj.path] = fileobj
         else:
-            logger.debug("ResolvedSpec->resolve: _resolve_fileobj_with_tags")
-
             resolved_files = self._resolve_fileobj_with_tags(fileobj)
 
         self.fileobjs_by_specfilepaths[fileobj.path] = resolved_files
-        logger.debug(f"ResolvedSpec->resolve: {fileobj.__dict__}")
+        logger.debug(f"Finished resolving file: {fileobj.__dict__}")
 
         return resolved_files
 

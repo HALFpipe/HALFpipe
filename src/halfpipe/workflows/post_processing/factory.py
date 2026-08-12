@@ -103,9 +103,7 @@ class LookupFactory(Factory):
 
         self.previous_factory = previous_factory
         logger.debug(
-            "LookupFactory swap:\n"
-            f"  previous={self.previous_factory.__class__.__name__}\n"
-            f"  current={self.__class__.__name__}\n"
+            f"Setting up {self.__class__.__name__} to look up outputs from {self.previous_factory.__class__.__name__}"
         )
 
         # i think this is not needed because all is set up through setup in postprocessing factory
@@ -115,10 +113,8 @@ class LookupFactory(Factory):
     def setup(self, processing_groups=None) -> None:
         self.processing_groups = processing_groups
         logger.debug(
-            "LookupFactory swap:\n"
-            f"  previous={self.previous_factory.__class__.__name__}\n"
-            f"  current={self.__class__.__name__}\n"
-            f"  processing_group={self.processing_groups}"
+            f"Setting up {self.__class__.__name__} to look up outputs from "
+            f"{self.previous_factory.__class__.__name__} for processing group {self.processing_groups}"
         )
 
         setting_names = [setting["name"] for setting in self.ctx.spec.settings]
@@ -160,8 +156,7 @@ class LookupFactory(Factory):
         return obj is None
 
     def _connect_inputs(self, hierarchy, inputnode, source_file, setting_name, lookup_tuple):
-        logger.debug(f"_connect_inputs previous_factory: {self.previous_factory.__class__.__name__} ")
-        logger.debug(f"_connect_inputs current_factory: {self.__class__.__name__} ")
+        logger.debug(f"Connecting inputs from {self.previous_factory.__class__.__name__} into {self.__class__.__name__}")
 
         if hasattr(inputnode.inputs, "repetition_time"):
             self.ctx.database.fillmetadata("repetition_time", [source_file])
@@ -216,8 +211,8 @@ class LookupFactory(Factory):
         hierarchy.append(vwf)
 
         logger.debug(
-            f"lookup factory get-> hierarchy {hierarchy}, inputnode: {inputnode}, source_file: {source_file}"
-            f", setting_name {setting_name}, lookup_tuple {lookup_tuple}"
+            f"{self.__class__.__name__} resolved hierarchy {hierarchy} with inputnode {inputnode} "
+            f"for source_file={source_file}, setting_name={setting_name}, lookup_tuple={lookup_tuple}"
         )
         if connect_inputs:
             self._connect_inputs(hierarchy, inputnode, source_file, setting_name, lookup_tuple)
