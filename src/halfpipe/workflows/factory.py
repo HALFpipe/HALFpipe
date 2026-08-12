@@ -49,14 +49,9 @@ class Factory(ABC):
         bids_database = self.ctx.bids_database
 
         logger.debug(
-            (
-                f"Operating in class: {self.__class__.__name__} ",
-                "Factory->_single_subject_wf_name-> "
-                f"source_file: {source_file},"
-                f"bids_subject_id: {bids_subject_id}, "
-                f"subject_id: {subject_id}, "
-                f"processing_group: {processing_group}",
-            )
+            f"{self.__class__.__name__} is computing the single-subject workflow name for "
+            f"source_file={source_file}, bids_subject_id={bids_subject_id}, "
+            f"subject_id={subject_id}, processing_group={processing_group}"
         )
 
         if isinstance(processing_group, tuple):
@@ -76,26 +71,14 @@ class Factory(ABC):
                 subject_id = bids_database.get_tag_value(bids_path, "subject")
             if subject_id is not None:
                 bids_subject_id = format_like_bids(subject_id)
-            logger.debug(
-                (
-                    "Factory->_single_subject_wf_name-> if bids_subject_id is none"
-                    "and processing_group is a list -> "
-                    f"bids_subject_id: {bids_subject_id}, "
-                )
-            )
+            logger.debug(f"Resolved bids_subject_id to {bids_subject_id} from the source file")
 
         if isinstance(processing_group, list):
             sessions = dict(processing_group)[bids_subject_id]
             if sessions is not None:  # None or empty list
                 session_str = stringify_sessions(sessions)
                 wf_label = f"sub_{bids_subject_id}_ses_{session_str}_wf"
-                logger.debug(
-                    (
-                        "Factory->_single_subject_wf_name-> if bids_subject_id is none"
-                        "and processing_group is a list -> "
-                        f"return : {wf_label}, "
-                    )
-                )
+                logger.debug(f"Using workflow name {wf_label} for this subject/session")
 
                 return wf_label
 
@@ -130,7 +113,7 @@ class Factory(ABC):
 
         hierarchy: list[pe.Workflow] = [self.ctx.workflow]
         logger.debug(
-            f"_get_hierarchy({self.__class__.__name__}): "
+            f"{self.__class__.__name__} is building a workflow hierarchy for "
             f"name={name}, source_file={source_file}, subject_id={subject_id}, "
             f"childname={childname}, create_ok={create_ok}, processing_group={processing_group}"
         )
@@ -165,7 +148,7 @@ class Factory(ABC):
         if childname is not None:
             require_workflow(childname)
 
-        logger.debug(f"_get_hierarchy-> hierarchy: {hierarchy}")
+        logger.debug(f"Built workflow hierarchy: {hierarchy}")
 
         return hierarchy
 

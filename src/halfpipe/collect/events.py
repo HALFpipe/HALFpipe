@@ -20,7 +20,7 @@ def collect_events(database: Database, source_file: str) -> tuple[str | tuple[st
         datatype="func",
         suffix="events",
     )
-    logger.debug(f"collect_events-> source_file:{source_file}, task: {task}, candidates:{candidates}")
+    logger.debug(f"Collecting events for source file {source_file} (task: {task}); candidate event files: {candidates}")
     if candidates is None or len(candidates) == 0:
         return None
 

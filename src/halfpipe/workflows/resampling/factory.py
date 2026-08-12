@@ -49,14 +49,12 @@ class AltBOLDFactory(Factory):
 
         if connect:
             previous_factory_name = self.previous_factory.__class__.__name__
-            logger.debug(f"AltBOLDFactory-> previous_factory_name: {previous_factory_name}")
+            logger.debug(f"Alt BOLD factory's previous factory is {previous_factory_name}")
             if previous_factory_name == "FmriprepFactory":
-                logger.debug("AltBOLDFactory-> connect with fmriprep factory")
                 self.previous_factory.connect(
                     hierarchy, inputnode, source_file=source_file, processing_group=self.previous_factory.processing_groups
                 )
             else:
-                logger.debug("AltBOLDFactory-> connect NOT with fmriprep factory")
                 self.previous_factory.connect(hierarchy, inputnode, source_file=source_file)
 
         outputnode = vwf.get_node("outputnode")

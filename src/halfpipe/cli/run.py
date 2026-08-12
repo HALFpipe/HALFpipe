@@ -28,7 +28,7 @@ def run_stage_ui(opts: Namespace):
         # 'opts' is passed by reference to the textual TUI so it is modified directly there
         app = MainApp(opts)
         app.run()
-        logger.info(f"The options after running TUI are: {opts}")
+        logger.debug(f"Options provided by TUI: {opts}")
 
         if opts.workdir is False:
             import os

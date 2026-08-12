@@ -16,7 +16,6 @@ from packaging.version import Version
 
 from ..collect.fmap import collect_fieldmaps
 from ..logging import logger
-from ..logging.describe_workflow import describe_workflow
 from ..utils.copy import deepcopyfactory
 from ..utils.format import inflect_engine as p
 from .configurables import configurables
@@ -277,12 +276,10 @@ class FmriprepFactory(Factory):
                 get_fmriprep_wf_name(), source_file=bold_file_path, processing_group=processing_groups
             )[-1]
 
-            func_preproc_wf_hierarchy = describe_workflow(func_preproc_wf)
-            logger.debug(f"func_preproc_wf_hierarchy: {func_preproc_wf_hierarchy}")
             # this is a good debug because thanks to it we see why it was skipped, either 0 graphs or not a workflow
             logger.debug(
-                f"FmriPrepFactory->setup-> func_preproc_wf: {func_preproc_wf} and bold_file_path: {bold_file_path} "
-                f"and len(func_preproc_wf._graph: {len(func_preproc_wf._graph)}"
+                f"fMRIPrep factory setup produced workflow {func_preproc_wf} for bold file {bold_file_path} "
+                f"with graph size {len(func_preproc_wf._graph)}"
             )
             if not isinstance(func_preproc_wf, pe.Workflow) or len(func_preproc_wf._graph) == 0:
                 logger.warning(f'fMRIPrep skipped processing for file "{bold_file_path}"')
@@ -349,7 +346,6 @@ class FmriprepFactory(Factory):
 
             inputnode.inputs.repetition_time = database.metadata(bold_file_path, "repetition_time")
 
-            logger.debug("FMRIprep connecting on init_func_report_wf")
             self.connect(hierarchy, inputnode, source_file=bold_file_path, processing_group=processing_groups)
 
         return bold_file_paths, processing_groups
@@ -481,7 +477,7 @@ class FmriprepFactory(Factory):
         anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
 
         logger.debug(
-            f"{self.__class__.__name__} -> connect: "
+            f"{self.__class__.__name__} is connecting using "
             f"anat_fit_wf_hierarchy={anat_fit_wf_hierarchy}, "
             f"processing_group={processing_group}"
         )

@@ -18,13 +18,9 @@ class Database:
     def __init__(self, spec: Spec | ResolvedSpec, bids_database_dir: Path | None = None) -> None:
         resolved_spec = None
         if isinstance(spec, ResolvedSpec):
-            logger.debug("Database.__init__: using provided ResolvedSpec")
             resolved_spec = spec
         elif isinstance(spec, Spec):
-            logger.debug(
-                "Database.__init__: resolving Spec (bids_database_dir=%s)",
-                bids_database_dir,
-            )
+            logger.debug("Resolving the spec file using BIDS database directory %s", bids_database_dir)
             resolved_spec = ResolvedSpec(spec, bids_database_dir=bids_database_dir)
         else:
             raise ValueError("Need to initialize Database with a Spec or ResolvedSpec")
@@ -35,20 +31,11 @@ class Database:
         self.filepaths_by_tags: dict[str, dict[str, set[str]]] = dict()
         self.tags_by_filepaths: dict[str, dict[str, str]] = dict()
 
-        logger.info(
-            "Indexing %d resolved files",
-            len(list(self.resolved_spec.resolved_files)),
-        )
+        logger.debug("Indexing %d resolved files", len(list(self.resolved_spec.resolved_files)))
 
         for idx, file_obj in enumerate(self.resolved_spec.resolved_files, start=1):
-            logger.debug(
-                "Database.__init__: indexing file %d: %s",
-                idx,
-                file_obj.path,
-            )
+            logger.debug("Indexing file %d: %s", idx, file_obj.path)
             self.index(file_obj)
-
-        logger.info("Database initialization completed")
 
     def __hash__(self):
         return hash(tuple(self.tags_by_filepaths.keys()))
@@ -61,46 +48,26 @@ class Database:
         return hash.hexdigest()
 
     def put(self, spec_fileobj):
-        logger.debug("Database.put-> spec_fileobj.path=%s", spec_fileobj.path)
+        logger.debug("Adding a new file from the spec: %s", spec_fileobj.path)
 
         resolved_files = self.resolved_spec.put(spec_fileobj)
 
-        logger.debug(
-            "Database.put-> resolved %d files from spec file",
-            len(resolved_files),
-        )
+        logger.debug("Resolved %d files from this spec file", len(resolved_files))
 
         for idx, resolved_fileobj in enumerate(resolved_files, start=1):
-            logger.debug(
-                "Database.put-> indexing resolved file %d/%d: %s",
-                idx,
-                len(resolved_files),
-                resolved_fileobj.path,
-            )
+            logger.debug("Indexing resolved file %d of %d: %s", idx, len(resolved_files), resolved_fileobj.path)
             self.index(resolved_fileobj)
-            logger.debug(
-                "Database.put-> resolved_fileobj.tags=%s",
-                resolved_fileobj.tags,
-            )
+            logger.debug("Tags for this resolved file: %s", resolved_fileobj.tags)
 
     def index(self, fileobj):
-        logger.debug("Database.index-> start path=%s", fileobj.path)
+        logger.debug("Indexing file: %s", fileobj.path)
 
         def add_tag_to_index(filepath, entity, tagval):
             if tagval is None:
-                logger.debug(
-                    "Database.index-> skip tag %s=None for %s",
-                    entity,
-                    filepath,
-                )
+                logger.debug("Skipping tag %s because it is empty for file %s", entity, filepath)
                 return
 
-            logger.debug(
-                "Database.index-> adding tag %s=%s for %s",
-                entity,
-                tagval,
-                filepath,
-            )
+            logger.debug("Adding tag %s=%s for file %s", entity, tagval, filepath)
 
             if entity not in self.filepaths_by_tags:
                 self.filepaths_by_tags[entity] = dict()
@@ -123,10 +90,7 @@ class Database:
         if hasattr(fileobj, "extension"):
             tagdict.update(dict(extension=fileobj.extension))
 
-        logger.debug(
-            "Database.index-> base tagdict=%s",
-            tagdict,
-        )
+        logger.debug("Base tag dictionary for this file: %s", tagdict)
 
         self.tags_by_filepaths[filepath] = dict(**tagdict)
 
@@ -134,8 +98,6 @@ class Database:
         # their real tags; the association is resolved on demand via ``intended_for_targets``.
         for tagname, tagval in tagdict.items():
             add_tag_to_index(filepath, tagname, tagval)
-
-        logger.debug("Database.index-> completed path=%s", filepath)
 
     def tags(self, filepath) -> dict[str, str] | None:
         """
@@ -183,64 +145,45 @@ class Database:
         return self.filepaths_by_tags.get(entity)
 
     def get(self, **filters: str) -> set[str]:
-        logger.debug("Database.get-> filters=%s", filters)
+        logger.debug("Looking up files matching filters: %s", filters)
 
         res = None
         for tagname, tagval in filters.items():
-            logger.debug(
-                "Database.get-> applying filter %s=%s",
-                tagname,
-                tagval,
-            )
+            logger.debug("Applying filter %s=%s", tagname, tagval)
 
             if tagname in self.filepaths_by_tags and tagval in self.filepaths_by_tags[tagname]:
                 cur_set = self.filepaths_by_tags[tagname][tagval]
                 if res is not None:
                     res &= cur_set
                 else:
-                    logger.debug(
-                        "Database.get-> no matches for %s=%s",
-                        tagname,
-                        tagval,
-                    )
+                    logger.debug("No files matched filter %s=%s", tagname, tagval)
                     res = cur_set.copy()
             else:
                 res = None
                 break
 
-        logger.debug(f"Database.get-> result:{res}")
+        logger.debug(f"Lookup result: {res}")
         if res is None:
             return set()
         return res
 
     def filter(self, filepaths, **filters: str) -> set[str]:
-        logger.debug(
-            "Database.filter-> start filepaths=%d filters=%s",
-            len(filepaths),
-            filters,
-        )
+        logger.debug("Filtering %d files using filters: %s", len(filepaths), filters)
 
         res = set(filepaths)
 
         for entity, tagval in filters.items():
-            logger.debug(
-                "Database.filter-> applying %s=%s",
-                entity,
-                tagval,
-            )
+            logger.debug("Applying filter %s=%s", entity, tagval)
             if entity not in self.filepaths_by_tags:
-                logger.debug("Database.filter-> entity %s not indexed", entity)
+                logger.debug("No files have been indexed for entity %s", entity)
                 return set()
             if tagval not in self.filepaths_by_tags[entity]:
-                logger.debug("Database.filter-> tagval %s not found for %s", tagval, entity)
+                logger.debug("Tag value %s was not found for entity %s", tagval, entity)
                 return set()
             cur_set = self.filepaths_by_tags[entity][tagval]
             res &= cur_set
 
-        logger.debug(
-            "Database.filter-> remaining=%d",
-            len(res),
-        )
+        logger.debug("%d files remain after filtering", len(res))
 
         return res
 
