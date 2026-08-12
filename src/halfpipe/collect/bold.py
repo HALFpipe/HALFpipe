@@ -24,6 +24,8 @@ def collect_bold_files(
     # Find associated files
     for bold_file_path in bold_file_paths:
         sub = database.tagval(bold_file_path, "sub")
+        if sub is None:
+            raise ValueError(f'Could not find "sub" tag for "{bold_file_path}"')
 
         t1ws = associations(
             database,

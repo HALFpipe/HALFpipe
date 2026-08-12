@@ -162,18 +162,18 @@ class Database:
     @overload
     def tagval(
         self,
-        filepath: str,
+        filepath: str | Path,
         entity: str,
     ) -> str | None: ...
 
     def tagval(
         self,
-        filepath: list[str] | tuple[str, ...] | str,
+        filepath: list[str] | tuple[str, ...] | str | Path,
         entity: str,
     ) -> str | list[str | None] | None:
         if isinstance(filepath, (list, tuple)):  # vectorize
             return [self.tagval(fp, entity) for fp in filepath]
-        tagdict = self.tags_by_filepaths.get(filepath)
+        tagdict = self.tags_by_filepaths.get(str(filepath))
         if tagdict is not None:
             return tagdict.get(entity)
         else:

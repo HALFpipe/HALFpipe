@@ -10,6 +10,7 @@ from typing import Any, Generator
 
 import marshmallow.exceptions
 from bids import BIDSLayout
+from bids.exceptions import BIDSValidationError
 from bids.layout.index import BIDSLayoutIndexer
 from bids.layout.models import BIDSFile
 from marshmallow import EXCLUDE
@@ -210,8 +211,12 @@ class ResolvedSpec:
 
             file = to_fileobj(obj, basemetadata, fileobj.tags)
             if file is None:
-                if isinstance(obj.path, str) and not obj.path.endswith(".json") and exists(obj.path):
-                    unresolved_paths.append(obj.path)
+                # Only actual data files. Files without a datatype, such as ``README``, are
+                # not part of the field-map bookkeeping and have no sidecars to search for.
+                datatype = obj.get_entities().get("datatype")
+                if datatype is not None and isinstance(obj.path, str) and not obj.path.endswith(".json"):
+                    if exists(obj.path):
+                        unresolved_paths.append(obj.path)
                 logger.debug("→ Skipped (to_fileobj returned None)")
                 continue
 
@@ -235,18 +240,26 @@ class ResolvedSpec:
         for image_path in image_paths:
             file_directory = Path(image_path).parent
 
-            applicable_paths: list[Path] = list()
-            for sidecar_path in layout.get_nearest(image_path, extension=".json", strict=True, all_=True):
-                sidecar_directory = Path(sidecar_path).parent
-                # Skip unrelated
-                if not file_directory.is_relative_to(sidecar_directory):
-                    continue
-                applicable_paths.append(Path(sidecar_path))
+            sidecar_paths: list[Path] = list()
+            try:
+                for sidecar_path in layout.get_nearest(image_path, extension=".json", strict=True, all_=True):
+                    sidecar_directory = Path(sidecar_path).parent
+                    # Skip unrelated
+                    if not file_directory.is_relative_to(sidecar_directory):
+                        continue
+                    sidecar_paths.append(Path(sidecar_path))
+            except BIDSValidationError as exc_info:
+                logger.warning(
+                    "Skipping sidecar search for %s because of BIDS validation error",
+                    image_path,
+                    exc_info=exc_info,
+                )
+                continue
 
-            # ``get_nearest`` returns the most specific first; we want the nearest sidecar
-            # to be merged last and win, and ordered by depth as the primary signal.
-            applicable_paths.sort(key=lambda p: len(p.parts))
-            self.sidecar_paths_by_filepaths[image_path] = applicable_paths
+            # Sort by least specific first
+            sidecar_paths.sort(key=lambda p: len(p.parts))
+
+            self.sidecar_paths_by_filepaths[image_path] = sidecar_paths
 
         # ---- Field-map associations -----------------
 

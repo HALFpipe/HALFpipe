@@ -294,7 +294,7 @@ def bids_session_test_empty_mock_data(request):
 
 
 @pytest.fixture(scope="session")
-def fibromyalgia_base_dataset(tmp_path_factory):
+def fibromyalgia_base_dataset(tmp_path_factory: pytest.TempPathFactory) -> Path:
     """
     Download the OpenNeuro dataset exactly once per test session.
     """
@@ -324,7 +324,12 @@ def fibromyalgia_base_dataset(tmp_path_factory):
 
 
 @pytest.fixture(scope="session")
-def bids_session_expanded_real_test_data(request, fibromyalgia_base_dataset, tmp_path_factory, covariant_spreadsheet_path):
+def bids_session_expanded_real_test_data(
+    request: pytest.FixtureRequest,
+    fibromyalgia_base_dataset: Path,
+    tmp_path_factory: pytest.TempPathFactory,
+    covariant_spreadsheet_path: Path,
+) -> tuple[Path, Path]:
     from typing import cast
 
     sessions = int(cast(int, getattr(request, "param", 0)))
@@ -443,4 +448,4 @@ def bids_session_expanded_real_test_data(request, fibromyalgia_base_dataset, tmp
 
     save_spec(mock_spec, workdir=workdir_path)
 
-    yield data_path, workdir_path
+    return data_path, workdir_path
