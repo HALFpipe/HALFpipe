@@ -136,7 +136,7 @@ class SliceTimingFileStep:
             specfileobj = current_specfileobj
             self.specfileobjs: Iterable[File] = [specfileobj]
 
-            self.filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(specfileobj)]
+            self.filepaths = [fileobj.path for fileobj in ctx.database.fromspecfileobj(specfileobj)]  # type: ignore
         else:
             self.filepaths = list(ctx.database.get(**self.filters))
             self.specfileobjs = set(ctx.database.specfileobj(filepath) for filepath in self.filepaths)
@@ -1014,7 +1014,7 @@ class AcqToTaskMappingStep:
             set(
                 frozenset(
                     (k, v)
-                    for k, v in ctx.database.tags(f).items()
+                    for k, v in ctx.database.tags(f).items()  # type: ignore
                     if k not in ["sub", "dir"] and k in entities and v is not None
                 )
                 for f in fmapfilepaths
@@ -1027,7 +1027,9 @@ class AcqToTaskMappingStep:
         boldtags = sorted(
             set(
                 frozenset(
-                    (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
+                    (k, v)
+                    for k, v in ctx.database.tags(f).items()  # type: ignore
+                    if k not in ["sub"] and k in entities and v is not None
                 )
                 for f in boldfilepaths
             )
@@ -1114,9 +1116,11 @@ class AcqToTaskMappingStep:
             fmaplist = ctx.database.fromspecfileobj(specfileobj)
             fmaptags = set(
                 frozenset(
-                    (k, v) for k, v in ctx.database.tags(f).items() if k not in ["sub"] and k in entities and v is not None
+                    (k, v)
+                    for k, v in ctx.database.tags(f).items()  # type: ignore
+                    if k not in ["sub"] and k in entities and v is not None
                 )
-                for f in map(attrgetter("path"), fmaplist)
+                for f in map(attrgetter("path"), fmaplist)  # type: ignore
             )
 
             def _expand_fmaptags(tagset):
