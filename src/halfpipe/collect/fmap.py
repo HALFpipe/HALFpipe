@@ -6,6 +6,7 @@ from ..ingest.database import Database
 from ..ingest.metadata.direction import canonicalize_direction_code
 from ..logging import logger
 from ..utils.format import inflect_engine as pe
+from .associations import associations, intended_for_targets
 
 
 class PhaseEncodingDirection(str):
@@ -89,15 +90,30 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
     if "dir" in bold_file_tags:
         del bold_file_tags["dir"]
 
-    matching_files = database.associations2(bold_file_tags, filters)
-    if matching_files is None:
+    result = associations(database, bold_file_tags, **filters)
+    if result is None:
         return list()
-    candidates: set[str] = set(matching_files)
+    candidates: set[str] = set(result)
 
-    if candidates is None:
-        return list()
+    for fmap_path in database.get(datatype="fmap", sub=sub):
+        targets = intended_for_targets(database, fmap_path)
+        if targets is None:
+            continue
+        if bold_file_path in targets:
+            candidates.add(fmap_path)
+        else:
+            candidates.discard(fmap_path)
 
-    candidates = set(candidates)
+    database.fillmetadata("b0_field_source", [bold_file_path])
+    requested_identifiers = database.metadata(bold_file_path, "b0_field_source")
+    if requested_identifiers:
+        for candidate in list(candidates):
+            database.fillmetadata("b0_field_identifier", [candidate])
+            identifiers = database.metadata(candidate, "b0_field_identifier")
+            if not identifiers:
+                continue
+            if not set(identifiers).intersection(requested_identifiers):
+                candidates.discard(candidate)
 
     # Filter phase maps
     magnitude_map: dict[str, list[str]] = {
@@ -130,6 +146,18 @@ def collect_fieldmaps(database: Database, bold_file_path: str, silent: bool = Fa
             incomplete_str = pe.join(sorted(incomplete))
             logger.info(f"Skipping field maps {incomplete_str} due to missing magnitude images")
         candidates -= incomplete
+
+    # Remove unused magnitude images
+    magnitude_suffixes = {suffix for suffixes in magnitude_map.values() for suffix in suffixes}
+    used_magnitude_suffixes: set[str] = set()
+    for candidate in candidates:
+        suffix = database.tagval(candidate, "suffix")
+        if suffix in magnitude_map:
+            used_magnitude_suffixes.update(magnitude_map[suffix])
+    for candidate in list(candidates):
+        suffix = database.tagval(candidate, "suffix")
+        if suffix in magnitude_suffixes and suffix not in used_magnitude_suffixes:
+            candidates.discard(candidate)
 
     # Filter EPI (blip-up blip-down)
     epi_fmaps: list[tuple[str, PhaseEncodingDirection]] = list()

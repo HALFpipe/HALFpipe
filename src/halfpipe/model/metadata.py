@@ -118,13 +118,6 @@ class BoldMetadataSchema(PEDirMetadataSchema, TEMetadataSchema):
             raise ValidationError("Cannot specify both slice_timing and slice_timing_code at the same time")
 
 
-class BIDSFmapMetadataSchema(BaseMetadataSchema):
-    intended_for = fields.List(
-        fields.Str(),
-        metadata=dict(description="Contains one or more filenames with paths relative to the participant subfolder."),
-    )
-
-
 class PhaseDiffMetadataSchema(BaseMetadataSchema):
     echo_time1 = fields.Float(
         metadata=dict(
@@ -180,9 +173,30 @@ metadata_schemas: list[Type[Schema]] = [
     EventsMetadataSchema,
     RefMetadataSchema,
     BoldMetadataSchema,
-    BIDSFmapMetadataSchema,
 ]
 
 metadata_fields = {name: field for schema in metadata_schemas for name, field in schema().fields.items()}
 metadata_fields["units"] = fields.Str()
+metadata_fields["intended_for"] = fields.List(
+    fields.Str(),
+    metadata=dict(description="Contains one or more filenames with paths relative to the participant subfolder."),
+)
+metadata_fields["b0_field_identifier"] = fields.List(
+    fields.Str(),
+    metadata=dict(
+        description=(
+            "One or more names this field map is known by, so that other images can request it via "
+            "``B0FieldSource``. Introduced in BIDS 1.7 to replace ``IntendedFor``, which points the other way."
+        )
+    ),
+)
+metadata_fields["b0_field_source"] = fields.List(
+    fields.Str(),
+    metadata=dict(
+        description=(
+            "One or more ``B0FieldIdentifier`` values naming the field maps that should be used to correct this image."
+        )
+    ),
+)
+
 MetadataSchema = Schema.from_dict(metadata_fields)

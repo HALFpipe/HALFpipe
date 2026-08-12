@@ -10,6 +10,7 @@ from ..logging import logger
 from ..utils.image import nvol
 from ..workflows.features.factory import FeatureFactory
 from ..workflows.post_processing.factory import PostProcessingFactory
+from .associations import associations
 from .fmap import collect_fieldmaps
 
 
@@ -24,8 +25,9 @@ def collect_bold_files(
     for bold_file_path in bold_file_paths:
         sub = database.tagval(bold_file_path, "sub")
 
-        t1ws = database.associations(
-            bold_file_path,
+        t1ws = associations(
+            database,
+            database.tags(bold_file_path),
             datatype="anat",
             sub=sub,
         )
@@ -38,8 +40,9 @@ def collect_bold_files(
         if fmaps is not None:
             associated_file_paths.extend(fmaps)  # Add all fmaps for now, filter later
 
-        sbrefs = database.associations(
-            bold_file_path,
+        sbrefs = associations(
+            database,
+            database.tags(bold_file_path),
             datatype="func",
             suffix="sbref",
             sub=sub,

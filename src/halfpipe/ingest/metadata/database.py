@@ -2,20 +2,27 @@
 # emacs: -*- mode: python; py-indent-offset: 4; indent-tabs-mode: nil -*-
 # vi: set ft=python sts=4 ts=4 sw=4 et:
 
+from typing import TYPE_CHECKING
+
 import numpy as np
 
+from ...collect.associations import associations
 from ...logging import logger
+from ...model.file.base import File
 from ..spreadsheet import read_spreadsheet
 from .base import Loader
 from .direction import canonicalize_direction_code, parse_direction_str
 
+if TYPE_CHECKING:
+    from ..database import Database
+
 
 class DatabaseMetadataLoader(Loader):
-    def __init__(self, database, loader):
+    def __init__(self, database: "Database", loader: Loader) -> None:
         self.database = database
         self.loader = loader
 
-    def fill(self, fileobj, key):
+    def fill(self, fileobj: File, key: str) -> bool:
         if self.database is None:
             return False
 
@@ -42,8 +49,9 @@ class DatabaseMetadataLoader(Loader):
         if key == "echo_time_difference":  # calculate from associated files
             if fileobj.datatype == "fmap" and fileobj.suffix == "phasediff":
                 filepath = fileobj.path
-                magnitude1 = self.database.associations(filepath, suffix="magnitude1")
-                magnitude2 = self.database.associations(filepath, suffix="magnitude2")
+                tags = self.database.tags(filepath)
+                magnitude1 = associations(self.database, tags, suffix="magnitude1")
+                magnitude2 = associations(self.database, tags, suffix="magnitude2")
                 if magnitude1 is not None and magnitude2 is not None:
                     if len(magnitude1) > 0 and len(magnitude2) > 0:  # two magnitude files
                         m1 = self.database.fileobj(next(iter(magnitude1)))
@@ -59,7 +67,7 @@ class DatabaseMetadataLoader(Loader):
                 filepath = fileobj.path
                 suffix = dict(phase1="magnitude1", phase2="magnitude2").get(fileobj.suffix)
                 if suffix is not None:
-                    magnitude = self.database.associations(filepath, suffix=suffix)
+                    magnitude = associations(self.database, self.database.tags(filepath), suffix=suffix)
                     if magnitude is not None and len(magnitude) > 0:
                         m = self.database.fileobj(next(iter(magnitude)))
                         if self.loader.fill(m, "echo_time"):

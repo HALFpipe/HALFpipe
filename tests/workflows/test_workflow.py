@@ -174,22 +174,32 @@ def test_feature_extraction(tmp_path: Path, mock_spec: Spec) -> None:
     assert dice_similarity(tsnr_image_path, template_mask_path, threshold=20.0) >= 0.8
 
 
+def update_sidecar(path: Path, **metadata) -> None:
+    with open(path, "r") as json_file:
+        data = json.load(json_file)
+    data.update(metadata)
+    with open(path, "w") as json_file:
+        json.dump(data, json_file)
+
+
 @pytest.mark.parametrize(
-    ("fieldmap_type", "extend_tasks"),
+    ("fieldmap_type", "with_runs", "b0_field_identifier"),
     [
-        pytest.param("phasediff", False, id="phasediff-original"),
-        pytest.param("epi", False, id="epi-original"),
-        pytest.param("epi", True, id="epi-extended"),
+        pytest.param("phasediff", False, False, id="phasediff-original"),
+        pytest.param("epi", False, False, id="epi-original"),
+        pytest.param("epi", True, False, id="epi-with-runs"),
+        pytest.param("epi", False, True, id="epi-b0-field-identifier"),
     ],
 )
 def test_with_fieldmaps(
     tmp_path: Path,
     request: pytest.FixtureRequest,
-    extend_tasks: bool,
+    with_runs: bool,
     fieldmap_type: str,
+    b0_field_identifier: bool,
     mock_spec: Spec,
 ) -> None:
-    bids_data = request.getfixturevalue("bids_data_with_runs" if extend_tasks else "bids_data")
+    bids_data = request.getfixturevalue("bids_data_with_runs" if with_runs else "bids_data")
 
     bids_path = tmp_path / "bids"
     shutil.copytree(bids_data, bids_path)
@@ -237,6 +247,12 @@ def test_with_fieldmaps(
     else:
         raise ValueError(f"Unknown fieldmap type: {fieldmap_type}")
 
+    if b0_field_identifier:
+        for path in fmap_path.glob("*_epi.json"):
+            update_sidecar(path, B0FieldIdentifier=["pepolar_fmap_bold"])
+        for path in (bids_path / "sub-1012" / "func").glob("*_bold.json"):
+            update_sidecar(path, B0FieldSource=["pepolar_fmap_bold"])
+
     # Test creating the workflow
     workdir = tmp_path / "workdir"
     save_spec(mock_spec, workdir=workdir)
@@ -244,6 +260,16 @@ def test_with_fieldmaps(
     config.nipype.omp_nthreads = cpu_count()
 
     workflow = init_workflow(workdir)
+
+    if b0_field_identifier:
+        b0_field_identifiers: set[str] = set()
+        b0_field_sources: set[str] = set()
+        for sidecar_path in (workdir / "rawdata").glob("sub-*/**/*.json"):
+            with open(sidecar_path, "r") as json_file:
+                sidecar = json.load(json_file)
+            b0_field_identifiers.update(sidecar.get("B0FieldIdentifier", list()))
+            b0_field_sources.update(sidecar.get("B0FieldSource", list()))
+        assert b0_field_sources <= b0_field_identifiers, "All declared sources must be advertised by at least one field map"
 
     graphs = init_execgraph(workdir, workflow)
     graph = next(iter(graphs.values()))
