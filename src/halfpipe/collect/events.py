@@ -4,6 +4,7 @@
 
 from ..ingest.database import Database
 from ..logging import logger
+from .associations import associations
 
 
 def collect_events(database: Database, source_file: str) -> tuple[str | tuple[str, str], ...] | None:
@@ -12,8 +13,9 @@ def collect_events(database: Database, source_file: str) -> tuple[str | tuple[st
         logger.warning(f'Cannot collect events for "{source_file}" because it has no task tag')
         return None
     # Get from database
-    candidates: tuple[str, ...] | None = database.associations(
-        source_file,
+    candidates: tuple[str, ...] | None = associations(
+        database,
+        database.tags(source_file),
         task=task,  # Enforce same task
         datatype="func",
         suffix="events",

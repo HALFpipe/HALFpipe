@@ -4,7 +4,7 @@
 
 from hashlib import sha1
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any, Iterable
 
 from ..logging import logger
 from ..model.spec import Spec
@@ -15,8 +15,6 @@ from .resolve import ResolvedSpec
 
 class Database:
     def __init__(self, spec: Spec | ResolvedSpec, bids_database_dir: Path | None = None) -> None:
-        logger.info("Database initialization started")
-
         resolved_spec = None
         if isinstance(spec, ResolvedSpec):
             logger.debug("Database.__init__: using provided ResolvedSpec")
@@ -131,43 +129,8 @@ class Database:
 
         self.tags_by_filepaths[filepath] = dict(**tagdict)
 
-        # ---- IntendedFor handling ---------------------------------------------
-        if hasattr(fileobj, "intended_for"):
-            intended_for = fileobj.intended_for
-            if intended_for is not None:
-                logger.debug(
-                    "Database.index-> processing intended_for for %s: %s",
-                    filepath,
-                    intended_for,
-                )
-
-                for k, newvaluelist in intended_for.items():
-                    from_entity, from_tagval = k.split(".")
-
-                    if from_tagval == "null":
-                        from_tagval = None
-
-                    tagval = tagdict.get(from_entity)
-                    if tagval != from_tagval:
-                        logger.debug(
-                            "Database.index-> intended_for mismatch %s=%s (expected %s)",
-                            from_entity,
-                            tagval,
-                            from_tagval,
-                        )
-                        continue
-
-                    if from_entity in tagdict:
-                        logger.debug(
-                            "Database.index-> removing original tag %s from index",
-                            from_entity,
-                        )
-                        del tagdict[from_entity]  # not indexable by old tag
-
-                    for v in newvaluelist:
-                        to_entity, to_tagval = v.split(".")
-                        add_tag_to_index(filepath, to_entity, to_tagval)
-
+        # NB: field-map -> BOLD association is *not* encoded by rewriting tags. Files keep
+        # their real tags; the association is resolved on demand via ``intended_for_targets``.
         for tagname, tagval in tagdict.items():
             add_tag_to_index(filepath, tagname, tagval)
 
@@ -292,52 +255,6 @@ class Database:
                 raise ValueError(f'Unsupported filter type "{type}"')
 
         return res
-
-    def associations(self, filepath: str, **filters: str) -> tuple[str, ...] | None:
-        logger.debug(
-            "Database.associations-> start filepath=%s filters=%s",
-            filepath,
-            filters,
-        )
-        matching_files = self.get(**filters)
-        logger.debug(f"Database.associations-> filepath:{filepath}, \n\n matching_files:{matching_files}")
-        for entity in reversed(entities):  # from high to low priority
-            logger.debug(f"Database.associations-> entity:{entity}")
-            if entity not in self.filepaths_by_tags:
-                continue
-            cur_set = set()
-            for _, filepaths in self.filepaths_by_tags[entity].items():
-                if filepath in filepaths:
-                    cur_set |= set(filepaths)
-            cur_set &= matching_files
-            logger.debug(f"Database.associations-> cur_set:{cur_set}, matching_files:{matching_files}")
-            if len(cur_set) > 0:
-                matching_files = cur_set
-            if len(cur_set) == 1:
-                break
-        if len(matching_files) > 0:
-            return tuple(matching_files)
-        return None
-
-    def associations2(self, optional_tags: Mapping[str, str], mandatory_tags: Mapping[str, str]) -> tuple[str, ...] | None:
-        matching_files = self.get(**mandatory_tags)
-        for entity in reversed(entities):  # from high to low priority
-            if entity not in self.filepaths_by_tags:
-                continue
-            if entity not in optional_tags:
-                continue
-            entity_dict = self.filepaths_by_tags[entity]
-            if optional_tags[entity] not in entity_dict:
-                continue
-            files: set[str] = entity_dict[optional_tags[entity]].copy()
-            files &= matching_files
-            if len(files) > 0:
-                matching_files = files
-            if len(files) == 1:
-                break
-        if len(matching_files) > 0:
-            return tuple(matching_files)
-        return None
 
     def tagvalset(self, entity, filepaths=None):
         if not isinstance(entity, str):
