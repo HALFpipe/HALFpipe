@@ -11,7 +11,6 @@ from ..fixes.workflows import IdentifiableWorkflow
 from ..ingest.bids import BidsDatabase
 from ..ingest.database import Database
 from ..logging import logger
-from ..logging.describe_workflow import describe_workflow
 from ..model.spec import Spec, load_spec
 from ..utils.cache import cache_obj, uncache_obj
 from ..utils.copy import deepcopyfactory
@@ -169,8 +168,5 @@ def init_workflow(
 
     logger.info(f"Finished workflow {uuidstr}")
     cache_obj(workdir, ".workflow", workflow)
-
-    logger.debug(f"Printing final workflow {uuidstr}")
-    describe_workflow(workflow)
 
     return workflow

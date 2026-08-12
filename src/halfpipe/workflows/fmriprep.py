@@ -480,9 +480,6 @@ class FmriprepFactory(Factory):
 
         anat_fit_wf_hierarchy = bold_wf_hierarchy.copy()
 
-        for wf in anat_fit_wf_hierarchy:
-            describe_workflow(wf)
-
         logger.debug(
             f"{self.__class__.__name__} -> connect: "
             f"anat_fit_wf_hierarchy={anat_fit_wf_hierarchy}, "
