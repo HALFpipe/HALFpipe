@@ -4,9 +4,10 @@
 
 from hashlib import sha1
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, overload
 
 from ..logging import logger
+from ..model.file.base import File
 from ..model.spec import Spec
 from ..model.tags import entities
 from .metadata.loader import MetadataLoader
@@ -136,7 +137,7 @@ class Database:
 
         logger.debug("Database.index-> completed path=%s", filepath)
 
-    def tags(self, filepath):
+    def tags(self, filepath) -> dict[str, str] | None:
         """
         get a dictionary of entity -> value for a specific filepath
         """
@@ -148,15 +149,35 @@ class Database:
     def specfileobj(self, filepath):
         return self.resolved_spec.specfileobj(filepath)
 
-    def fromspecfileobj(self, specfileobj):
+    def fromspecfileobj(self, specfileobj) -> list[File] | None:
         return self.resolved_spec.fromspecfileobj(specfileobj)
 
-    def tagval(self, filepath, entity):
+    @overload
+    def tagval(
+        self,
+        filepath: list[str] | tuple[str, ...],
+        entity: str,
+    ) -> list[str | None]: ...
+
+    @overload
+    def tagval(
+        self,
+        filepath: str,
+        entity: str,
+    ) -> str | None: ...
+
+    def tagval(
+        self,
+        filepath: list[str] | tuple[str, ...] | str,
+        entity: str,
+    ) -> str | list[str | None] | None:
         if isinstance(filepath, (list, tuple)):  # vectorize
             return [self.tagval(fp, entity) for fp in filepath]
         tagdict = self.tags_by_filepaths.get(filepath)
         if tagdict is not None:
             return tagdict.get(entity)
+        else:
+            return None
 
     def tagvaldict(self, entity):
         return self.filepaths_by_tags.get(entity)
