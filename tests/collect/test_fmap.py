@@ -1294,3 +1294,48 @@ def test_collect_fieldmaps_non_bids_intended_for(
 
     result = {path: collect_fieldmaps(database, path, silent=True) for path in bold_file_paths}
     assert result == expected
+
+
+@pytest.mark.slow
+@pytest.mark.timeout(120)
+def test_collect_fieldmaps_non_bids_intended_for_large() -> None:
+    n_subjects = 2_000
+    tasks = ["rest", "faces", "sst", "wm"]
+    acquisitions = ["mb", "sb"]
+    intended_for = {f"acq.{acq}": [f"task.{task}"] for acq, task in zip(acquisitions, tasks, strict=False)}
+
+    database = Database(Spec(datetime.now(), list()))
+
+    bold_file_paths: list[str] = list()
+    for subject_index in range(n_subjects):
+        sub = f"{subject_index:04d}"
+        for task in tasks:
+            path = f"sub-{sub}_task-{task}_bold.nii.gz"
+            bold_file_paths.append(path)
+            database.put(mock_bold_file(metadata_phase_encoding_direction="j", path=path, tags=dict(sub=sub, task=task)))
+        for acq in acquisitions:
+            for direction, pe_dir in (("ap", "j-"), ("pa", "j")):
+                database.put(
+                    mock_fmap_file(
+                        suffix="epi",
+                        path=f"sub-{sub}_acq-{acq}_dir-{direction}_epi.nii.gz",
+                        tags=dict(sub=sub, acq=acq, dir=direction),
+                        metadata=dict(phase_encoding_direction=pe_dir, total_readout_time=0.05),
+                        intended_for=intended_for,
+                    )
+                )
+
+    for path in bold_file_paths:
+        fieldmaps = collect_fieldmaps(database, path, silent=True)
+        tags = database.tags(path)
+        assert tags is not None
+        sub = tags["sub"]
+        task = tags["task"]
+        if task in tasks[: len(acquisitions)]:
+            acq = acquisitions[tasks.index(task)]
+            assert fieldmaps == [
+                f"sub-{sub}_acq-{acq}_dir-ap_epi.nii.gz",
+                f"sub-{sub}_acq-{acq}_dir-pa_epi.nii.gz",
+            ]
+        else:
+            assert fieldmaps == []
