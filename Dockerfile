@@ -51,8 +51,4 @@ RUN git config --global user.name "HALFpipe" && \
 RUN rm -rf /opt/conda
 COPY --from=install /opt/conda/ /opt/conda/
 
-# Download all resources
-RUN --mount=source=src/halfpipe/resource.py,target=/resource.py \
-    conda run --name="fmriprep" python /resource.py
-
 ENTRYPOINT ["/opt/conda/envs/fmriprep/bin/halfpipe"]
