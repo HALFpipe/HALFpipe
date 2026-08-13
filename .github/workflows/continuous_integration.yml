@@ -172,8 +172,8 @@ jobs:
           git config --global --add "safe.directory" "*"
           # Run the integration tests
           py.test -k 'not test_consistency' \
-            --cov --cov-report=xml --dist=load \
-            --numprocesses=2
+            --cov --cov-report=xml --dist=loadgroup \
+            --numprocesses=3
 
       - name: Upload coverage to Codecov
         if: ${{ steps.metadata.outputs.run == 'true' }}
