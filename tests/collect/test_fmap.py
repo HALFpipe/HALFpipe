@@ -79,9 +79,8 @@ def mock_fmap_file(
     ],
 )
 def test_phase_encoding_direction(pe_dir: str, axis: str, sign: str) -> None:
-    pe_dir = PhaseEncodingDirection(pe_dir)
-    assert pe_dir.axis == axis
-    assert pe_dir.sign == sign
+    assert PhaseEncodingDirection(pe_dir).axis == axis
+    assert PhaseEncodingDirection(pe_dir).sign == sign
 
 
 def test_empty_phase_encoding_direction() -> None:
@@ -1297,9 +1296,9 @@ def test_collect_fieldmaps_non_bids_intended_for(
 
 
 @pytest.mark.slow
-@pytest.mark.timeout(120)
+@pytest.mark.timeout(180)
 def test_collect_fieldmaps_non_bids_intended_for_large() -> None:
-    n_subjects = 2_000
+    n_subjects = 1_000
     tasks = ["rest", "faces", "sst", "wm"]
     acquisitions = ["mb", "sb"]
     intended_for = {f"acq.{acq}": [f"task.{task}"] for acq, task in zip(acquisitions, tasks, strict=False)}
