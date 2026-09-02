@@ -39,3 +39,4 @@ def test_make_script(monkeypatch, tmp_path: Path, has_model: bool):
     assert Path(tmp_path / "submit.slurm.sh").is_file()
     assert Path(tmp_path / "submit.sge.sh").is_file()
     assert Path(tmp_path / "submit.torque.sh").is_file()
+    assert Path(tmp_path / "submit.lsf.sh").is_file()
