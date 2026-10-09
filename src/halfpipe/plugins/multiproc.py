@@ -128,6 +128,10 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         if self._keep != "all":
             self._rt = PathReferenceTracer(self._cwd)
 
+        from ..workflows.fmriprep import get_fmriprep_wf_name
+
+        self._fmriprep_wf_name = get_fmriprep_wf_name()
+
     def _postrun_check(self):
         shutdown_thread = Thread(target=self.pool.shutdown, kwargs=dict(wait=True), daemon=True)
         shutdown_thread.start()
@@ -166,7 +170,7 @@ class MultiProcPlugin(nip.MultiProcPlugin):
         if self._rt is not None:
             name = self.procs[jobid].fullname
             unmark = True  # try to delete this when dependencies finish
-            if self._keep == "some" and "fmriprep_wf" in name:
+            if self._keep == "some" and self._fmriprep_wf_name in name:
                 unmark = False  # keep fmriprep if keep is "some"
             if self._keep == "some" and "ica_aroma_components_wf" in name:
                 unmark = False
