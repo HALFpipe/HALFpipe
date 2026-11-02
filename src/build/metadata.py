@@ -1,6 +1,5 @@
 import json
 import os
-import subprocess
 from datetime import datetime, timezone
 
 from github import Github
@@ -24,14 +23,6 @@ token: str = github_context["token"]
 
 registry = os.environ["REGISTRY"]
 
-prefixes = (
-    "src/",
-    "recipes/",
-    "tests/",
-    "Dockerfile",
-    "pyproject.toml",
-    ".github/workflows/continuous_integration.yml",
-)
 repository_owner, repository_name = repository.lower().split("/")
 reference, type, name = ref.split("/")[:3]
 if reference != "refs":
@@ -47,11 +38,7 @@ elif type == "tags":
 elif type == "pull":
     tag = f"{type}-{name}"
     push = False
-    changed_files: list[str] = subprocess.check_output(
-        ["git", "diff", "--name-only", "HEAD^1", "HEAD"],
-        text=True,
-    ).splitlines()
-    run = any(file.startswith(prefixes) for file in changed_files)
+    run = True
 else:
     raise ValueError(f"Unknown reference type: {type}")
 
