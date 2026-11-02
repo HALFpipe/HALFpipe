@@ -1,14 +1,14 @@
 ---
 title: "Resting-State fMRI with the new UI"
 lightbox: true
-format: 
+format:
   html:
     css: styles.css
 ---
 
 ::: {.callout-caution icon=true}
 
-# The New-UI is still under development 
+# The New-UI is still under development
 
 We are still working on the implementation of the New UI for HALFpipe. Please report any issue you might encounter at halfpipe@fmri.science or on GitHub.
 
@@ -34,14 +34,14 @@ Please address questions and comments to [halfpipe@fmri.science](halfpipe@fmri.s
 3. Run the Execution Command for your container software.
 
 ```bash
-apptainer run --contain --cleanenv --bind /:/ext halfpipe_1.3.1.sif --use_cluster --tui 
+apptainer run --contain --cleanenv --bind /:/ext halfpipe_1.3.1.sif --use_cluster --tui
 ```
 
 ::: {.callout-note collapse="false"}
 #### Understanding the command line
 - File Location: Ensure the HALFpipe-1.3.1.sif file is in your current working directory or specify its full path.
 
-- New UI flag: Use the `--tui` flag to launch HALFpipe with the new UI. 
+- New UI flag: Use the `--tui` flag to launch HALFpipe with the new UI.
 
 - Cluster Flag: Use the `--use-cluster` flag when running the execution command on an HPC.
 :::
@@ -54,7 +54,7 @@ apptainer run --contain --cleanenv --bind /:/ext halfpipe_1.3.1.sif --use_cluste
 ```bash
 docker run --interactive --tty --volume /:/ext halfpipe/halfpipe:1.3.1 --subject-chunks --nipype-n-procs 1 --keep none --tui
 ```
-- __Note__: To access your files more easily, you can bind in the path where the data, working directory and atlases are located. 
+- __Note__: To access your files more easily, you can bind in the path where the data, working directory and atlases are located.
 
 For example: `--volume /home/user/scratch:/home/user/scratch`
 
@@ -64,7 +64,7 @@ __Note 1__: The flags `--subject-chunks` and `--nipype-n-procs 1` are optional. 
 
 __Note 2__: On some systems, Docker will restrict the number of CPU cores available to HALFpipe by default. If your computer can handle it, you can allocate more CPUs using the Docker flag `--cpus`. Refer to your system’s documentation to learn your CPU limitations.
 
-By adding more CPUs, you can add the HALFpipe flag `--nipype-n-procs` to accelerate the process. For example: 
+By adding more CPUs, you can add the HALFpipe flag `--nipype-n-procs` to accelerate the process. For example:
 ```bash
 docker run --interactive --tty --cpus=3 --volume /:/ext halfpipe/halfpipe:1.3.1 --nipype-n-procs --subject-chunks --keep none
 ```
@@ -72,7 +72,7 @@ docker run --interactive --tty --cpus=3 --volume /:/ext halfpipe/halfpipe:1.3.1 
 :::
 
 # Pipeline settings
-You have now opened the new user interface (UI) of HALFpipe. 
+You have now opened the new user interface (UI) of HALFpipe.
 
 This new interface is user-friendly: you can navigate it using your mouse and select different parameters by clicking on them.
 
@@ -104,7 +104,7 @@ With this new UI, there are different icons you can interact with:
 2. Indicate the path you want your working directory to be located. This correspond to your output folder.
 
 ::: {.callout-note collapse="true"}
-### You can either select an already existing folder, or create a new one. 
+### You can either select an already existing folder, or create a new one.
 To create a new directory, simply add its name to the end of the path. If the folder doesn’t exist, a message will appear indicating it wasn’t found and will prompt you to create it. Click 'Yes' to proceed and generate the output folder.
 :::
 
@@ -115,7 +115,7 @@ Indicate whether or not the data is in BIDS format
 
 ::: {.panel-tabset}
 ### If in BIDS
-1. Click on Browse. 
+1. Click on Browse.
 2. Here, simply indicate the path to your BIDS data. Files will be automatically found, this can take a moment.
 Let Lesion mask set to OFF
 3. Click on **General preprocessing settings** in the top navigation bar, and go to the next section.
@@ -123,11 +123,11 @@ Let Lesion mask set to OFF
 ![Data in BIDS switch to ON](images/HALFpipe_new_ui/halfpipe_new_ui_input_bids_1.svg){group="input-bids"}
 
 
-### If not in BIDS 
+### If not in BIDS
 1. Switch the button to **OFF**
 2. Under the section *T1W-weighted images*, click on Browse.
 3. Select the T1W-weighted file of 1 subject.
-4. Delete the unique subject ID and replace it with `{subject}`. If applicable, do the same with `{run}` and `{session}`. 
+4. Delete the unique subject ID and replace it with `{subject}`. If applicable, do the same with `{run}` and `{session}`.
     - As you modify the path, HALFpipe will indicate how many files it has found. Once your path is correct and all subject files are detected, click __OK__ to save the path.
 5. Follow the same logic for the BOLD data and Field maps (if any) sections.
     - Check repetition time values : click on **YES** (unless the TR is incorrect)
@@ -136,7 +136,7 @@ Let Lesion mask set to OFF
 
 :::{.callout-tip collapse="true"}
 #### Example of path
-- If your data is organized as `path/to/T1/subj01/T1.nii.gz` - where subj01 can be any ID you have to enter `path/to/T1/{subject}/T1.nii.gz`. 
+- If your data is organized as `path/to/T1/subj01/T1.nii.gz` - where subj01 can be any ID you have to enter `path/to/T1/{subject}/T1.nii.gz`.
 - It will then find T1 files for all subjects: `path/to/T1/subj01/T1.nii.gz`, `path/to/T1/subj02/T1.nii.gz` etc…
 :::
 
@@ -144,7 +144,7 @@ Let Lesion mask set to OFF
 
 ![Example of path with {subject} and {session}](images/HALFpipe_new_ui/halfpipe_new_ui_input_not_bids_6.svg){group="input-not-bids"}
 
-::: 
+:::
 
 If your files have been successfully imported, you should see the follow message:
 
@@ -158,7 +158,7 @@ Verify all the files have been properly found. You can do that by looking at the
 ## General Preprocessing settings
 1. Switch _Slice timing_ to :
     - __ON__ if you know the slice timing details during the acquisition for your data. If unsure, check with the MR physicist/technician or any dataset information.
-        - In the following steps you will check the slice order and slice timing values. 
+        - In the following steps you will check the slice order and slice timing values.
         - Check the metadata automatically found. Then click __Yes__ if these are the expected numbers, otherwise __No__ and specify them.
     - __OFF__ otherwise
 
@@ -186,10 +186,10 @@ To harmonize the graphical and terminal interfaces, a future release will introd
 
 1. Click on *New*
 2. We will now run 4 feature types: **Seed-based** connectivity, **Atlas-based** connectivity Matrix, **ReHo** and **fALFF**.
-Each of the features will be extracted with three types of confound removal using: 
-- Pipeline 1: aCompCor 
+Each of the features will be extracted with three types of confound removal using:
+- Pipeline 1: aCompCor
 - Pipeline 2: Motion parameters with scrubbing
-- Pipeline 3: Pipeline 2 + Global Signal (GSR) 
+- Pipeline 3: Pipeline 2 + Global Signal (GSR)
 - Pipeline 4:  Motion parameters
 - Pipeline 5:  Pipeline 4 + Global Signal (GSR)
 
@@ -260,8 +260,8 @@ Each of the features will be extracted with three types of confound removal usin
 - Click on the session(s) or task(s) corresponding to your resting state data.
 
 2. Seed images
-- Click on _Add_. 
-- Click on _Browse_ to indicate the path. 
+- Click on _Add_.
+- Click on _Browse_ to indicate the path.
 - Select the path of one existing seed. Then modify the path with `{seed}.nii.gz`
 - Check metadata: click on **yes**. Then verify that all the seeds are selected.
 
@@ -285,35 +285,35 @@ We will now repeat the same procedure for the other pipelines.
 In the next steps, you will only modify the confounds in the final step to match the pipeline you want to apply.
 :::
 
-2. **Pipeline 2**: 
+2. **Pipeline 2**:
 - To do so, click **Duplicate** in the left navigation bar (located below the New button). This will create a new panel for seed-based connectivity, automatically pre-filled with the general settings.
 - Feature name: Enter **seedCorr2**
 - In preprocesssing settings: Switch _low-pass temporal filter_ to __OFF__
-- Go to the **Remove confounds** section and select the confounds for **Pipeline 2**: 
+- Go to the **Remove confounds** section and select the confounds for **Pipeline 2**:
 
 ![Pipeline 2](images/HALFpipe_new_ui/halfpipe_new_ui_feature_seed_pipeline2.svg){group="seed"}
 
-3. Pipeline 3: 
+3. Pipeline 3:
 - click **Duplicate** in the left navigation bar.
 - Feature name: Enter **seedCorr3**
 - In preprocesssing settings: Switch _low-pass temporal filter_ to __OFF__
-- Select the confounds for **Pipeline 3**: 
+- Select the confounds for **Pipeline 3**:
 
 ![Pipeline 3](images/HALFpipe_new_ui/halfpipe_new_ui_feature_seed_pipeline3.svg){group="seed"}
 
-4. Pipeline 4: 
+4. Pipeline 4:
 - Again, click **Duplicate** in the left navigation bar.
 - Feature name: Enter **seedCorr4**
 - In preprocesssing settings: Switch _low-pass temporal filter_ to __OFF__
-- Select the confounds for **Pipeline 4**: 
+- Select the confounds for **Pipeline 4**:
 
 ![Pipeline 4](images/HALFpipe_new_ui/halfpipe_new_ui_feature_seed_pipeline4.svg){group="seed"}
 
-5. Pipeline 5: 
+5. Pipeline 5:
 - Again, click **Duplicate** in the left navigation bar.
 - Feature name: Enter **seedCorr5**
 - In preprocesssing settings: Switch _low-pass temporal filter_ to __OFF__
-- Select the confounds for **Pipeline 5**: 
+- Select the confounds for **Pipeline 5**:
 
 ![Pipeline 5](images/HALFpipe_new_ui/halfpipe_new_ui_feature_seed_pipeline5.svg){group="seed"}
 
@@ -329,10 +329,10 @@ In the next steps, you will only modify the confounds in the final step to match
 - If applicable select session(s) or task(s) for resting state data
 
 2. Atlas images
-- Add path to atlas images. Click on **_Browse_** to indicate the path. 
+- Add path to atlas images. Click on **_Browse_** to indicate the path.
 - Select the atlas `atlas-Schaefer2018Combined_dseg.nii.gz`
 - Click the OK button and indicate the atlas name: `Schaefer2018Combined`
-- Check metadata: click on **yes**. 
+- Check metadata: click on **yes**.
 
 ![Find atlas](images/HALFpipe_new_ui/halfpipe_new_ui_feature_corr_atlas_path.svg){group="corr"}
 
@@ -356,35 +356,35 @@ We will now repeat the same procedure for the other pipelines.
 In the next steps, you will only modify the confounds in the final step to match the pipeline you want to apply.
 :::
 
-2. **Pipeline 2**: 
+2. **Pipeline 2**:
 - To do so, click **Duplicate** in the left navigation bar (located below the New button). This will create a new panel for seed-based connectivity, automatically pre-filled with the general settings.
 - Feature name: Enter **corrMatrix2**
 - In preprocesssing settings: Switch _low-pass temporal filter_ to __OFF__
-- Go to the **Remove confounds** section and select the confounds for **Pipeline 2**: 
+- Go to the **Remove confounds** section and select the confounds for **Pipeline 2**:
 
 ![Pipeline 2](images/HALFpipe_new_ui/halfpipe_new_ui_feature_corr_pipeline2.svg){group="corr"}
 
-3. Pipeline 3: 
+3. Pipeline 3:
 - click **Duplicate** in the left navigation bar.
 - Feature name: Enter **corrMatrix3**
 - In preprocesssing settings: Switch _low-pass temporal filter_ to __OFF__
-- Select the confounds for **Pipeline 3**: 
+- Select the confounds for **Pipeline 3**:
 
 ![Pipeline 3](images/HALFpipe_new_ui/halfpipe_new_ui_feature_corr_pipeline3.svg){group="corr"}
 
-4. Pipeline 4: 
+4. Pipeline 4:
 - Again, click **Duplicate** in the left navigation bar.
 - Feature name: Enter **corrMatrix4**
 - In preprocesssing settings: Switch _low-pass temporal filter_ to __OFF__
-- Select the confounds for **Pipeline 4**: 
+- Select the confounds for **Pipeline 4**:
 
 ![Pipeline 4](images/HALFpipe_new_ui/halfpipe_new_ui_feature_corr_pipeline4.svg){group="corr"}
 
-5. Pipeline 5: 
+5. Pipeline 5:
 - Again, click **Duplicate** in the left navigation bar.
 - Feature name: Enter **corrMatrix5**
 - In preprocesssing settings: Switch _low-pass temporal filter_ to __OFF__
-- Select the confounds for **Pipeline 5**: 
+- Select the confounds for **Pipeline 5**:
 
 ![Pipeline 5](images/HALFpipe_new_ui/halfpipe_new_ui_feature_corr_pipeline5.svg){group="corr"}
 
@@ -413,35 +413,35 @@ We will now repeat the same procedure for the other pipelines.
 In the next steps, you will only modify the confounds in the final step to match the pipeline you want to apply.
 :::
 
-2. **Pipeline 2**: 
+2. **Pipeline 2**:
 - To do so, click **Duplicate** in the left navigation bar (located below the New button). This will create a new panel for seed-based connectivity, automatically pre-filled with the general settings.
 - Feature name: Enter **reHo2**
 - In preprocesssing settings: verify that _low-pass temporal filter_ is set to __ON__ (0.01)
-- Go to the **Remove confounds** section and select the confounds for **Pipeline 2**: 
+- Go to the **Remove confounds** section and select the confounds for **Pipeline 2**:
 
 ![Pipeline 2](images/HALFpipe_new_ui/halfpipe_new_ui_feature_reho_pipeline2.svg){group="reho"}
 
-3. Pipeline 3: 
+3. Pipeline 3:
 - click **Duplicate** in the left navigation bar.
 - Feature name: Enter **reHo3**
 - In preprocesssing settings: verify that _low-pass temporal filter_ is set to __ON__ (0.01)
-- Select the confounds for **Pipeline 3**: 
+- Select the confounds for **Pipeline 3**:
 
 ![Pipeline 3](images/HALFpipe_new_ui/halfpipe_new_ui_feature_reho_pipeline3.svg){group="reho"}
 
-4. Pipeline 4: 
+4. Pipeline 4:
 - Again, click **Duplicate** in the left navigation bar.
 - Feature name: Enter **reHo4**
 - In preprocesssing settings: verify that _low-pass temporal filter_ is set to __ON__ (0.01)
-- Select the confounds for **Pipeline 4**: 
+- Select the confounds for **Pipeline 4**:
 
 ![Pipeline 4](images/HALFpipe_new_ui/halfpipe_new_ui_feature_reho_pipeline4.svg){group="reho"}
 
-5. Pipeline 5: 
+5. Pipeline 5:
 - Again, click **Duplicate** in the left navigation bar.
 - Feature name: Enter **reHo5**
 - In preprocesssing settings: verify that _low-pass temporal filter_ is set to __ON__ (0.01)
-- Select the confounds for **Pipeline 5**: 
+- Select the confounds for **Pipeline 5**:
 
 ![Pipeline 5](images/HALFpipe_new_ui/halfpipe_new_ui_feature_reho_pipeline5.svg){group="reho"}
 
@@ -470,35 +470,35 @@ We will now repeat the same procedure for the other pipelines.
 In the next steps, you will only modify the confounds in the final step to match the pipeline you want to apply.
 :::
 
-2. **Pipeline 2**: 
+2. **Pipeline 2**:
 - To do so, click **Duplicate** in the left navigation bar (located below the New button). This will create a new panel for seed-based connectivity, automatically pre-filled with the general settings.
 - Feature name: Enter **fALFF2**
 - In preprocesssing settings: verify that _low-pass temporal filter_ is set to __ON__ (0.01)
-- Go to the **Remove confounds** section and select the confounds for **Pipeline 2**: 
+- Go to the **Remove confounds** section and select the confounds for **Pipeline 2**:
 
 ![Pipeline 2](images/HALFpipe_new_ui/halfpipe_new_ui_feature_falff_pipeline2.svg){group="falff"}
 
-3. Pipeline 3: 
+3. Pipeline 3:
 - click **Duplicate** in the left navigation bar.
 - Feature name: Enter **fALFF3**
 - In preprocesssing settings: verify that _low-pass temporal filter_ is set to __ON__ (0.01)
-- Select the confounds for **Pipeline 3**: 
+- Select the confounds for **Pipeline 3**:
 
 ![Pipeline 3](images/HALFpipe_new_ui/halfpipe_new_ui_feature_falff_pipeline3.svg){group="falff"}
 
-4. Pipeline 4: 
+4. Pipeline 4:
 - Again, click **Duplicate** in the left navigation bar.
 - Feature name: Enter **fALFF4**
 - In preprocesssing settings: verify that _low-pass temporal filter_ is set to __ON__ (0.01)
-- Select the confounds for **Pipeline 4**: 
+- Select the confounds for **Pipeline 4**:
 
 ![Pipeline 4](images/HALFpipe_new_ui/halfpipe_new_ui_feature_falff_pipeline4.svg){group="falff"}
 
-5. Pipeline 5: 
+5. Pipeline 5:
 - Again, click **Duplicate** in the left navigation bar.
 - Feature name: Enter **fALFF5**
 - In preprocesssing settings: verify that _low-pass temporal filter_ is set to __ON__ (0.01)
-- Select the confounds for **Pipeline 5**: 
+- Select the confounds for **Pipeline 5**:
 
 ![Pipeline 5](images/HALFpipe_new_ui/halfpipe_new_ui_feature_falff_pipeline5.svg){group="falff"}
 
@@ -523,7 +523,7 @@ If you make changes to the settings or selected features, always click Refresh b
 
 2. Click on __save__.
 
-3. Click on __Run__. 
+3. Click on __Run__.
 
 ::: {.panel-tabset}
 ## On HPC
