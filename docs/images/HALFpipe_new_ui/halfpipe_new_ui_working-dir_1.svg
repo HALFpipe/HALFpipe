@@ -1,0 +1,5452 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   class="rich-terminal"
+   viewBox="0 0 1357.9985 273.58944"
+   version="1.1"
+   id="svg660"
+   sodipodi:docname="halfpipe_new_ui_working-dir_1.svg"
+   width="1357.9985"
+   height="273.58945"
+   inkscape:version="1.3.2 (091e20e, 2023-11-25)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview660"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="0.279587"
+     inkscape:cx="557.96586"
+     inkscape:cy="371.97724"
+     inkscape:window-width="1512"
+     inkscape:window-height="837"
+     inkscape:window-x="0"
+     inkscape:window-y="38"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg660" />
+  <!-- Generated with Rich https://www.textualize.io -->
+  <style
+     id="style1">
+
+    @font-face {
+        font-family: &quot;Fira Code&quot;;
+        src: local(&quot;FiraCode-Regular&quot;),
+                url(&quot;https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff2/FiraCode-Regular.woff2&quot;) format(&quot;woff2&quot;),
+                url(&quot;https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff/FiraCode-Regular.woff&quot;) format(&quot;woff&quot;);
+        font-style: normal;
+        font-weight: 400;
+    }
+    @font-face {
+        font-family: &quot;Fira Code&quot;;
+        src: local(&quot;FiraCode-Bold&quot;),
+                url(&quot;https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff2/FiraCode-Bold.woff2&quot;) format(&quot;woff2&quot;),
+                url(&quot;https://cdnjs.cloudflare.com/ajax/libs/firacode/6.2.0/woff/FiraCode-Bold.woff&quot;) format(&quot;woff&quot;);
+        font-style: bold;
+        font-weight: 700;
+    }
+
+    .terminal-429106114-matrix {
+        font-family: Fira Code, monospace;
+        font-size: 20px;
+        line-height: 24.4px;
+        font-variant-east-asian: full-width;
+    }
+
+    .terminal-429106114-title {
+        font-size: 18px;
+        font-weight: bold;
+        font-family: arial;
+    }
+
+    .terminal-429106114-r1 { fill: #c5c8c6 }
+.terminal-429106114-r2 { fill: #000000 }
+.terminal-429106114-r3 { fill: #ddedf9;font-weight: bold }
+.terminal-429106114-r4 { fill: #85beea;font-weight: bold }
+.terminal-429106114-r5 { fill: #ddedf9 }
+.terminal-429106114-r6 { fill: #e1e1e1 }
+.terminal-429106114-r7 { fill: #737373 }
+.terminal-429106114-r8 { fill: #323232 }
+.terminal-429106114-r9 { fill: #0178d4 }
+.terminal-429106114-r10 { fill: #008000 }
+.terminal-429106114-r11 { fill: #ffffff;font-weight: bold }
+.terminal-429106114-r12 { fill: #e0e5e0 }
+.terminal-429106114-r13 { fill: #ff0000 }
+.terminal-429106114-r14 { fill: #454a50 }
+.terminal-429106114-r15 { fill: #e1e6e1 }
+.terminal-429106114-r16 { fill: #e2e3e3;font-weight: bold }
+.terminal-429106114-r17 { fill: #fea62b;font-weight: bold }
+.terminal-429106114-r18 { fill: #a7a9ab }
+.terminal-429106114-r19 { fill: #e2e3e3 }
+.terminal-429106114-r20 { fill: #4c5055 }
+    </style>
+  <defs
+     id="defs52">
+    <clipPath
+       id="terminal-429106114-clip-terminal">
+      <rect
+         x="0"
+         y="0"
+         width="2280.3999"
+         height="1267.8"
+         id="rect1" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-0">
+      <rect
+         x="0"
+         y="1.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect2" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-1">
+      <rect
+         x="0"
+         y="25.9"
+         width="2281.3999"
+         height="24.65"
+         id="rect3" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-2">
+      <rect
+         x="0"
+         y="50.299999"
+         width="2281.3999"
+         height="24.65"
+         id="rect4" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-3">
+      <rect
+         x="0"
+         y="74.699997"
+         width="2281.3999"
+         height="24.65"
+         id="rect5" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-4">
+      <rect
+         x="0"
+         y="99.099998"
+         width="2281.3999"
+         height="24.65"
+         id="rect6" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-5">
+      <rect
+         x="0"
+         y="123.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect7" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-6">
+      <rect
+         x="0"
+         y="147.89999"
+         width="2281.3999"
+         height="24.65"
+         id="rect8" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-7">
+      <rect
+         x="0"
+         y="172.3"
+         width="2281.3999"
+         height="24.65"
+         id="rect9" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-8">
+      <rect
+         x="0"
+         y="196.7"
+         width="2281.3999"
+         height="24.65"
+         id="rect10" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-9">
+      <rect
+         x="0"
+         y="221.10001"
+         width="2281.3999"
+         height="24.65"
+         id="rect11" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-10">
+      <rect
+         x="0"
+         y="245.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect12" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-11">
+      <rect
+         x="0"
+         y="269.89999"
+         width="2281.3999"
+         height="24.65"
+         id="rect13" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-12">
+      <rect
+         x="0"
+         y="294.29999"
+         width="2281.3999"
+         height="24.65"
+         id="rect14" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-13">
+      <rect
+         x="0"
+         y="318.70001"
+         width="2281.3999"
+         height="24.65"
+         id="rect15" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-14">
+      <rect
+         x="0"
+         y="343.10001"
+         width="2281.3999"
+         height="24.65"
+         id="rect16" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-15">
+      <rect
+         x="0"
+         y="367.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect17" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-16">
+      <rect
+         x="0"
+         y="391.89999"
+         width="2281.3999"
+         height="24.65"
+         id="rect18" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-17">
+      <rect
+         x="0"
+         y="416.29999"
+         width="2281.3999"
+         height="24.65"
+         id="rect19" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-18">
+      <rect
+         x="0"
+         y="440.70001"
+         width="2281.3999"
+         height="24.65"
+         id="rect20" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-19">
+      <rect
+         x="0"
+         y="465.10001"
+         width="2281.3999"
+         height="24.65"
+         id="rect21" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-20">
+      <rect
+         x="0"
+         y="489.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect22" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-21">
+      <rect
+         x="0"
+         y="513.90002"
+         width="2281.3999"
+         height="24.65"
+         id="rect23" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-22">
+      <rect
+         x="0"
+         y="538.29999"
+         width="2281.3999"
+         height="24.65"
+         id="rect24" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-23">
+      <rect
+         x="0"
+         y="562.70001"
+         width="2281.3999"
+         height="24.65"
+         id="rect25" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-24">
+      <rect
+         x="0"
+         y="587.09998"
+         width="2281.3999"
+         height="24.65"
+         id="rect26" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-25">
+      <rect
+         x="0"
+         y="611.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect27" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-26">
+      <rect
+         x="0"
+         y="635.90002"
+         width="2281.3999"
+         height="24.65"
+         id="rect28" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-27">
+      <rect
+         x="0"
+         y="660.29999"
+         width="2281.3999"
+         height="24.65"
+         id="rect29" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-28">
+      <rect
+         x="0"
+         y="684.70001"
+         width="2281.3999"
+         height="24.65"
+         id="rect30" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-29">
+      <rect
+         x="0"
+         y="709.09998"
+         width="2281.3999"
+         height="24.65"
+         id="rect31" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-30">
+      <rect
+         x="0"
+         y="733.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect32" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-31">
+      <rect
+         x="0"
+         y="757.90002"
+         width="2281.3999"
+         height="24.65"
+         id="rect33" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-32">
+      <rect
+         x="0"
+         y="782.29999"
+         width="2281.3999"
+         height="24.65"
+         id="rect34" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-33">
+      <rect
+         x="0"
+         y="806.70001"
+         width="2281.3999"
+         height="24.65"
+         id="rect35" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-34">
+      <rect
+         x="0"
+         y="831.09998"
+         width="2281.3999"
+         height="24.65"
+         id="rect36" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-35">
+      <rect
+         x="0"
+         y="855.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect37" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-36">
+      <rect
+         x="0"
+         y="879.90002"
+         width="2281.3999"
+         height="24.65"
+         id="rect38" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-37">
+      <rect
+         x="0"
+         y="904.29999"
+         width="2281.3999"
+         height="24.65"
+         id="rect39" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-38">
+      <rect
+         x="0"
+         y="928.70001"
+         width="2281.3999"
+         height="24.65"
+         id="rect40" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-39">
+      <rect
+         x="0"
+         y="953.09998"
+         width="2281.3999"
+         height="24.65"
+         id="rect41" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-40">
+      <rect
+         x="0"
+         y="977.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect42" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-41">
+      <rect
+         x="0"
+         y="1001.9"
+         width="2281.3999"
+         height="24.65"
+         id="rect43" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-42">
+      <rect
+         x="0"
+         y="1026.3"
+         width="2281.3999"
+         height="24.65"
+         id="rect44" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-43">
+      <rect
+         x="0"
+         y="1050.7"
+         width="2281.3999"
+         height="24.65"
+         id="rect45" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-44">
+      <rect
+         x="0"
+         y="1075.1"
+         width="2281.3999"
+         height="24.65"
+         id="rect46" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-45">
+      <rect
+         x="0"
+         y="1099.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect47" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-46">
+      <rect
+         x="0"
+         y="1123.9"
+         width="2281.3999"
+         height="24.65"
+         id="rect48" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-47">
+      <rect
+         x="0"
+         y="1148.3"
+         width="2281.3999"
+         height="24.65"
+         id="rect49" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-48">
+      <rect
+         x="0"
+         y="1172.7"
+         width="2281.3999"
+         height="24.65"
+         id="rect50" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-49">
+      <rect
+         x="0"
+         y="1197.1"
+         width="2281.3999"
+         height="24.65"
+         id="rect51" />
+    </clipPath>
+    <clipPath
+       id="terminal-429106114-line-50">
+      <rect
+         x="0"
+         y="1221.5"
+         width="2281.3999"
+         height="24.65"
+         id="rect52" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath660">
+      <rect
+         style="fill:#000000"
+         id="rect661"
+         width="1357.9985"
+         height="273.58945"
+         x="453.61487"
+         y="192.79462"
+         rx="8" />
+    </clipPath>
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath661">
+      <rect
+         style="fill:#000000"
+         id="rect662"
+         width="1357.9985"
+         height="273.58945"
+         x="462.61487"
+         y="233.79462"
+         rx="8" />
+    </clipPath>
+  </defs>
+  <rect
+     fill="#292929"
+     stroke="rgba(255,255,255,0.35)"
+     stroke-width="1"
+     x="1"
+     y="1"
+     width="2298"
+     height="1316.8"
+     rx="8"
+     id="rect53"
+     clip-path="url(#clipPath661)"
+     transform="translate(-462.61487,-233.79462)" />
+  <g
+     transform="translate(-453.61487,-192.79462)"
+     clip-path="url(#clipPath660)"
+     id="g660">
+    <rect
+       fill="#0178d4"
+       x="0"
+       y="1.5"
+       width="2147.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect55" />
+    <rect
+       fill="#0178d4"
+       x="2147.2"
+       y="1.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect56" />
+    <rect
+       fill="#0178d4"
+       x="2159.3999"
+       y="1.5"
+       width="48.799999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect57" />
+    <rect
+       fill="#0178d4"
+       x="2208.2"
+       y="1.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect58" />
+    <rect
+       fill="#0178d4"
+       x="2220.3999"
+       y="1.5"
+       width="48.799999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect59" />
+    <rect
+       fill="#0178d4"
+       x="2269.2"
+       y="1.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect60" />
+    <rect
+       fill="#0178d4"
+       x="0"
+       y="25.9"
+       width="878.40002"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect61" />
+    <rect
+       fill="#0178d4"
+       x="878.40002"
+       y="25.9"
+       width="219.60001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect62" />
+    <rect
+       fill="#0178d4"
+       x="1098"
+       y="25.9"
+       width="231.8"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect63" />
+    <rect
+       fill="#0178d4"
+       x="1329.8"
+       y="25.9"
+       width="817.40002"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect64" />
+    <rect
+       fill="#0178d4"
+       x="2147.2"
+       y="25.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect65" />
+    <rect
+       fill="#0178d4"
+       x="2159.3999"
+       y="25.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect66" />
+    <rect
+       fill="#0178d4"
+       x="2171.6001"
+       y="25.9"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect67" />
+    <rect
+       fill="#0178d4"
+       x="2196"
+       y="25.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect68" />
+    <rect
+       fill="#0178d4"
+       x="2208.2"
+       y="25.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect69" />
+    <rect
+       fill="#0178d4"
+       x="2220.3999"
+       y="25.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect70" />
+    <rect
+       fill="#0178d4"
+       x="2232.6001"
+       y="25.9"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect71" />
+    <rect
+       fill="#0178d4"
+       x="2257"
+       y="25.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect72" />
+    <rect
+       fill="#0178d4"
+       x="2269.2"
+       y="25.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect73" />
+    <rect
+       fill="#0178d4"
+       x="0"
+       y="50.299999"
+       width="2147.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect74" />
+    <rect
+       fill="#0178d4"
+       x="2147.2"
+       y="50.299999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect75" />
+    <rect
+       fill="#0178d4"
+       x="2159.3999"
+       y="50.299999"
+       width="48.799999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect76" />
+    <rect
+       fill="#0178d4"
+       x="2208.2"
+       y="50.299999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect77" />
+    <rect
+       fill="#0178d4"
+       x="2220.3999"
+       y="50.299999"
+       width="48.799999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect78" />
+    <rect
+       fill="#0178d4"
+       x="2269.2"
+       y="50.299999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect79" />
+    <rect
+       fill="#0178d4"
+       x="0"
+       y="74.699997"
+       width="244"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect80" />
+    <rect
+       fill="#1e1e1e"
+       x="244"
+       y="74.699997"
+       width="158.60001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect81" />
+    <rect
+       fill="#1e1e1e"
+       x="402.60001"
+       y="74.699997"
+       width="195.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect82" />
+    <rect
+       fill="#1e1e1e"
+       x="597.79999"
+       y="74.699997"
+       width="1683.6"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect83" />
+    <rect
+       fill="#0178d4"
+       x="0"
+       y="99.099998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect84" />
+    <rect
+       fill="#0178d4"
+       x="24.4"
+       y="99.099998"
+       width="207.39999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect85" />
+    <rect
+       fill="#0178d4"
+       x="231.8"
+       y="99.099998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect86" />
+    <rect
+       fill="#1e1e1e"
+       x="244"
+       y="99.099998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect87" />
+    <rect
+       fill="#1e1e1e"
+       x="268.39999"
+       y="99.099998"
+       width="122"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect88" />
+    <rect
+       fill="#1e1e1e"
+       x="390.39999"
+       y="99.099998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect89" />
+    <rect
+       fill="#1e1e1e"
+       x="402.60001"
+       y="99.099998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect90" />
+    <rect
+       fill="#1e1e1e"
+       x="427"
+       y="99.099998"
+       width="158.60001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect91" />
+    <rect
+       fill="#1e1e1e"
+       x="585.59998"
+       y="99.099998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect92" />
+    <rect
+       fill="#1e1e1e"
+       x="597.79999"
+       y="99.099998"
+       width="1683.6"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect93" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="123.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect94" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="123.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect95" />
+    <rect
+       fill="#1e1e1e"
+       x="24.4"
+       y="123.5"
+       width="207.39999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect96" />
+    <rect
+       fill="#1e1e1e"
+       x="231.8"
+       y="123.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect97" />
+    <rect
+       fill="#1e1e1e"
+       x="244"
+       y="123.5"
+       width="2037.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect98" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="147.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect99" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="147.89999"
+       width="2257"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect100" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="147.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect101" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="172.3"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect102" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="172.3"
+       width="2257"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect103" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="172.3"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect104" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="196.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect105" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="196.7"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect106" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="196.7"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect107" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="196.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect108" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="196.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect109" />
+    <rect
+       fill="#008000"
+       x="488"
+       y="196.7"
+       width="317.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect110" />
+    <rect
+       fill="#153b15"
+       x="805.20001"
+       y="196.7"
+       width="988.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect111" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="196.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect112" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="196.7"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect113" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="196.7"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect114" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="196.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect115" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="221.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect116" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="221.10001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect117" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="221.10001"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect118" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="221.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect119" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="221.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect120" />
+    <rect
+       fill="#153b15"
+       x="488"
+       y="221.10001"
+       width="1293.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect121" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="221.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect122" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="221.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect123" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="221.10001"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect124" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="221.10001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect125" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="221.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect126" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="245.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect127" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="245.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect128" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="245.5"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect129" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="245.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect130" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="245.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect131" />
+    <rect
+       fill="#153b15"
+       x="488"
+       y="245.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect132" />
+    <rect
+       fill="#153b15"
+       x="500.20001"
+       y="245.5"
+       width="1268.8"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect133" />
+    <rect
+       fill="#153b15"
+       x="1769"
+       y="245.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect134" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="245.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect135" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="245.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect136" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="245.5"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect137" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="245.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect138" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="245.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect139" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="269.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect140" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="269.89999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect141" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="269.89999"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect142" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="269.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect143" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="269.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect144" />
+    <rect
+       fill="#153b15"
+       x="488"
+       y="269.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect145" />
+    <rect
+       fill="#153b15"
+       x="500.20001"
+       y="269.89999"
+       width="890.59998"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect146" />
+    <rect
+       fill="#153b15"
+       x="1390.8"
+       y="269.89999"
+       width="378.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect147" />
+    <rect
+       fill="#153b15"
+       x="1769"
+       y="269.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect148" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="269.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect149" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="269.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect150" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="269.89999"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect151" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="269.89999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect152" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="269.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect153" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="294.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect154" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="294.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect155" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="294.29999"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect156" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="294.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect157" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="294.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect158" />
+    <rect
+       fill="#153b15"
+       x="488"
+       y="294.29999"
+       width="1293.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect159" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="294.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect160" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="294.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect161" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="294.29999"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect162" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="294.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect163" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="294.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect164" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="318.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect165" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="318.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect166" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="318.70001"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect167" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="318.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect168" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="318.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect169" />
+    <rect
+       fill="#1e421e"
+       x="488"
+       y="318.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect170" />
+    <rect
+       fill="#1e421e"
+       x="500.20001"
+       y="318.70001"
+       width="1268.8"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect171" />
+    <rect
+       fill="#1e421e"
+       x="1769"
+       y="318.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect172" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="318.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect173" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="318.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect174" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="318.70001"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect175" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="318.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect176" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="318.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect177" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="343.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect178" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="343.10001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect179" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="343.10001"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect180" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="343.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect181" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="343.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect182" />
+    <rect
+       fill="#1e421e"
+       x="488"
+       y="343.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect183" />
+    <rect
+       fill="#1e421e"
+       x="500.20001"
+       y="343.10001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect184" />
+    <rect
+       fill="#24292f"
+       x="524.59998"
+       y="343.10001"
+       width="195.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect185" />
+    <rect
+       fill="#1e421e"
+       x="719.79999"
+       y="343.10001"
+       width="268.39999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect186" />
+    <rect
+       fill="#1e421e"
+       x="988.20001"
+       y="343.10001"
+       width="756.40002"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect187" />
+    <rect
+       fill="#1e421e"
+       x="1744.6"
+       y="343.10001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect188" />
+    <rect
+       fill="#1e421e"
+       x="1769"
+       y="343.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect189" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="343.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect190" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="343.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect191" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="343.10001"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect192" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="343.10001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect193" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="343.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect194" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect195" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="367.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect196" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="367.5"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect197" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect198" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect199" />
+    <rect
+       fill="#1e421e"
+       x="488"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect200" />
+    <rect
+       fill="#1e421e"
+       x="500.20001"
+       y="367.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect201" />
+    <rect
+       fill="#24292f"
+       x="524.59998"
+       y="367.5"
+       width="48.799999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect202" />
+    <rect
+       fill="#24292f"
+       x="573.40002"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect203" />
+    <rect
+       fill="#24292f"
+       x="585.59998"
+       y="367.5"
+       width="73.199997"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect204" />
+    <rect
+       fill="#24292f"
+       x="658.79999"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect205" />
+    <rect
+       fill="#24292f"
+       x="671"
+       y="367.5"
+       width="48.799999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect206" />
+    <rect
+       fill="#1e421e"
+       x="719.79999"
+       y="367.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect207" />
+    <rect
+       fill="#1e421e"
+       x="744.20001"
+       y="367.5"
+       width="219.60001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect208" />
+    <rect
+       fill="#1e421e"
+       x="963.79999"
+       y="367.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect209" />
+    <rect
+       fill="#1e421e"
+       x="988.20001"
+       y="367.5"
+       width="756.40002"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect210" />
+    <rect
+       fill="#1e421e"
+       x="1744.6"
+       y="367.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect211" />
+    <rect
+       fill="#1e421e"
+       x="1769"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect212" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect213" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect214" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="367.5"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect215" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="367.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect216" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="367.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect217" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="391.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect218" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="391.89999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect219" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="391.89999"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect220" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="391.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect221" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="391.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect222" />
+    <rect
+       fill="#1e421e"
+       x="488"
+       y="391.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect223" />
+    <rect
+       fill="#1e421e"
+       x="500.20001"
+       y="391.89999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect224" />
+    <rect
+       fill="#24292f"
+       x="524.59998"
+       y="391.89999"
+       width="195.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect225" />
+    <rect
+       fill="#1e421e"
+       x="719.79999"
+       y="391.89999"
+       width="268.39999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect226" />
+    <rect
+       fill="#1e421e"
+       x="988.20001"
+       y="391.89999"
+       width="756.40002"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect227" />
+    <rect
+       fill="#1e421e"
+       x="1744.6"
+       y="391.89999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect228" />
+    <rect
+       fill="#1e421e"
+       x="1769"
+       y="391.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect229" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="391.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect230" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="391.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect231" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="391.89999"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect232" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="391.89999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect233" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="391.89999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect234" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="416.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect235" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="416.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect236" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="416.29999"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect237" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="416.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect238" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="416.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect239" />
+    <rect
+       fill="#1e421e"
+       x="488"
+       y="416.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect240" />
+    <rect
+       fill="#1e421e"
+       x="500.20001"
+       y="416.29999"
+       width="1268.8"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect241" />
+    <rect
+       fill="#1e421e"
+       x="1769"
+       y="416.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect242" />
+    <rect
+       fill="#153b15"
+       x="1781.2"
+       y="416.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect243" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="416.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect244" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="416.29999"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect245" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="416.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect246" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="416.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect247" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="440.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect248" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="440.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect249" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="440.70001"
+       width="427"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect250" />
+    <rect
+       fill="#153b15"
+       x="463.60001"
+       y="440.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect251" />
+    <rect
+       fill="#153b15"
+       x="475.79999"
+       y="440.70001"
+       width="1317.6"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect252" />
+    <rect
+       fill="#153b15"
+       x="1793.4"
+       y="440.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect253" />
+    <rect
+       fill="#1e1e1e"
+       x="1805.6"
+       y="440.70001"
+       width="439.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect254" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="440.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect255" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="440.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect256" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="465.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect257" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="465.10001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect258" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="465.10001"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect259" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="465.10001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect260" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="465.10001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect261" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="489.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect262" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="489.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect263" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="489.5"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect264" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="489.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect265" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="489.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect266" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="513.90002"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect267" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="513.90002"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect268" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="513.90002"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect269" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="513.90002"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect270" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="513.90002"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect271" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="538.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect272" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="538.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect273" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="538.29999"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect274" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="538.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect275" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="538.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect276" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="562.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect277" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="562.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect278" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="562.70001"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect279" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="562.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect280" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="562.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect281" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="587.09998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect282" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="587.09998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect283" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="587.09998"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect284" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="587.09998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect285" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="587.09998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect286" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="611.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect287" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="611.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect288" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="611.5"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect289" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="611.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect290" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="611.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect291" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="635.90002"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect292" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="635.90002"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect293" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="635.90002"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect294" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="635.90002"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect295" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="635.90002"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect296" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="660.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect297" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="660.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect298" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="660.29999"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect299" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="660.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect300" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="660.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect301" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="684.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect302" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="684.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect303" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="684.70001"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect304" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="684.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect305" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="684.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect306" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="709.09998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect307" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="709.09998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect308" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="709.09998"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect309" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="709.09998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect310" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="709.09998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect311" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="733.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect312" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="733.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect313" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="733.5"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect314" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="733.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect315" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="733.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect316" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="757.90002"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect317" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="757.90002"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect318" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="757.90002"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect319" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="757.90002"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect320" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="757.90002"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect321" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="782.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect322" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="782.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect323" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="782.29999"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect324" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="782.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect325" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="782.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect326" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="806.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect327" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="806.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect328" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="806.70001"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect329" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="806.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect330" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="806.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect331" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="831.09998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect332" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="831.09998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect333" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="831.09998"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect334" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="831.09998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect335" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="831.09998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect336" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="855.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect337" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="855.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect338" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="855.5"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect339" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="855.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect340" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="855.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect341" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="879.90002"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect342" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="879.90002"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect343" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="879.90002"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect344" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="879.90002"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect345" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="879.90002"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect346" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="904.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect347" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="904.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect348" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="904.29999"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect349" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="904.29999"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect350" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="904.29999"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect351" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="928.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect352" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="928.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect353" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="928.70001"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect354" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="928.70001"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect355" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="928.70001"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect356" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="953.09998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect357" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="953.09998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect358" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="953.09998"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect359" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="953.09998"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect360" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="953.09998"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect361" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="977.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect362" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="977.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect363" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="977.5"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect364" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="977.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect365" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="977.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect366" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1001.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect367" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1001.9"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect368" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="1001.9"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect369" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="1001.9"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect370" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1001.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect371" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1026.3"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect372" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1026.3"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect373" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="1026.3"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect374" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="1026.3"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect375" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1026.3"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect376" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1050.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect377" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1050.7"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect378" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="1050.7"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect379" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="1050.7"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect380" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1050.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect381" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1075.1"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect382" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1075.1"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect383" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="1075.1"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect384" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="1075.1"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect385" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1075.1"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect386" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1099.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect387" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1099.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect388" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="1099.5"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect389" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="1099.5"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect390" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1099.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect391" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1123.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect392" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1123.9"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect393" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="1123.9"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect394" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="1123.9"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect395" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1123.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect396" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1148.3"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect397" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1148.3"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect398" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="1148.3"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect399" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="1148.3"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect400" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1148.3"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect401" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1172.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect402" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1172.7"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect403" />
+    <rect
+       fill="#1e1e1e"
+       x="36.599998"
+       y="1172.7"
+       width="2208.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect404" />
+    <rect
+       fill="#1e1e1e"
+       x="2244.8"
+       y="1172.7"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect405" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1172.7"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect406" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1197.1"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect407" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1197.1"
+       width="2257"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect408" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1197.1"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect409" />
+    <rect
+       fill="#1e1e1e"
+       x="0"
+       y="1221.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect410" />
+    <rect
+       fill="#1e1e1e"
+       x="12.2"
+       y="1221.5"
+       width="2257"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect411" />
+    <rect
+       fill="#1e1e1e"
+       x="2269.2"
+       y="1221.5"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect412" />
+    <rect
+       fill="#24292f"
+       x="0"
+       y="1245.9"
+       width="48.799999"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect413" />
+    <rect
+       fill="#24292f"
+       x="48.799999"
+       y="1245.9"
+       width="61"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect414" />
+    <rect
+       fill="#24292f"
+       x="109.8"
+       y="1245.9"
+       width="36.599998"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect415" />
+    <rect
+       fill="#24292f"
+       x="146.39999"
+       y="1245.9"
+       width="219.60001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect416" />
+    <rect
+       fill="#24292f"
+       x="366"
+       y="1245.9"
+       width="36.599998"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect417" />
+    <rect
+       fill="#24292f"
+       x="402.60001"
+       y="1245.9"
+       width="134.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect418" />
+    <rect
+       fill="#24292f"
+       x="536.79999"
+       y="1245.9"
+       width="36.599998"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect419" />
+    <rect
+       fill="#24292f"
+       x="573.40002"
+       y="1245.9"
+       width="109.8"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect420" />
+    <rect
+       fill="#24292f"
+       x="683.20001"
+       y="1245.9"
+       width="36.599998"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect421" />
+    <rect
+       fill="#24292f"
+       x="719.79999"
+       y="1245.9"
+       width="378.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect422" />
+    <rect
+       fill="#24292f"
+       x="1098"
+       y="1245.9"
+       width="36.599998"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect423" />
+    <rect
+       fill="#24292f"
+       x="1134.6"
+       y="1245.9"
+       width="231.8"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect424" />
+    <rect
+       fill="#24292f"
+       x="1366.4"
+       y="1245.9"
+       width="36.599998"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect425" />
+    <rect
+       fill="#24292f"
+       x="1403"
+       y="1245.9"
+       width="170.8"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect426" />
+    <rect
+       fill="#24292f"
+       x="1573.8"
+       y="1245.9"
+       width="561.20001"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect427" />
+    <rect
+       fill="#24292f"
+       x="2135"
+       y="1245.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect428" />
+    <rect
+       fill="#24292f"
+       x="2147.2"
+       y="1245.9"
+       width="24.4"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect429" />
+    <rect
+       fill="#24292f"
+       x="2171.6001"
+       y="1245.9"
+       width="97.599998"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect430" />
+    <rect
+       fill="#24292f"
+       x="2269.2"
+       y="1245.9"
+       width="12.2"
+       height="24.65"
+       shape-rendering="crispEdges"
+       id="rect431" />
+    <g
+       class="terminal-429106114-matrix"
+       id="g659">
+      <text
+         class="terminal-429106114-r2"
+         x="2147.2"
+         y="20"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-0)"
+         id="text431"
+         lengthAdjust="spacing">┌</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2159.3999"
+         y="20"
+         textLength="48.799999"
+         clip-path="url(#terminal-429106114-line-0)"
+         id="text432"
+         lengthAdjust="spacing">────</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2208.2"
+         y="20"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-0)"
+         id="text433"
+         lengthAdjust="spacing">┌</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2220.3999"
+         y="20"
+         textLength="48.799999"
+         clip-path="url(#terminal-429106114-line-0)"
+         id="text434"
+         lengthAdjust="spacing">────</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2269.2"
+         y="20"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-0)"
+         id="text435"
+         lengthAdjust="spacing">┐</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="20"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-0)"
+         id="text436"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r3"
+         x="878.40002"
+         y="44.400002"
+         textLength="219.60001"
+         clip-path="url(#terminal-429106114-line-1)"
+         id="text437"
+         lengthAdjust="spacing">ENIGMA HALFpipe — </text>
+      <text
+         class="terminal-429106114-r4"
+         x="1098"
+         y="44.400002"
+         textLength="231.8"
+         clip-path="url(#terminal-429106114-line-1)"
+         id="text438"
+         lengthAdjust="spacing">development version</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2147.2"
+         y="44.400002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-1)"
+         id="text439"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r5"
+         x="2171.6001"
+         y="44.400002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-1)"
+         id="text440"
+         lengthAdjust="spacing">❓</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2208.2"
+         y="44.400002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-1)"
+         id="text441"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r5"
+         x="2232.6001"
+         y="44.400002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-1)"
+         id="text442"
+         lengthAdjust="spacing">❌</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2269.2"
+         y="44.400002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-1)"
+         id="text443"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="44.400002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-1)"
+         id="text444"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r2"
+         x="2147.2"
+         y="68.800003"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-2)"
+         id="text445"
+         lengthAdjust="spacing">└</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2159.3999"
+         y="68.800003"
+         textLength="48.799999"
+         clip-path="url(#terminal-429106114-line-2)"
+         id="text446"
+         lengthAdjust="spacing">────</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2208.2"
+         y="68.800003"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-2)"
+         id="text447"
+         lengthAdjust="spacing">└</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2220.3999"
+         y="68.800003"
+         textLength="48.799999"
+         clip-path="url(#terminal-429106114-line-2)"
+         id="text448"
+         lengthAdjust="spacing">────</text>
+      <text
+         class="terminal-429106114-r2"
+         x="2269.2"
+         y="68.800003"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-2)"
+         id="text449"
+         lengthAdjust="spacing">┘</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="68.800003"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-2)"
+         id="text450"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="93.199997"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-3)"
+         id="text451"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r3"
+         x="24.4"
+         y="117.6"
+         textLength="207.39999"
+         clip-path="url(#terminal-429106114-line-4)"
+         id="text452"
+         lengthAdjust="spacing">Working directory</text>
+      <text
+         class="terminal-429106114-r7"
+         x="268.39999"
+         y="117.6"
+         textLength="122"
+         clip-path="url(#terminal-429106114-line-4)"
+         id="text453"
+         lengthAdjust="spacing">Input data</text>
+      <text
+         class="terminal-429106114-r7"
+         x="427"
+         y="117.6"
+         textLength="158.60001"
+         clip-path="url(#terminal-429106114-line-4)"
+         id="text454"
+         lengthAdjust="spacing">Check and run</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="117.6"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-4)"
+         id="text455"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r8"
+         x="0"
+         y="142"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-5)"
+         id="text456"
+         lengthAdjust="spacing">━</text>
+      <text
+         class="terminal-429106114-r8"
+         x="12.2"
+         y="142"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-5)"
+         id="text457"
+         lengthAdjust="spacing">╸</text>
+      <text
+         class="terminal-429106114-r9"
+         x="24.4"
+         y="142"
+         textLength="207.39999"
+         clip-path="url(#terminal-429106114-line-5)"
+         id="text458"
+         lengthAdjust="spacing">━━━━━━━━━━━━━━━━━</text>
+      <text
+         class="terminal-429106114-r8"
+         x="231.8"
+         y="142"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-5)"
+         id="text459"
+         lengthAdjust="spacing">╺</text>
+      <text
+         class="terminal-429106114-r8"
+         x="244"
+         y="142"
+         textLength="2037.4"
+         clip-path="url(#terminal-429106114-line-5)"
+         id="text460"
+         lengthAdjust="spacing">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="142"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-5)"
+         id="text461"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="166.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-6)"
+         id="text462"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="12.2"
+         y="166.39999"
+         textLength="2257"
+         clip-path="url(#terminal-429106114-line-6)"
+         id="text463"
+         lengthAdjust="spacing">▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="166.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-6)"
+         id="text464"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="166.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-6)"
+         id="text465"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="190.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-7)"
+         id="text466"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="190.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-7)"
+         id="text467"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="190.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-7)"
+         id="text468"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="215.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-8)"
+         id="text469"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="215.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-8)"
+         id="text470"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="475.79999"
+         y="215.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-8)"
+         id="text471"
+         lengthAdjust="spacing">▀</text>
+      <text
+         class="terminal-429106114-r11"
+         x="488"
+         y="215.2"
+         textLength="317.20001"
+         clip-path="url(#terminal-429106114-line-8)"
+         id="text472"
+         lengthAdjust="spacing"> Select working directory </text>
+      <text
+         class="terminal-429106114-r10"
+         x="805.20001"
+         y="215.2"
+         textLength="988.20001"
+         clip-path="url(#terminal-429106114-line-8)"
+         id="text473"
+         lengthAdjust="spacing">▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="215.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-8)"
+         id="text474"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="215.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-8)"
+         id="text475"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="215.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-8)"
+         id="text476"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="239.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-9)"
+         id="text477"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="239.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-9)"
+         id="text478"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="239.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-9)"
+         id="text479"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="239.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-9)"
+         id="text480"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="239.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-9)"
+         id="text481"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="264"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-10)"
+         id="text482"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="264"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-10)"
+         id="text483"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r12"
+         x="500.20001"
+         y="264"
+         textLength="1268.8"
+         clip-path="url(#terminal-429106114-line-10)"
+         id="text484"
+         lengthAdjust="spacing">Set path to the working directory. Here all output  will  be  stored.  By  selecting  a  directory  with</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="264"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-10)"
+         id="text485"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="264"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-10)"
+         id="text486"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="264"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-10)"
+         id="text487"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="288.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-11)"
+         id="text488"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="288.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-11)"
+         id="text489"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r12"
+         x="500.20001"
+         y="288.39999"
+         textLength="890.59998"
+         clip-path="url(#terminal-429106114-line-11)"
+         id="text490"
+         lengthAdjust="spacing">existing spec.json file it is possible to load the therein configuration.</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="288.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-11)"
+         id="text491"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="288.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-11)"
+         id="text492"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="288.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-11)"
+         id="text493"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="312.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-12)"
+         id="text494"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="312.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-12)"
+         id="text495"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="312.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-12)"
+         id="text496"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="312.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-12)"
+         id="text497"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="312.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-12)"
+         id="text498"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="337.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-13)"
+         id="text499"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="337.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-13)"
+         id="text500"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r13"
+         x="488"
+         y="337.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-13)"
+         id="text501"
+         lengthAdjust="spacing">┌</text>
+      <text
+         class="terminal-429106114-r13"
+         x="500.20001"
+         y="337.20001"
+         textLength="1268.8"
+         clip-path="url(#terminal-429106114-line-13)"
+         id="text502"
+         lengthAdjust="spacing">────────────────────────────────────────────────────────────────────────────────────────────────────────</text>
+      <text
+         class="terminal-429106114-r13"
+         x="1769"
+         y="337.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-13)"
+         id="text503"
+         lengthAdjust="spacing">┐</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="337.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-13)"
+         id="text504"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="337.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-13)"
+         id="text505"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="337.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-13)"
+         id="text506"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="361.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-14)"
+         id="text507"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="361.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-14)"
+         id="text508"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r13"
+         x="488"
+         y="361.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-14)"
+         id="text509"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r14"
+         x="524.59998"
+         y="361.60001"
+         textLength="195.2"
+         clip-path="url(#terminal-429106114-line-14)"
+         id="text510"
+         lengthAdjust="spacing">▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔</text>
+      <text
+         class="terminal-429106114-r13"
+         x="1769"
+         y="361.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-14)"
+         id="text511"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="361.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-14)"
+         id="text512"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="361.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-14)"
+         id="text513"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="361.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-14)"
+         id="text514"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="386"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text515"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="386"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text516"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r13"
+         x="488"
+         y="386"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text517"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r16"
+         x="585.59998"
+         y="386"
+         textLength="73.199997"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text518"
+         lengthAdjust="spacing">Browse</text>
+      <text
+         class="terminal-429106114-r15"
+         x="744.20001"
+         y="386"
+         textLength="219.60001"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text519"
+         lengthAdjust="spacing">WORKING DIRECTORY:</text>
+      <text
+         class="terminal-429106114-r13"
+         x="1769"
+         y="386"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text520"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="386"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text521"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="386"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text522"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="386"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-15)"
+         id="text523"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="410.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-16)"
+         id="text524"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="410.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-16)"
+         id="text525"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r13"
+         x="488"
+         y="410.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-16)"
+         id="text526"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r2"
+         x="524.59998"
+         y="410.39999"
+         textLength="195.2"
+         clip-path="url(#terminal-429106114-line-16)"
+         id="text527"
+         lengthAdjust="spacing">▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁▁</text>
+      <text
+         class="terminal-429106114-r13"
+         x="1769"
+         y="410.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-16)"
+         id="text528"
+         lengthAdjust="spacing">│</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="410.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-16)"
+         id="text529"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="410.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-16)"
+         id="text530"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="410.39999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-16)"
+         id="text531"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="434.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-17)"
+         id="text532"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="434.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-17)"
+         id="text533"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r13"
+         x="488"
+         y="434.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-17)"
+         id="text534"
+         lengthAdjust="spacing">└</text>
+      <text
+         class="terminal-429106114-r13"
+         x="500.20001"
+         y="434.79999"
+         textLength="1268.8"
+         clip-path="url(#terminal-429106114-line-17)"
+         id="text535"
+         lengthAdjust="spacing">────────────────────────────────────────────────────────────────────────────────────────────────────────</text>
+      <text
+         class="terminal-429106114-r13"
+         x="1769"
+         y="434.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-17)"
+         id="text536"
+         lengthAdjust="spacing">┘</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="434.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-17)"
+         id="text537"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="434.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-17)"
+         id="text538"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="434.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-17)"
+         id="text539"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="459.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-18)"
+         id="text540"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="463.60001"
+         y="459.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-18)"
+         id="text541"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r10"
+         x="475.79999"
+         y="459.20001"
+         textLength="1317.6"
+         clip-path="url(#terminal-429106114-line-18)"
+         id="text542"
+         lengthAdjust="spacing">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄</text>
+      <text
+         class="terminal-429106114-r10"
+         x="1793.4"
+         y="459.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-18)"
+         id="text543"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="459.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-18)"
+         id="text544"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="459.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-18)"
+         id="text545"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="483.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-19)"
+         id="text546"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="483.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-19)"
+         id="text547"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="483.60001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-19)"
+         id="text548"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="508"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-20)"
+         id="text549"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="508"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-20)"
+         id="text550"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="508"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-20)"
+         id="text551"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="532.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-21)"
+         id="text552"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="532.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-21)"
+         id="text553"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="532.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-21)"
+         id="text554"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="556.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-22)"
+         id="text555"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="556.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-22)"
+         id="text556"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="556.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-22)"
+         id="text557"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="581.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-23)"
+         id="text558"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="581.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-23)"
+         id="text559"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="581.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-23)"
+         id="text560"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="605.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-24)"
+         id="text561"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="605.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-24)"
+         id="text562"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="605.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-24)"
+         id="text563"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="630"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-25)"
+         id="text564"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="630"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-25)"
+         id="text565"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="630"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-25)"
+         id="text566"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="654.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-26)"
+         id="text567"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="654.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-26)"
+         id="text568"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="654.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-26)"
+         id="text569"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="678.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-27)"
+         id="text570"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="678.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-27)"
+         id="text571"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="678.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-27)"
+         id="text572"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="703.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-28)"
+         id="text573"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="703.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-28)"
+         id="text574"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="703.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-28)"
+         id="text575"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="727.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-29)"
+         id="text576"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="727.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-29)"
+         id="text577"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="727.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-29)"
+         id="text578"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="752"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-30)"
+         id="text579"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="752"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-30)"
+         id="text580"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="752"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-30)"
+         id="text581"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="776.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-31)"
+         id="text582"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="776.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-31)"
+         id="text583"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="776.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-31)"
+         id="text584"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="800.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-32)"
+         id="text585"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="800.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-32)"
+         id="text586"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="800.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-32)"
+         id="text587"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="825.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-33)"
+         id="text588"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="825.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-33)"
+         id="text589"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="825.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-33)"
+         id="text590"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="849.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-34)"
+         id="text591"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="849.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-34)"
+         id="text592"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="849.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-34)"
+         id="text593"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="874"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-35)"
+         id="text594"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="874"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-35)"
+         id="text595"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="874"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-35)"
+         id="text596"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="898.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-36)"
+         id="text597"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="898.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-36)"
+         id="text598"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="898.40002"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-36)"
+         id="text599"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="922.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-37)"
+         id="text600"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="922.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-37)"
+         id="text601"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="922.79999"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-37)"
+         id="text602"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="947.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-38)"
+         id="text603"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="947.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-38)"
+         id="text604"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="947.20001"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-38)"
+         id="text605"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="971.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-39)"
+         id="text606"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="971.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-39)"
+         id="text607"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="971.59998"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-39)"
+         id="text608"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="996"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-40)"
+         id="text609"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="996"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-40)"
+         id="text610"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="996"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-40)"
+         id="text611"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1020.4"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-41)"
+         id="text612"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1020.4"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-41)"
+         id="text613"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1020.4"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-41)"
+         id="text614"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1044.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-42)"
+         id="text615"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1044.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-42)"
+         id="text616"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1044.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-42)"
+         id="text617"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1069.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-43)"
+         id="text618"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1069.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-43)"
+         id="text619"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1069.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-43)"
+         id="text620"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1093.6"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-44)"
+         id="text621"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1093.6"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-44)"
+         id="text622"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1093.6"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-44)"
+         id="text623"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1118"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-45)"
+         id="text624"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1118"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-45)"
+         id="text625"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1118"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-45)"
+         id="text626"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1142.4"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-46)"
+         id="text627"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1142.4"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-46)"
+         id="text628"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1142.4"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-46)"
+         id="text629"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1166.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-47)"
+         id="text630"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1166.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-47)"
+         id="text631"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1166.8"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-47)"
+         id="text632"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1191.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-48)"
+         id="text633"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1191.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-48)"
+         id="text634"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1191.2"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-48)"
+         id="text635"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1215.6"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-49)"
+         id="text636"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1215.6"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-49)"
+         id="text637"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1215.6"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-49)"
+         id="text638"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r9"
+         x="0"
+         y="1240"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-50)"
+         id="text639"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r9"
+         x="12.2"
+         y="1240"
+         textLength="2257"
+         clip-path="url(#terminal-429106114-line-50)"
+         id="text640"
+         lengthAdjust="spacing">▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄</text>
+      <text
+         class="terminal-429106114-r9"
+         x="2269.2"
+         y="1240"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-50)"
+         id="text641"
+         lengthAdjust="spacing">█</text>
+      <text
+         class="terminal-429106114-r1"
+         x="2281.3999"
+         y="1240"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-50)"
+         id="text642"
+         lengthAdjust="spacing" />
+      <text
+         class="terminal-429106114-r17"
+         x="0"
+         y="1264.4"
+         textLength="48.799999"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text643"
+         lengthAdjust="spacing"> ^c </text>
+      <text
+         class="terminal-429106114-r18"
+         x="48.799999"
+         y="1264.4"
+         textLength="61"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text644"
+         lengthAdjust="spacing">Quit </text>
+      <text
+         class="terminal-429106114-r17"
+         x="109.8"
+         y="1264.4"
+         textLength="36.599998"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text645"
+         lengthAdjust="spacing"> w </text>
+      <text
+         class="terminal-429106114-r18"
+         x="146.39999"
+         y="1264.4"
+         textLength="219.60001"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text646"
+         lengthAdjust="spacing">Working directory </text>
+      <text
+         class="terminal-429106114-r17"
+         x="366"
+         y="1264.4"
+         textLength="36.599998"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text647"
+         lengthAdjust="spacing"> i </text>
+      <text
+         class="terminal-429106114-r18"
+         x="402.60001"
+         y="1264.4"
+         textLength="134.2"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text648"
+         lengthAdjust="spacing">Input data </text>
+      <text
+         class="terminal-429106114-r17"
+         x="536.79999"
+         y="1264.4"
+         textLength="36.599998"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text649"
+         lengthAdjust="spacing"> f </text>
+      <text
+         class="terminal-429106114-r18"
+         x="573.40002"
+         y="1264.4"
+         textLength="109.8"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text650"
+         lengthAdjust="spacing">Features </text>
+      <text
+         class="terminal-429106114-r17"
+         x="683.20001"
+         y="1264.4"
+         textLength="36.599998"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text651"
+         lengthAdjust="spacing"> p </text>
+      <text
+         class="terminal-429106114-r18"
+         x="719.79999"
+         y="1264.4"
+         textLength="378.20001"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text652"
+         lengthAdjust="spacing">General preprocessing settings </text>
+      <text
+         class="terminal-429106114-r17"
+         x="1098"
+         y="1264.4"
+         textLength="36.599998"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text653"
+         lengthAdjust="spacing"> g </text>
+      <text
+         class="terminal-429106114-r18"
+         x="1134.6"
+         y="1264.4"
+         textLength="231.8"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text654"
+         lengthAdjust="spacing">Group level models </text>
+      <text
+         class="terminal-429106114-r17"
+         x="1366.4"
+         y="1264.4"
+         textLength="36.599998"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text655"
+         lengthAdjust="spacing"> r </text>
+      <text
+         class="terminal-429106114-r18"
+         x="1403"
+         y="1264.4"
+         textLength="170.8"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text656"
+         lengthAdjust="spacing">Check and run </text>
+      <text
+         class="terminal-429106114-r20"
+         x="2135"
+         y="1264.4"
+         textLength="12.2"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text657"
+         lengthAdjust="spacing">▏</text>
+      <text
+         class="terminal-429106114-r17"
+         x="2147.2"
+         y="1264.4"
+         textLength="24.4"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text658"
+         lengthAdjust="spacing">^p</text>
+      <text
+         class="terminal-429106114-r18"
+         x="2171.6001"
+         y="1264.4"
+         textLength="97.599998"
+         clip-path="url(#terminal-429106114-line-51)"
+         id="text659"
+         lengthAdjust="spacing"> palette</text>
+    </g>
+  </g>
+</svg>

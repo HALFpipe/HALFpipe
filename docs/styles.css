@@ -1,0 +1,19 @@
+/* css styles */
+table.bordered {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+table.bordered td {
+  border: 1px solid #aaa;
+  padding: 8px;
+  vertical-align: top;
+}
+
+.author-text {
+  font-size: 0.8em;
+}
+
+.footnotes {
+  font-size: 0.8em;
+}

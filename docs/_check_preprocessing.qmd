@@ -1,0 +1,21 @@
+1. In your working directory, copy and paste the whole block of code into your terminal session.
+
+```bash 
+> incomplete-subject-list.txt
+find "derivatives/halfpipe" -type d -path "*/func" | while read task_dir; do
+ sub_id=$(echo "$task_dir" | grep -o "sub-[^/]*")
+ file_count=$(find "$task_dir" -type f | wc -l)
+ echo "$sub_id $file_count"
+done | sort > count-files-subject-list.txt
+echo "Done. See count-files-subject-list.txt for subject file counts."
+```
+
+2. There will be 2 generated files, an empty **incomplete-subject-list.txt** and a **count-files-subject-list.txt** file where Subject IDs and their output file counts are stored.
+    a. Manually inspect **count-files-subject-list.txt** and the `derivatives/halfpipe` subjects folders to verify the list of subjects and their file counts. 
+    
+    b. If any subjects have less than the expected amount of file (or differ from others) in **count-files-subject-list.txt** they will likely need to be re-run. 
+    
+    c. We recommend checking out the `err.txt` file and inspect the error messages, if any.
+
+3. Rerun HALFpipe
+    a. Run HALFpipe again, but add the option --subject-list `<path/to/incomplete-subject-list.txt>` to the end of the command. Then select **Run without modification**. 
