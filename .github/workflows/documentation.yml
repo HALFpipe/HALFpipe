@@ -1,0 +1,40 @@
+name: documentation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/documentation.yml"
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - ".github/workflows/documentation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: "1.10.19"
+
+      - name: Render documentation
+        working-directory: docs
+        run: quarto render
+        
+      - name: Upload rendered documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site
+          path: docs/_site/
+          if-no-files-found: error
