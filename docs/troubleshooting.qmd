@@ -1,0 +1,151 @@
+---
+title: "Troubleshooting"
+format:
+  html:
+    css: styles.css
+---
+
+::: {.author-text}
+<span style="color: #808080;">AUTHOR</span>
+
+Written by Clara El Khantour, Lea Waller, Seann Wang, Pierre Lune Bellec, Frank Hillary, Ilya Veer, Clara Moreau
+
+Please address questions and comments to [halfpipe@fmri.science](halfpipe@fmri.science). You can also join the HALFpipe Mattermost (similar to Slack) using this [link](https://mattermost.fmri.science/signup_user_complete/?id=hcc766b7wjdazexwe799hbsuwc&md=link&sbr=su).
+:::
+
+::: {.callout-important collapse="false"}
+
+If the information is this section doesn’t help with your issue, please visit our GitHub page:
+
+[https://github.com/HALFpipe/HALFpipe/issues](https://github.com/HALFpipe/HALFpipe/issues)
+
+:::
+
+::: {.callout-warning collapse="false"}
+
+In some cases, you will need to ensure the code is compatible with your setup (not just copy and paste), especially regarding the container bindings (**see the section 4**). The text highlighted in <span style="background-color:rgb(255, 204, 204);">red</span> requires your attention.
+
+:::
+
+## 1. If you see errors implying Freesurfer license:
+
+If you get the following error:
+
+```text
+RuntimeError: fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found.
+│ HALFpipe looked for an existing license file at several paths, in this order:
+│ 1) a "license.txt" file in your HALFpipe working directory
+│ 2) command line argument "--fs-license-file"
+└─Get it (for free) by registering at https://surfer.nmr.mgh.harvard.edu/registration.html
+```
+
+Please request the license at [https://surfer.nmr.mgh.harvard.edu/registration.html](https://surfer.nmr.mgh.harvard.edu/registration.html). You will receive an email with the license.txt file that you can copy and put directly in your current working directory.
+
+## 2. If you see errors with 'OOM':
+
+Example of an error in log.txt or in err.txt
+
+```text
+slurmstepd: error: Detected 1 oom-kill event(s) in step 13601774.batch cgroup.
+```
+Some of your processes may have been killed by the cgroup out- of-memory handler.
+
+
+**Solution**: Request more memory when submitting the job by modifying the following parameters depending on your HPC’s documentation.
+
+<table class="bordered">
+  <tr>
+    <td>SLURM</td>
+    <td>#SBATCH --mem=10752M</td>
+  </tr>
+  <tr>
+    <td>SGE</td>
+    <td>#$ -l h_vmem=10752M</td>
+  </tr>
+  <tr>
+    <td>Torque/PBS</td>
+    <td>#PBS -l mem=10752mb</td>
+  </tr>
+</table>
+
+## 3. If you see errors implying singularity:
+
+Example of an error in log.txt:
+
+```text
+singularity: command not found
+```
+
+**Solution**: load singularity before submitting the job (depends per cluster, for example: module load singularity)
+
+## 4. Your script keep crashing after few moments: it could be caused by an environment errors in HPC:
+
+* Ensure consistent **--bind** option used when building the container and the one in slurm.submit file as well as version of Singularity or Apptainer.
+* If you have to load an environment in your submit.slurm (e.g. **module load StdEnv/2020**), make sure to load the environment before loading Singularity or Apptainer (i.e. **module load Singularity**)
+* Make sure that all paths in the submit.slurm file are either **all relative or all absolute**—do not mix both types. **Consistency** is important to ensure the job runs correctly.
+
+## 5. The creation of sumbit-scripts take too much time: you may have a very large dataset (for advanced user)
+
+**On HPC cluster only:** if you have a large sample, you can submit **step 6** as a job (instead of running it via interactive session). To do this, take the following steps:
+
+* To specify the settings run:
+
+<pre style="background-color:#f7f7f7; padding:10px; border-radius:4px;"><code class="language-bash">
+singularity run \
+  --no-home \
+  --cleanenv \
+  --bind <span style="background-color:rgb(255, 204, 204);">/:/ext</span> \
+  halfpipe_latest.sif \
+  --only-spec-ui
+</code></pre>
+
+This will open the user interface as described above.
+
+* Refer to **step 6** for the settings to enter. Once you have entered all the settings, a spec.json file will be created.
+* Submit the following job to create the workflow and execgraph files:
+
+<pre style="background-color:#f7f7f7; padding:10px; border-radius:4px;"><code class="language-bash">
+singularity run \
+  --no-home \
+  --cleanenv \
+  --bind <span style="background-color:rgb(255, 204, 204);">/:/ext</span> \
+  <path/to/the/pipeline>/halfpipe_latest.sif \
+  --use-cluster \
+  --skip-spec-ui
+</code></pre>
+
+
+This step cannot be parallelized. In a small sample, this step will only take a few minutes, however, for hundreds of subjects, this may take up to a few hours. This step creates the following files and folders: **derivatives, nipype, rawdata, reports, submit.slurm.sh, work, workflow\*\*\*.pickle.xz, execgraph\*\*\*.pickle.xz**
+
+## 6. Resuming a HALFpipe container run from a crash, adding more features to an existing run, reselecting features for an existing run, starting a run from scratch.
+
+If at all you need to perform any of the above on an existing working directory follow this paragraph. Redo **[section 1 of the old manual](manual_old_ui.qmd#)** to launch an interactive session and run the container launch command. Begin with the instructions in **[section 2.1 of the old manual](manual_old_ui.qmd#)** and select your existing working directory instead of a new one. You will be prompted with the options above. Please select the one which you need.
+
+```bash
+Found spec file in working directory
+
+[X] Run without modification
+[] Start over at beginning
+[] Start over at features
+[] Add another featurel
+[] Start over at models
+
+```
+
+## 7. Avoiding interruption of HALFpipe execution due to HPC disconnection using tmux.
+
+**For HPC Users:** if your connection to the cluster drops during **[section 1 and/or 2 of the old manual](manual_old_ui.qmd#)**, the execution will fail and you will have to restart the process. To avoid this, you can **use TMUX to run your HALFpipe execution persistently in the background (if available on your HPC)**. This way, even if your SSH connection drops, you are able to disconnect and later reattach to the session without interrupting HALFpipe’s execution**.** Please refer to your cluster documentation or IT support.
+
+Follow the steps below to run a TMUX session:
+
+1. Open a terminal session and connect to your cluster,
+2. Start a new TMUX session: **tmux new -s halfpipe**
+3. Run your HALFpipe launch command from **[section 1 of the old manual](manual_old_ui.qmd#)**.
+4. Once the process is running and after specifying the settings in **[section 2 of the old manual](manual_old_ui.qmd#)**, you can detach from TMUX: **Ctrl + b** then **d**
+5. You can reattach at any time with: **tmux attach -t halfpipe**
+   1. Tip: Type **tmux** ls to list active sessions.
+6. When done, type **exit** inside the session to close it.
+
+:::{.footnotes}
+_Manual adapted from the **MDD ENIGMA resting-state fMRI manual** and the **OCD ENIGMA task-based fMRI manual**._
+:::

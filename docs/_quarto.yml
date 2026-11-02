@@ -1,0 +1,46 @@
+project:
+  type: website
+
+website:
+  title: "HALFpipe"
+  navbar: false
+
+  sidebar:
+    style: floating
+    pinned: true
+    search: true
+    collapse-level: 1
+    contents:
+      - index.qmd
+      - about.qmd
+      - installation.qmd
+      - section: "Manuals"
+        contents:
+          - text: "Resting-state fMRI Manual - Terminal UI"
+            file: manual_old_ui.qmd
+          - text: "Resting-state fMRI Manual - Graphical UI"
+            file: new_ui.qmd
+      - quality-control.qmd
+      - check_run.qmd
+      - wonkyconn_docs.qmd
+      - troubleshooting.qmd
+
+  announcement:
+    icon: info-circle
+    dismissable: true
+    content: "**NEW RELEASE** - HALFpipe v1.3.2 is now available! Check out the [release notes](https://github.com/HALFpipe/HALFpipe/releases/tag/1.3.2) for more details."
+    type: primary
+    position: below-navbar
+
+  repo-url: https://github.com/HALFpipe/HALFpipe
+  repo-actions: [issue]
+
+format:
+  html:
+    theme: cosmo
+    css: styles.css
+    toc: true
+    page-navigation: true
+    grid:
+      sidebar-width: 300px
+      body-width : 1200px
