@@ -1,7 +1,7 @@
 ---
 title: "Quality control"
 lightbox: true
-format: 
+format:
   html:
     css: styles.css
 ---
@@ -9,7 +9,7 @@ format:
 ::: {.author-text}
  <span style="color: #808080;">AUTHOR</span>
 
-Written by Lina Mograby. 
+Written by Lina Mograby.
 
 Previous version by Elena Pozzi, Yara Toenders, Ilya Veer, Lea Waller, Courtney Haswell, Rajendra Morey, and Lianne Schmaal
 
@@ -27,7 +27,7 @@ After running the pipeline, an output folder will be created. If the pipeline ra
 ├──rawdata → this folder contains the raw T1 images and epi in BIDS
 ├──log.txt
 ├──err.txt
-├──halfpipe.log.txt 
+├──halfpipe.log.txt
 ├──spec.json
 ├── an execgraph and workflow file (you can ignore this)
 └──possibly files starting with ‘crash’
@@ -50,7 +50,7 @@ Important files for troubleshooting:
 - The err.txt file contains the record of the errors
 - The crash files might contain information about processes that crashed. If you submit an issue on GitHub, please include this file.
 
-# Step 1: Open the summary report in the reports folder 
+# Step 1: Open the summary report in the reports folder
 
 The summary report (`reportpreproc.txt` in the reports folder) should look something like this:
 
@@ -61,7 +61,7 @@ The summary report (`reportpreproc.txt` in the reports folder) should look somet
 |3        |rest	 |missing   |
 |4   	  |rest	 |done      |
 
-- **Done** means that all the output files of interest (i.e., preprocessed image, confound files, connectivity matrices, ICA maps, seed connectivity maps, alff, reho) for that subject were created. These derivative files can be found in the folder `<path/to/output/derivatives/halfpipe/subjectfolder>`. 
+- **Done** means that all the output files of interest (i.e., preprocessed image, confound files, connectivity matrices, ICA maps, seed connectivity maps, alff, reho) for that subject were created. These derivative files can be found in the folder `<path/to/output/derivatives/halfpipe/subjectfolder>`.
 
 - Conversely, subjects with the status **missing** did not run completely. This means that not all the output files were created.
 
@@ -75,7 +75,7 @@ Continue to [step 2](#step-2-open-the-index.html-page).
 
 ### If you have any subject listed under missing
 
-Please have a look at the `log.txt` file (located in the main output folder). To open the log file, you can use any text editor. Use the search function to search for ‘error’, to understand if something and what went wrong. Common errors are listed in the `troubleshooting section`. 
+Please have a look at the `log.txt` file (located in the main output folder). To open the log file, you can use any text editor. Use the search function to search for ‘error’, to understand if something and what went wrong. Common errors are listed in the `troubleshooting section`.
 
 #### Step 1.1.1: Re-run missing or failed subjects
 
@@ -83,13 +83,13 @@ Please have a look at the `log.txt` file (located in the main output folder). To
 - Re-run HALFpipe as before, but add the option `--subject-list <full path to text file> to the end of the command.`
 
 *Only if running on HPC *
-- Edit your submission script to add the option, and then submit the job to the HPC queue. 
+- Edit your submission script to add the option, and then submit the job to the HPC queue.
 
 If you are unable to troubleshoot, please open an issue on GitHub.
 :::
 
 # Step 2: Open the index.html page
-Open the **index.html** file in the reports folder in your favourite browser. You can navigate through different windows by clicking on the drop-down menu (the three lines in the top left corner next to Nypipe status, see image below): **charts, explore reports and report detail view**. 
+Open the **index.html** file in the reports folder in your favourite browser. You can navigate through different windows by clicking on the drop-down menu (the three lines in the top left corner next to Nypipe status, see image below): **charts, explore reports and report detail view**.
 
 ::: {.callout-tip collapse="false"}
 
@@ -113,21 +113,21 @@ This is divided in 3 sections:
 
 The reports contain images for each participant for the following pre-processing steps:
 1. T1w skull stripping and segmentation
-2. T1w spatial normalisation 
-3. EPI tSNR     
+2. T1w spatial normalisation
+3. EPI tSNR
 4. EPI confounds (carpet plot)
 5. EPI ICA-based artefact removal
 6. EPI spatial normalisationƒ
 
 **Each pre-processing step should be rated for each participant (<span style="color: #28a745;">good</span>, <span style="color: #f4a261;">uncertain</span>, <span style="color: #d00;">bad</span>)** using the emoticons. You can zoom in by clicking on the report (or clicking on 'report detail view' from the dropdown menu). All images/subjects should be rated (i.e., either good, uncertain, or bad), in order to have a comprehensive QA from each site.
 
-Instead of using the mouse clicks to rate the images, you can also use the following keyboard acuts: [w] rates image as good, [s] as uncertain and [x] as <span style="color: #d00;">bad</span>. The keys [d] and [a] jump to the next, respectively the previous image. 
+Instead of using the mouse clicks to rate the images, you can also use the following keyboard acuts: [w] rates image as good, [s] as uncertain and [x] as <span style="color: #d00;">bad</span>. The keys [d] and [a] jump to the next, respectively the previous image.
 
-After rating the images (see below for the explanation), the rating should be exported by going to the menu (the icon in the upper left corner, see example) of the reports page, and then clicking **"Export"**. They will be saved as ‘exclude.json’. The ratings are also displayed in the summary and ratings for each feature chart. If ratings do not get exported, there's a risk of losing your progress once you delete your cookies. 
+After rating the images (see below for the explanation), the rating should be exported by going to the menu (the icon in the upper left corner, see example) of the reports page, and then clicking **"Export"**. They will be saved as ‘exclude.json’. The ratings are also displayed in the summary and ratings for each feature chart. If ratings do not get exported, there's a risk of losing your progress once you delete your cookies.
 
 ![Example: shows the menu and export button on the report](images/qc/02-explore_reports.jpg)
 
-You can switch between sort **'per image type'** or **'per subject'**. Sorting the reports per image type (e.g., by skull stripping reports) will help you get a sense of how each image looks like across all subjects and will give you an idea of wwhat a 'normal' image looks like and what stands out. 
+You can switch between sort **'per image type'** or **'per subject'**. Sorting the reports per image type (e.g., by skull stripping reports) will help you get a sense of how each image looks like across all subjects and will give you an idea of wwhat a 'normal' image looks like and what stands out.
 
 Sorting per subject will allow you to check how the same subject performed across the different pre-processing steps. We recommend sorting per image type, because that gives you an idea of what a good or bad image looks like. However, if you are unsure about the quality of a certain subject in one step, switch to sorting per subject to see how the same subject performed across the different steps (this could be useful to determine if they need to be excluded).
 
@@ -135,20 +135,20 @@ Below we report examples of each pre-processing step, how they should look like,
 
 ::: {.callout-important collapse="false"}
 
-If you rate a subject as **'<span style="color: #d00;">bad</span>'*** in one of the images, it will later automatically be excluded from the group analysis. 
+If you rate a subject as **'<span style="color: #d00;">bad</span>'*** in one of the images, it will later automatically be excluded from the group analysis.
 
-Obvious issues (e.g., large portion of the brain missing after skull stripping, poor T1 or EPI normalisation, very clear artefacts in the EPI showing in the tSNR) are usually worth the exclusion of the subject (or you can try to re-run the subject if the problem is for example skull stripping). 
+Obvious issues (e.g., large portion of the brain missing after skull stripping, poor T1 or EPI normalisation, very clear artefacts in the EPI showing in the tSNR) are usually worth the exclusion of the subject (or you can try to re-run the subject if the problem is for example skull stripping).
 
-Usually, bad examples of skull stripping, registration etc are the results of a problematic subject (e.g., lot of motion, not enough WM/GM contrast, signal loss, etc), so it is helpful to check all the reports for that subject, especially if you are unsure, before deciding to exclude them. 
+Usually, bad examples of skull stripping, registration etc are the results of a problematic subject (e.g., lot of motion, not enough WM/GM contrast, signal loss, etc), so it is helpful to check all the reports for that subject, especially if you are unsure, before deciding to exclude them.
 
 The carpet plot and the ICA AROMA report can be hard to interpret on their own and (especially if you are unsure about the result) **we recommend examining them in conjunction with the other images.**
 
 :::
 
-## T1w skull stripping 
+## T1w skull stripping
 Skull stripping is the process separating the brain (cortex and cerebellum) from the skull. The red line follows the outline of the brain and it separates it from the skull.
 
-### **<span style="color: #28a745;">Example of a good subject</span>** 
+### **<span style="color: #28a745;">Example of a good subject</span>**
 
 - There are no skull stripping errors, such as portions of the brain missing, or too much of the skull retained
 - The red line follows the outline of the brain
@@ -177,10 +177,10 @@ Skull stripping is the process separating the brain (cortex and cerebellum) from
 
 ![T1w skull stripping: examples of good subjects](images/qc/03-t1w_skull_stripping_good-14_crop.png){group="good-skull-stripping" width=1200}
 
-### **<span style="color: #d00;">Example of a bad subject</span>** 
+### **<span style="color: #d00;">Example of a bad subject</span>**
 
 - There are skull stripping errors, such as portions of the brain missing, or too much of the skull retained
-- **NOTE:** check all the images (slices) in the report. If only one image (slice) looks problematic, it is possible that the subject is okay and it is just a visual issue in that particular screenshot 
+- **NOTE:** check all the images (slices) in the report. If only one image (slice) looks problematic, it is possible that the subject is okay and it is just a visual issue in that particular screenshot
 
 ![T1w skull stripping: example of a bad subject: some portions of the brain have been left out. Note that in this subject, the 'ring' markers at the edge of the brain are likely indicative of high motion.](images/qc/03-t1w_skull_stripping_bad-01_crop.png){group="bad-skull-stripping" width=1200}
 
@@ -212,16 +212,16 @@ Skull stripping is the process separating the brain (cortex and cerebellum) from
  -> if only one slice is problematic, it could be an issue related to the visual depiction of the data instead of an issue related to the test subject
 :::
 
-## dT1w spatial normalisation 
+## dT1w spatial normalisation
 
-This QC step shows the registration of the T1 image to MNI space. 
+This QC step shows the registration of the T1 image to MNI space.
 
 The registered T1 image is shown in the background with a brain atlas in MNI space as an overlay.
 
 
-### **<span style="color: #28a745;">Example of a good subject</span>** 
+### **<span style="color: #28a745;">Example of a good subject</span>**
 
-- If the registration performed well, you should see an overlap (i.e., correspondence of structures) between the MNI template and the T1 registered to the MNI space. 
+- If the registration performed well, you should see an overlap (i.e., correspondence of structures) between the MNI template and the T1 registered to the MNI space.
 
 ![T1w spatial normalisation: example of a good subject](images/qc/04-dt1w_spatial_normalisation_good-03.png){group="good-dt1w-spatial-normalisation"}
 
@@ -235,9 +235,9 @@ The registered T1 image is shown in the background with a brain atlas in MNI spa
 
 ![T1w spatial normalisation: example of a good subject](images/qc/04-dt1w_spatial_normalisation_good-08.png){group="good-dt1w-spatial-normalisation"}
 
-### **<span style="color: #d00;">Example of a bad subject</span>** 
+### **<span style="color: #d00;">Example of a bad subject</span>**
 
-- In case of poor registration, you should see a misalignment between the MNI template and the T1 (e.g., brain shifted down).  
+- In case of poor registration, you should see a misalignment between the MNI template and the T1 (e.g., brain shifted down).
 
 ![T1w spatial normalisation: example of a bad subject](images/qc/04-dt1w_spatial_normalisation_bad-01.png){group="bad-dt1w-spatial-normalisation"}
 
@@ -262,7 +262,7 @@ The registered T1 image is shown in the background with a brain atlas in MNI spa
 ## EPI tSNR
 In the signal to noise ratio images of the resting state image the desired signal is compared to the amount of background noise. It is important to check all the views (sagittal, coronal, axial) because some artefacts (e.g., stripes) may be evident only in one particular view.
 
-### **<span style="color: #28a745;">Example of a good subject</span>** 
+### **<span style="color: #28a745;">Example of a good subject</span>**
 
 - Signal to noise is symmetrically distributed and there is no signal distortion
 
@@ -290,10 +290,10 @@ In the signal to noise ratio images of the resting state image the desired signa
 
 ![tSNR: example of a good subject](images/qc/05-epi_tsnr_good-12.png){group="good-epi_tsnr"}
 
-### **<span style="color: #d00;">Example of a bad subject</span>** 
+### **<span style="color: #d00;">Example of a bad subject</span>**
 
 - Asymmetry
-- Potential signal distortion (might represent an artefact) 
+- Potential signal distortion (might represent an artefact)
 - Signal drop-out
 - Stripes artefact
 
@@ -328,35 +328,35 @@ Clear large artefact (e.g., zebra stripes in example 1) are worth the exclusion 
 | Symmetrical distribution of noise and signal | Asymmetry |
 | No disruptions of the signal <br>(no “black patches”) | Potential signal disruptions <br>(could be related to artefacts) |
 | No stripes <br>(sign of high motion) | Signal drop |
-|  | Stripe artefacts <br>(“zebra” stripes due to motion) |              
+|  | Stripe artefacts <br>(“zebra” stripes due to motion) |
 : Table summary for EPI tSNR {.striped .hover}
 
-## EPI confounds (carpet plot) 
+## EPI confounds (carpet plot)
 
 A carpet plot is a 2D 'heatmap' of relevant time series within a scan, with voxels on the vertical axis and time on the horizontal axis. Voxels are grouped into blue=cortical GM, orange=subcortical GM, green=cerebellum, red=white matter and CSF, as indicated by the colour map on the left-hand side of the plot.
 
 In the carpet plot it is important to look for changes in heatmap/intensity and how they relate to motion (frame-wise displacement (FD)) and global signal (GS) measures (the graphs above the carpet plot). Unusual changes might represent other artefacts (e.g., hardware related) or changes in respiratory patterns.
 
-### **<span style="color: #28a745;">Example of a good subject</span>** 
+### **<span style="color: #28a745;">Example of a good subject</span>**
 
 - No changes in the heatmap, low motion (FD mean < 0.5), no sudden large jumps in the FD line or GS
 - Small changes in the heatmap identifiable as caused by motion or other causes (i.e., corresponding to changes in the graphs above the heatmap)
 
 ![Example of a good subject: no clear changes in the heatmap, low motion, no large jumps/ changes](images/qc/06-epi_confounds_good-01.png){group="good-epi_confounds"}
 
-### **<span style="color: #f4a261;">Example of an uncertain subject</span>** 
+### **<span style="color: #f4a261;">Example of an uncertain subject</span>**
 
 ![Example of a uncertain subject: small changes in the heatmap that correspond to spikes of motion < 3 mm (FD max here is 2.110)](images/qc/06-epi_confounds_uncertain-01.png){group="good-epi_confounds"}
 
 ![Example of a uncertain subject: changes in the heatmap that correspond to spikes of motion, max FD is below 3, mean FD is below 0.5](images/qc/06-epi_confounds_uncertain-02.png){group="good-epi_confounds"}
 
 
-### **<span style="color: #d00;">Example of a bad subject</span>** 
+### **<span style="color: #d00;">Example of a bad subject</span>**
 
 - Large changes in the heatmap can be indicative of motion. If this is the case, they will usually correspond to changes in the FD line (purple line) above the heatmap. Mean FD and max FD are also reported in the plot for each subject
 
 ::: {.callout-important collapse="false"}
-- For group analysis, there will be the option to automatically exclude subjects with mean FD > 0.5, so you don’t have to check the mean FD for all subjects at this stage (but it could be helpful to look at FD values if you are unsure about whether to exclude or not a subject). Although we have not included a hard threshold for max FD, values > 3mm could be indicative of a problematic subject (i.e., with sudden jumps). In data sets with a high percentage of high motion individuals, it is worth considering whether the threshold should be raised to >3.5mm, in order to include a larger percentage of subjects. 
+- For group analysis, there will be the option to automatically exclude subjects with mean FD > 0.5, so you don’t have to check the mean FD for all subjects at this stage (but it could be helpful to look at FD values if you are unsure about whether to exclude or not a subject). Although we have not included a hard threshold for max FD, values > 3mm could be indicative of a problematic subject (i.e., with sudden jumps). In data sets with a high percentage of high motion individuals, it is worth considering whether the threshold should be raised to >3.5mm, in order to include a larger percentage of subjects.
 - Changes in the heatmap without clear causes may indicate other artefacts, such as hardware-related artefacts. Other sudden changes could be related to respiratory patterns
 :::
 
@@ -381,14 +381,14 @@ In the carpet plot it is important to look for changes in heatmap/intensity and 
 | No changes in the heatmap | Big changes: <br>- could be related to motion <br>(change in the FD-line) |
 | Small changes in the heatmap caused by motion mean FD < 0.5 | Mean FD > 0.5 or maximum FD > 3 mm |
 | DVARS and FD “similar” |  |
-| No big spikes |  |            
+| No big spikes |  |
 : Table summary for wEPI confounds (carpet plot) {.striped .hover}
 
 ## EPI ICA-based artefact removal
 
 The fMRI data for each subject are decomposed into spatially independent components. Each component is represented by a spatial map and a time course. Some components represent noise, some signal. ICA AROMA is trained to automatically classify these components. Signal components are usually represented by **low numbers of large clusters** (some of which may represent known networks such as the Default Mode Network), located in the **GM and away from WM, CSF, blood vessels,** or the edges of the brain. Signal components usually do not have a particular shape, while noise components may show banding or ring patterns. Signal components usually have low frequency (0.01-0.1 Hz) (i.e., few spikes on the left hand side of the power spectra plot), **while noise high frequency**, or very low. The time series of signal components is oscillatory and fairly regular, while in noise we may see sudden spikes or differing patterns (see Griffanti et al., 2017. Hand classification of fMRI ICA noise components. NeuroImage).
 
-Some examples are presented below. For each component, there is a spatial map (on the left), the time series (top plot on the right) and the power spectra (bottom plot on the right). Of note, ICA AROMA errors cannot be 'fixed', as it automatically classifies the components. 
+Some examples are presented below. For each component, there is a spatial map (on the left), the time series (top plot on the right) and the power spectra (bottom plot on the right). Of note, ICA AROMA errors cannot be 'fixed', as it automatically classifies the components.
 
 ::: {.callout-important collapse="false"}
 We don't expect you to check all the components for every subject. Rather, try to eyeball the report and see whether generally clusters that should be signal (according to the description above) are coloured in green. If you think that ICA AROMA performed poorly, check the other quality metrics for that subject to decide whether they should be excluded.
@@ -405,13 +405,13 @@ We don't expect you to check all the components for every subject. Rather, try t
 
 :::
 
-### **<span style="color: #28a745;">Example of a good subject</span>** 
+### **<span style="color: #28a745;">Example of a good subject</span>**
 
 - Components correctly classified in noise (red) and signal (green), conservative classification (uncertain components classified as signal).
 
 ![ICA AROMA: example of a good/ok subject](images/qc/07-epi_ica_good.jpg){group="good-epi_ica"}
 
-### **<span style="color: #d00;">Example of a bad subject</span>** 
+### **<span style="color: #d00;">Example of a bad subject</span>**
 
 - ICA AROMA might have performed poorly if it classified all/most of the components as noise, when some of them could have been signal. These types of errors are more likely to occur in task fMRI with block designs, whereby some task-related activity may be classified as motion. In resting state, try to look for common large brain networks such as the default mode network/salience network. If they have been classified as noise, ICA-AROMA might have not performed well. It is possible that ICA AROMA classified all/most of the components as noise if the subject was particularly problematic (lot of motion, artefacts)
 - Components that look like rings, bandings or stripes are usually acquisition-related artefacts (e.g., interleaved acquisition, multi-band). The presence of these artefacts is not an issue by itself, but ideally these components should be classified as noise. Note that ICA AROMA was not trained on multiband data, so it is possible that it classifies some of these components as signal (nothing we can do about).
@@ -419,7 +419,7 @@ We don't expect you to check all the components for every subject. Rather, try t
 - In case of uncertain components, it is preferable that ICA AROMA behaved conservatively, and did not remove these components, because they may contain some signal
 
 ::: {.callout-tip collapse="false"}
-**NOTE:** If you think that ICA AROMA performed poorly or the subject looks problematic, check the other quality metrics for that subject to decide whether they should be excluded. 
+**NOTE:** If you think that ICA AROMA performed poorly or the subject looks problematic, check the other quality metrics for that subject to decide whether they should be excluded.
 :::
 
 ![ICA AROMA: example of a bad subject: a large part of the components has been classified as noise (picture on the left). Other QC images of the same participant show that this subject is problematic: the tSNR page for this subjects shows stripes artefacts (picture on the right).](images/qc/07-epi_ica_bad.png){group="bad-epi_ica"}
@@ -437,11 +437,11 @@ We don't expect you to check all the components for every subject. Rather, try t
 
 ## EPI spatial normalisation
 
-This QC step shows the registration of the EPI image to MNI space. 
+This QC step shows the registration of the EPI image to MNI space.
 
-### **<span style="color: #28a745;">Example of a good subject</span>** 
+### **<span style="color: #28a745;">Example of a good subject</span>**
 
-- If the registration performed well, you should see an overlap (i.e., correspondence of structures) between the MNI template and the EPI registered to the MNI space. 
+- If the registration performed well, you should see an overlap (i.e., correspondence of structures) between the MNI template and the EPI registered to the MNI space.
 - If parts of the brain are missing due to the scanner field of view, this is fine. For example, the cerebellum may be cut off for a participant with a large head.
 
 ![EPI spatial normalisation: example of a good subject](images/qc/08-epi_spatial_normalisation_good-01.jpg){group="good-epi_spatial_normalisation"}
@@ -462,7 +462,7 @@ This QC step shows the registration of the EPI image to MNI space.
 
 ![EPI spatial normalisation: example of a good subject.](images/qc/08-epi_spatial_normalisation_good-11.png){group="good-epi_spatial_normalisation"}
 
-### **<span style="color: #d00;">Example of a bad subject</span>** 
+### **<span style="color: #d00;">Example of a bad subject</span>**
 
 - In case of poor registration, you should see a misalignment of the EPI and the MNI template
 
@@ -529,7 +529,7 @@ This section brings together all the summary tables and can serve as a checklist
 | Symmetrical distribution of noise and signal | Asymmetry |
 | No disruptions of the signal <br>(no “black patches”) | Potential signal disruptions <br>(could be related to artefacts) |
 | No stripes <br>(sign of high motion) | Signal drop |
-|  | Stripe artefacts <br>(“zebra” stripes due to motion) |              
+|  | Stripe artefacts <br>(“zebra” stripes due to motion) |
 : Table summary for EPI tSNR {.striped .hover}
 
 
@@ -538,7 +538,7 @@ This section brings together all the summary tables and can serve as a checklist
 | No changes in the heatmap | Big changes: <br>- could be related to motion <br>(change in the FD-line) |
 | Small changes in the heatmap caused by motion mean FD < 0.5 | Mean FD > 0.5 or maximum FD > 3 mm |
 | DVARS and FD “similar” |  |
-| No big spikes |  |            
+| No big spikes |  |
 : Table summary for wEPI confounds (carpet plot) {.striped .hover}
 
 

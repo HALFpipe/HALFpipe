@@ -1,9 +1,9 @@
 ---
 title: "Wonkyconn"
-format: 
+format:
   html:
     css: styles.css
---- 
+---
 
 ::: {.author-text}
 <span style="color: #808080;">AUTHOR</span>

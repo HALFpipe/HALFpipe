@@ -1,7 +1,7 @@
 # Welcome to ENIGMA HALFpipe!
 
-[![badges](https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml) 
-[![codecov](https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HALFpipe/HALFpipe) 
+[![badges](https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml)
+[![codecov](https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HALFpipe/HALFpipe)
 [![codecov](https://zenodo.org/badge/DOI/10.5281/zenodo.5657185.svg)](https://doi.org/10.5281/zenodo.5657185)
 
 ``HALFpipe`` is a user-friendly software that facilitates reproducible analysis of fMRI data, including preprocessing, single-subject, and group analysis. It provides state-of-the-art preprocessing using [fmriprep](https://fmriprep.readthedocs.io/), but removes the necessity to convert data to the [BIDS](https://bids-specification.readthedocs.io/en/stable/>) format. Common resting-state and task-based fMRI features can then be calculated on the

@@ -1,9 +1,9 @@
 ---
 title: "Troubleshooting"
-format: 
+format:
   html:
     css: styles.css
---- 
+---
 
 ::: {.author-text}
 <span style="color: #808080;">AUTHOR</span>
@@ -29,7 +29,7 @@ In some cases, you will need to ensure the code is compatible with your setup (n
 
 ## 1. If you see errors implying Freesurfer license:
 
-If you get the following error:  
+If you get the following error:
 
 ```text
 RuntimeError: fMRIPrep needs to use FreeSurfer commands, but a valid license file for FreeSurfer could not be found.
@@ -45,7 +45,7 @@ Please request the license at [https://surfer.nmr.mgh.harvard.edu/registration.h
 
 Example of an error in log.txt or in err.txt
 
-```text  
+```text
 slurmstepd: error: Detected 1 oom-kill event(s) in step 13601774.batch cgroup.
 ```
 Some of your processes may have been killed by the cgroup out- of-memory handler.
@@ -70,25 +70,25 @@ Some of your processes may have been killed by the cgroup out- of-memory handler
 
 ## 3. If you see errors implying singularity:
 
-Example of an error in log.txt:  
+Example of an error in log.txt:
 
 ```text
-singularity: command not found  
+singularity: command not found
 ```
 
 **Solution**: load singularity before submitting the job (depends per cluster, for example: module load singularity)
 
 ## 4. Your script keep crashing after few moments: it could be caused by an environment errors in HPC:
 
-* Ensure consistent **--bind** option used when building the container and the one in slurm.submit file as well as version of Singularity or Apptainer.  
-* If you have to load an environment in your submit.slurm (e.g. **module load StdEnv/2020**), make sure to load the environment before loading Singularity or Apptainer (i.e. **module load Singularity**)  
+* Ensure consistent **--bind** option used when building the container and the one in slurm.submit file as well as version of Singularity or Apptainer.
+* If you have to load an environment in your submit.slurm (e.g. **module load StdEnv/2020**), make sure to load the environment before loading Singularity or Apptainer (i.e. **module load Singularity**)
 * Make sure that all paths in the submit.slurm file are either **all relative or all absolute**—do not mix both types. **Consistency** is important to ensure the job runs correctly.
 
 ## 5. The creation of sumbit-scripts take too much time: you may have a very large dataset (for advanced user)
 
 **On HPC cluster only:** if you have a large sample, you can submit **step 6** as a job (instead of running it via interactive session). To do this, take the following steps:
 
-* To specify the settings run: 
+* To specify the settings run:
 
 <pre style="background-color:#f7f7f7; padding:10px; border-radius:4px;"><code class="language-bash">
 singularity run \
@@ -99,10 +99,10 @@ singularity run \
   --only-spec-ui
 </code></pre>
 
-This will open the user interface as described above.  
+This will open the user interface as described above.
 
-* Refer to **step 6** for the settings to enter. Once you have entered all the settings, a spec.json file will be created.  
-* Submit the following job to create the workflow and execgraph files: 
+* Refer to **step 6** for the settings to enter. Once you have entered all the settings, a spec.json file will be created.
+* Submit the following job to create the workflow and execgraph files:
 
 <pre style="background-color:#f7f7f7; padding:10px; border-radius:4px;"><code class="language-bash">
 singularity run \
@@ -138,13 +138,13 @@ Found spec file in working directory
 
 Follow the steps below to run a TMUX session:
 
-1. Open a terminal session and connect to your cluster,  
-2. Start a new TMUX session: **tmux new -s halfpipe**  
-3. Run your HALFpipe launch command from **[section 1 of the old manual](manual_old_ui.qmd#)**.  
-4. Once the process is running and after specifying the settings in **[section 2 of the old manual](manual_old_ui.qmd#)**, you can detach from TMUX: **Ctrl + b** then **d**  
-5. You can reattach at any time with: **tmux attach -t halfpipe**   
-   1. Tip: Type **tmux** ls to list active sessions.  
-6. When done, type **exit** inside the session to close it. 
+1. Open a terminal session and connect to your cluster,
+2. Start a new TMUX session: **tmux new -s halfpipe**
+3. Run your HALFpipe launch command from **[section 1 of the old manual](manual_old_ui.qmd#)**.
+4. Once the process is running and after specifying the settings in **[section 2 of the old manual](manual_old_ui.qmd#)**, you can detach from TMUX: **Ctrl + b** then **d**
+5. You can reattach at any time with: **tmux attach -t halfpipe**
+   1. Tip: Type **tmux** ls to list active sessions.
+6. When done, type **exit** inside the session to close it.
 
 :::{.footnotes}
 _Manual adapted from the **MDD ENIGMA resting-state fMRI manual** and the **OCD ENIGMA task-based fMRI manual**._

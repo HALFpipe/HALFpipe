@@ -31,7 +31,7 @@ jobs:
       - name: Render documentation
         working-directory: docs
         run: quarto render
-        
+
       - name: Upload rendered documentation
         uses: actions/upload-artifact@v4
         with:
