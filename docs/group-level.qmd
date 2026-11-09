@@ -42,9 +42,9 @@ This group-level analysis guide is being revised.
 
 This manual assumes that you have already run HALFpipe for the preprocessing, feature extraction, and QC. If you are still preparing your inputs, see [2. Configure resting-state analysis](configure.qmd), [3. Run and check outputs](check_run.qmd), and [4. Quality control](quality-control.qmd). To save your ratings, follow [4.4 Export ratings and rerun if needed](qc/rerun.qmd#export-your-qc-ratings).
 
-After completing the preprocessing and feature extraction, we are now ready to perform group-level analysis. To do so, we will need to download a more recent version of HALFpipe. 
+After completing the preprocessing and feature extraction, we are now ready to perform group-level analysis. To do so, we will need to download a more recent version of HALFpipe.
 
-**→ Important: You will not need to re-run processing and QC**; we will proceed directly to group-level analysis using your existing outputs. 
+**→ Important: You will not need to re-run processing and QC**; we will proceed directly to group-level analysis using your existing outputs.
 
 Below is an example of the structure of your working directory created with HALFpipe following preprocessing and QC:
 
@@ -62,11 +62,11 @@ Working_directory/
 
 ## Get your QC report {#get-your-qc-report}
 
-Once you are done with the QC, you can export your rating into a JSON file (if not done yet). You will need this file for the group-level analysis in order to exclude subjects with bad images. 
+Once you are done with the QC, you can export your rating into a JSON file (if not done yet). You will need this file for the group-level analysis in order to exclude subjects with bad images.
 
 To export the exclusion file, simply return to the index.html page (your ratings should have been saved automatically). From there, open the menu (top left), select Export, and the file will be downloaded. Here is where you can find this export button.
 
-![](images/group-level-qc-export.png)  
+![](images/group-level-qc-export.png)
 → You should copy-paste the path where this file is located. We will use it in the command line later.
 
 ## Download the latest version of HALFpipe {#download-the-latest-version-of-halfpipe}
@@ -88,13 +88,13 @@ Please find the folder where the outputs from HALFpipe were generated and copy-p
 
 ## Spreadsheet with covariates {#spreadsheet-with-covariates}
 
-- Your spreadsheet should contain the following columns.  
-  - id containing the same subject IDs as in the image file names   
-  - age in years  
-  - sex coded as “male” and “female”  
-  - diagnosis coded as “anorexia” or “control”  
-  - site and scanner only if applicable, coded either numerically or as text  
-- **If your data are coded differently**, then you may need to adapt the command line flags when specifying your data (as described in the section [Run group-level analysis](#run-group-level-analysis)).  
+- Your spreadsheet should contain the following columns.
+  - id containing the same subject IDs as in the image file names
+  - age in years
+  - sex coded as “male” and “female”
+  - diagnosis coded as “anorexia” or “control”
+  - site and scanner only if applicable, coded either numerically or as text
+- **If your data are coded differently**, then you may need to adapt the command line flags when specifying your data (as described in the section [Run group-level analysis](#run-group-level-analysis)).
 - For example, your spreadsheet could look like this.
 
 ::: {.table-responsive}
@@ -106,14 +106,14 @@ Please find the folder where the outputs from HALFpipe were generated and copy-p
 
 :::
 
-In our analysis, we will include these variables as **mandatory covariates**: 
+In our analysis, we will include these variables as **mandatory covariates**:
 
-- `Continuous variable: age`  
-- `Categorical variables: sex and diagnosis (and site/scanner if relevant)` 
+- `Continuous variable: age`
+- `Categorical variables: sex and diagnosis (and site/scanner if relevant)`
 
 # **Select features of interest** {#select-features-of-interest}
 
-**Create a text file named feature-list.txt**. This file specifies which features the group-level analysis will run on: Seed-based and Atlas-based. This file contains the feature names you specified when running HALFpipe. Make sure the names match what you provided; if not, edit the file accordingly. 
+**Create a text file named feature-list.txt**. This file specifies which features the group-level analysis will run on: Seed-based and Atlas-based. This file contains the feature names you specified when running HALFpipe. Make sure the names match what you provided; if not, edit the file accordingly.
 
 You can find the feature names in the derivatives filename: sub-01\_ses-01\_task-rest\_**feature-CorrMatrix1**\_ …
 
@@ -134,19 +134,19 @@ seedCorr5
 
 # **Run group-level analysis** {#run-group-level-analysis}
 
-We are now ready to run HALFpipe for the group-level analysis. 
+We are now ready to run HALFpipe for the group-level analysis.
 
 * **For HPC users:** We recommend submitting a job on your cluster, the same way you did for the preprocessing. To do this:
 
-  1. Create a new executable file named submit-grouplevel.**slurm**.sh if using Slurm (or submit-grouplevel.**sge**.sh for SGE, submit-grouplevel.**torque**.sh for Torque, depending on your server) 
+  1. Create a new executable file named submit-grouplevel.**slurm**.sh if using Slurm (or submit-grouplevel.**sge**.sh for SGE, submit-grouplevel.**torque**.sh for Torque, depending on your server)
 
-  2. Replicate the configuration you had at the top of your submit.slurm.sh file that you used to run the preprocessing (adjusting resource allocations, if necessary). 
+  2. Replicate the configuration you had at the top of your submit.slurm.sh file that you used to run the preprocessing (adjusting resource allocations, if necessary).
 
-     **Note**: As we are performing group-level analysis, you do not need to run each subject in parallel, so make sure to remove the following parameter from your configuration: 
+     **Note**: As we are performing group-level analysis, you do not need to run each subject in parallel, so make sure to remove the following parameter from your configuration:
 
-- For slurm, remove: `#SBATCH --array=1-9`  
-- For SGE, remove: `#$ -t 1-234`  
-- For Torque, remove: `#PBS -J 1-234`  
+- For slurm, remove: `#SBATCH --array=1-9`
+- For SGE, remove: `#$ -t 1-234`
+- For Torque, remove: `#PBS -J 1-234`
   Here is an example of a `submit-grouplevel.slurm.sh` script:
 
 ```bash
@@ -183,7 +183,7 @@ singularity run \
 
 * **On a local computer**: simply copy and paste the command line below in your terminal using Singularity (Apptainer) or Docker, depending on your system. You will have to adjust the paths and variables as described [in the following section](#command-explanations).
 
-Below is an example of what a complete command might look like.   
+Below is an example of what a complete command might look like.
 → It is important to carefully adapt each part to the specifics of your dataset. In most cases, the parts in **bold** will stay the same as in the example. The parts in *cursive* will definitely need to be adapted for your dataset.
 
 * If you are transferring your working directory to another system for processing, only the derivatives folder is needed.
@@ -321,14 +321,14 @@ Once the pipeline is completed, congratulations, you are done with the analysis\
 
 → We will now compress the **work\_dir/outputs/group-level** folder and delete files that contain individual information and that were generated to perform the statistics. You can contact me if you have questions regarding this step before proceeding ([clara.el.khantour@umontreal.ca](mailto:clara.el.khantour@umontreal.ca)).
 
-1. First, go to the folder where the group-level outputs were generated:  
+1. First, go to the folder where the group-level outputs were generated:
    `cd /work_dir/outputs/`
 
-2. Verify you are in the correct location:  
-   `ls`  
-   By doing this command, you should be able to see a folder named `group-level`  
-     
-3. Next, we will compress the group-level folder using tar, and exclude the design matrix and the json files:  
+2. Verify you are in the correct location:
+   `ls`
+   By doing this command, you should be able to see a folder named `group-level`
+
+3. Next, we will compress the group-level folder using tar, and exclude the design matrix and the json files:
    `tar --exclude='*design_matrix.tsv' --exclude='*.json' -zcvf group-level-ENIGMA-AN.tar.gz grouplevel`
 
 This step can take some time. The generated folder contains only aggregate/group-level data. **No individual data will be shared.**
