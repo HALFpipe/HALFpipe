@@ -17,3 +17,91 @@ table.bordered td {
 .footnotes {
   font-size: 0.8em;
 }
+
+.qc-example-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+  padding: .85rem;
+  align-items: start;
+}
+.qc-example-gallery > .quarto-figure { margin: 0; min-width: 0; }
+.qc-example-gallery figure { margin: 0; }
+.qc-example-gallery img {
+  width: 100% !important;
+  height: 180px !important;
+  object-fit: contain;
+  background: #111;
+}
+.qc-example-gallery figcaption {
+  font-size: .85rem;
+  line-height: 1.4;
+}
+
+/* Navigation is specific to the QC manual; other site pages keep their layout. */
+.qc-manual .qc-workflow-grid,
+.qc-manual .qc-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 16rem), 1fr));
+  gap: 1rem;
+  margin: 1rem 0 2rem;
+}
+.qc-manual .qc-nav-card {
+  min-width: 0;
+  border: 1px solid #d7dde3;
+  border-radius: .5rem;
+  padding: 1rem;
+  background: #fff;
+}
+.qc-manual .qc-nav-card:hover { border-color: #2c6da4; }
+.qc-manual .qc-card-title { font-size: 1.05rem; font-weight: 600; }
+.qc-manual .qc-card-image {
+  width: 100%;
+  height: 140px;
+  object-fit: contain;
+  background: #111;
+  margin-top: .8rem;
+}
+.qc-manual .qc-nav-card p:last-child { margin-bottom: 0; }
+.qc-manual .qc-page-tools { margin-bottom: 1.5rem; }
+.qc-manual .btn { margin: .15rem .35rem .25rem 0; }
+.qc-manual a:focus-visible,
+.qc-manual .qc-credits > summary:focus-visible {
+  outline: 3px solid #0759a5;
+  outline-offset: 3px;
+}
+.qc-manual .qc-credits > summary { cursor: pointer; margin: 1rem 0; }
+
+.start-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: .75rem;
+  margin: 1rem 0 1.5rem;
+}
+
+.start-card {
+  border: 1px solid #d7dde3;
+  border-radius: .5rem;
+  padding: .9rem 1rem;
+}
+
+.start-card p:first-child {
+  font-weight: 600;
+  margin-bottom: .35rem;
+}
+
+.start-card p:last-child {
+  margin-bottom: 0;
+}
+
+.group-level-guide main {
+  overflow-wrap: anywhere;
+}
+
+.group-level-guide main :not(pre) > code {
+  white-space: normal;
+}
+
+.group-level-guide pre {
+  overflow-x: auto;
+}

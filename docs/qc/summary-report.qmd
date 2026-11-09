@@ -1,0 +1,15 @@
+---
+title: "Open the summary report"
+search: false
+---
+
+<span id="step-1-open-the-summary-report-in-the-reports-folder"></span>
+
+The summary-report instructions are now part of [Prepare for QC](before-starting.qmd#step-1-open-the-summary-report-in-the-reports-folder).
+
+<span id="step-1.1-check-for-missing-files-in-the-summary-report"></span>
+<span id="step-1.1.1-re-run-missing-or-failed-subjects"></span>
+<span id="tabset-1-1"></span>
+<span id="tabset-1-2"></span>
+
+[Check for missing outputs](before-starting.qmd#step-1.1-check-for-missing-files-in-the-summary-report).
