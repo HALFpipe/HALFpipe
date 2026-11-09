@@ -1,0 +1,96 @@
+---
+title: "4.3.3 EPI tSNR"
+---
+
+::: {.qc-page-tools}
+[All report types](reports.qmd#examples-by-report-type){.btn .btn-outline-secondary .btn-sm}
+[Back to rating](reports.qmd#explore-reports){.btn .btn-outline-secondary .btn-sm}
+[Cheat Sheet](cheat-sheet.qmd){.btn .btn-outline-secondary .btn-sm}
+[Examples](#example-of-a-good-subject-2){.btn .btn-outline-secondary .btn-sm}
+[Summary](#summary-2){.btn .btn-outline-secondary .btn-sm}
+:::
+
+<span id="epi-tsnr"></span>
+
+<!-- qc-source-start -->
+The temporal signal-to-noise ratio (tSNR) map shows where the resting-state signal is more or less stable over time. Check all three views (sagittal, coronal, and axial) for asymmetry, signal drop-out, distortion, or stripes. Some artefacts are visible in only one view.
+
+## **<span style="color: #28a745;">Example of a good subject</span>**  {#example-of-a-good-subject-2}
+
+- Signal to noise is symmetrically distributed and there is no signal distortion
+
+::: {.qc-example-gallery}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-01.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-02.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-03.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-04.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-05.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-06.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-07.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-08.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-09.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-10.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-11.png){group="good-epi_tsnr"}
+
+![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-12.png){group="good-epi_tsnr"}
+
+:::
+
+
+## **<span style="color: #d00;">Example of a bad subject</span>**  {#example-of-a-bad-subject-2}
+
+- Asymmetry
+- Potential signal distortion (might represent an artefact)
+- Signal drop-out
+- Stripes artefact
+
+::: {.callout-note collapse="false"}
+Clear large artefact (e.g., zebra stripes in example 1) are worth the exclusion of the subject. If you are unsure, *check the other quality metrics for that subject to decide whether they should be excluded*.
+:::
+
+::: {.qc-example-gallery}
+
+![tSNR: example of a bad subject: stripes](../images/qc/05-epi_tsnr_bad-01.png){group="bad-epi_tsnr"}
+
+![tSNR: example of a bad subject: frontal signal distortion/drop](../images/qc/05-epi_tsnr_bad-02.png){group="bad-epi_tsnr"}
+
+![tSNR: example of a bad subject: stripes artefact in sagittal and coronal view](../images/qc/05-epi_tsnr_bad-03.png){group="bad-epi_tsnr"}
+
+![tSNR: example of a bad subject: signal distortion/drop caused by motion](../images/qc/05-epi_tsnr_bad-04.png){group="bad-epi_tsnr"}
+
+![tSNR: example of bad subject: signal distortion](../images/qc/05-epi_tsnr_bad-05.png){group="bad-epi_tsnr"}
+
+![tSNR: example of a bad subject: artefacts in sagittal and coronal view.](../images/qc/05-epi_tsnr_bad-07.png){group="bad-epi_tsnr"}
+
+![tSNR: example of a bad subject: artefacts in sagittal and coronal view.](../images/qc/05-epi_tsnr_bad-08.png){group="bad-epi_tsnr"}
+
+![tSNR: example of a bad subject: shape of the brain looks very off in sagittal and coronal view.](../images/qc/05-epi_tsnr_bad-09.png){group="bad-epi_tsnr"}
+
+![tSNR: example of a bad subject: asymmetric signal drop.](../images/qc/05-epi_tsnr_bad-10.png){group="bad-epi_tsnr"}
+
+![tSNR: example of a bad subject: due to a technical issue, no normal brain shape is recognizable in the upper two rows](../images/qc/05-epi_tsnr_bad-11.png){group="bad-epi_tsnr"}
+
+:::
+
+
+## **Summary** {#summary-2}
+
+| **good** | **bad** |
+|---|---|
+| Symmetrical distribution of noise and signal | Asymmetry |
+| No disruptions of the signal <br>(no “black patches”) | Potential signal disruptions <br>(could be related to artefacts) |
+| No stripes <br>(sign of high motion) | Signal drop |
+|  | Stripe artefacts <br>(“zebra” stripes due to motion) |
+: Table summary for EPI tSNR {.striped .hover}
+<!-- qc-source-end -->

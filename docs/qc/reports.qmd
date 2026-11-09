@@ -1,0 +1,91 @@
+---
+title: "4.3 Rate the reports"
+---
+
+::: {.qc-page-tools}
+[Quality control](../quality-control.qmd){.btn .btn-outline-secondary .btn-sm}
+[Cheat Sheet](cheat-sheet.qmd){.btn .btn-outline-secondary .btn-sm}
+:::
+
+<span id="step-2-open-the-index.html-page"></span>
+
+<!-- qc-source-start -->
+Open `reports/index.html` in your browser. From the menu in the upper left, choose **Explore reports** to start rating. You can also open **Charts** or **Report detail view** from this menu.
+
+::: {.callout-tip title="Keep your ratings"}
+The report saves ratings in your browser's local storage. To resume a review, reopen the report on the same computer and in the same browser. Clearing site data can erase those ratings. [Export a copy of your ratings](rerun.qmd#export-your-qc-ratings) to keep a separate record.
+:::
+
+![](../images/qc/00-step2.png)
+
+## Explore reports {#explore-reports}
+
+1. **Sort by image type.** Compare the same kind of report across participants. Use the [examples for your report type](#examples-by-report-type) as a reference.
+2. **Inspect and rate the image.** Click the image or open **Report detail view** for a closer look. Select **good**, **uncertain**, or **bad** using the rating icons or [keyboard shortcuts](#keyboard-shortcuts).
+3. **If you're unsure, sort by subject.** Compare that participant's other reports before making a decision. This is especially helpful for the carpet plot and, where available, the ICA-AROMA report.
+4. **Check for unrated images.** Review each available image. An unselected rating is distinct from **uncertain**, which you choose explicitly.
+
+::: {.callout-important title="When you find a clear problem"}
+Examples include a large part of the brain missing after skull stripping, poor alignment to the template, or clear artefacts in the tSNR image. Use the category examples to assess the problem. Check the other reports for that participant if the finding is unclear. The [rerun and export page](rerun.qmd) explains what to do after rating.
+:::
+
+When you've reviewed the images, [rerun subjects if needed and export your ratings](rerun.qmd).
+
+## Examples by report type {#examples-by-report-type}
+
+Review the report types your run produced.
+
+::: {.qc-category-grid}
+
+::: {.qc-nav-card}
+[T1w skull stripping](skull-stripping.qmd){.qc-card-title}
+
+[![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-03_crop.png){.qc-card-image .nolightbox}](skull-stripping.qmd)
+:::
+
+::: {.qc-nav-card}
+[dT1w spatial normalisation](t1w-normalisation.qmd){.qc-card-title}
+
+[![T1w spatial normalisation: example of a good subject](../images/qc/04-dt1w_spatial_normalisation_good-03.png){.qc-card-image .nolightbox}](t1w-normalisation.qmd)
+:::
+
+::: {.qc-nav-card}
+[EPI tSNR](tsnr.qmd){.qc-card-title}
+
+[![tSNR: example of a good subject](../images/qc/05-epi_tsnr_good-01.png){.qc-card-image .nolightbox}](tsnr.qmd)
+:::
+
+::: {.qc-nav-card}
+[EPI confounds (carpet plot)](confounds.qmd){.qc-card-title}
+
+[![Example of a good subject: no clear changes in the heatmap, low motion, no large jumps/ changes](../images/qc/06-epi_confounds_good-01.png){.qc-card-image .nolightbox}](confounds.qmd)
+:::
+
+::: {.qc-nav-card}
+[EPI spatial normalisation](epi-normalisation.qmd){.qc-card-title}
+
+[![EPI spatial normalisation: example of a good subject](../images/qc/08-epi_spatial_normalisation_good-01.jpg){.qc-card-image .nolightbox}](epi-normalisation.qmd)
+:::
+
+:::
+
+## Optional ICA-AROMA examples {#optional-ica-aroma}
+
+The five denoising pipelines in the current ENIGMA resting-state workflow do not use ICA-AROMA. HALFpipe can still generate this panel for QC. See the [ICA-AROMA examples](ica.qmd) if you need to interpret it.
+
+## Keyboard shortcuts {#keyboard-shortcuts}
+
+| Key | Action |
+|---|---|
+| `w` | Good |
+| `s` | Uncertain |
+| `x` | Bad |
+| `a` | Previous image |
+| `d` | Next image |
+
+## Charts {#charts}
+
+Use **Charts** to review processing status, see your ratings by report type, and inspect group plots. These include mean framewise displacement (FD), the percentage of frames with FD above 0.5, mean grey matter tSNR, and the percentage of ICA components classified as noise when available. Select a point to open that participant's QC page.
+
+![](../images/qc/01-charts.png)
+<!-- qc-source-end -->

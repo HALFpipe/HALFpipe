@@ -1,0 +1,52 @@
+<script>
+// Keep existing manual bookmarks useful after sections move to separate pages.
+(() => {
+  const destinations = {
+  "before-starting-the-qc": "qc/before-starting.html#before-starting-the-qc",
+  "step-1-open-the-summary-report-in-the-reports-folder": "qc/before-starting.html#step-1-open-the-summary-report-in-the-reports-folder",
+  "step-1.1-check-for-missing-files-in-the-summary-report": "qc/before-starting.html#step-1.1-check-for-missing-files-in-the-summary-report",
+  "step-1.1.1-re-run-missing-or-failed-subjects": "qc/before-starting.html#step-1.1.1-re-run-missing-or-failed-subjects",
+  "step-2-open-the-index.html-page": "qc/reports.html#step-2-open-the-index.html-page",
+  "charts": "qc/reports.html#charts",
+  "explore-reports": "qc/reports.html#explore-reports",
+  "t1w-skull-stripping": "qc/skull-stripping.html#t1w-skull-stripping",
+  "example-of-a-good-subject": "qc/skull-stripping.html#example-of-a-good-subject",
+  "example-of-a-bad-subject": "qc/skull-stripping.html#example-of-a-bad-subject",
+  "summary": "qc/skull-stripping.html#summary",
+  "dt1w-spatial-normalisation": "qc/t1w-normalisation.html#dt1w-spatial-normalisation",
+  "example-of-a-good-subject-1": "qc/t1w-normalisation.html#example-of-a-good-subject-1",
+  "example-of-a-bad-subject-1": "qc/t1w-normalisation.html#example-of-a-bad-subject-1",
+  "summary-1": "qc/t1w-normalisation.html#summary-1",
+  "epi-tsnr": "qc/tsnr.html#epi-tsnr",
+  "example-of-a-good-subject-2": "qc/tsnr.html#example-of-a-good-subject-2",
+  "example-of-a-bad-subject-2": "qc/tsnr.html#example-of-a-bad-subject-2",
+  "summary-2": "qc/tsnr.html#summary-2",
+  "epi-confounds-carpet-plot": "qc/confounds.html#epi-confounds-carpet-plot",
+  "example-of-a-good-subject-3": "qc/confounds.html#example-of-a-good-subject-3",
+  "example-of-an-uncertain-subject": "qc/confounds.html#example-of-an-uncertain-subject",
+  "example-of-a-bad-subject-3": "qc/confounds.html#example-of-a-bad-subject-3",
+  "summary-3": "qc/confounds.html#summary-3",
+  "epi-ica-based-artefact-removal": "qc/ica.html#epi-ica-based-artefact-removal",
+  "example-of-a-good-subject-4": "qc/ica.html#example-of-a-good-subject-4",
+  "example-of-a-bad-subject-4": "qc/ica.html#example-of-a-bad-subject-4",
+  "summary-4": "qc/ica.html#summary-4",
+  "epi-spatial-normalisation": "qc/epi-normalisation.html#epi-spatial-normalisation",
+  "example-of-a-good-subject-5": "qc/epi-normalisation.html#example-of-a-good-subject-5",
+  "example-of-a-bad-subject-5": "qc/epi-normalisation.html#example-of-a-bad-subject-5",
+  "summary-5": "qc/epi-normalisation.html#summary-5",
+  "step-2b-rerun-subjects-if-needed": "qc/rerun.html#step-2b-rerun-subjects-if-needed",
+  "cheat-sheet": "qc/cheat-sheet.html#cheat-sheet",
+  "tabset-1-1": "qc/before-starting.html#tabset-1-1",
+  "tabset-1-2": "qc/before-starting.html#tabset-1-2"
+};
+  const followBookmark = () => {
+    let anchor;
+    try { anchor = decodeURIComponent(window.location.hash.slice(1)); }
+    catch { return; }
+    const target = Object.hasOwn(destinations, anchor) ? destinations[anchor] : undefined;
+    if (target) window.location.replace(new URL(target, window.location.href).href);
+  };
+  followBookmark();
+  window.addEventListener("hashchange", followBookmark);
+})();
+</script>
