@@ -60,7 +60,7 @@ website:
       - text: "8. About and citation"
         href: about.qmd
 
-  announcement: 
+  announcement:
     icon: info-circle
     dismissable: true
     content: "**NEW RELEASE** - HALFpipe v1.3.2 is now available! Check out the [release notes](https://github.com/HALFpipe/HALFpipe/releases/tag/1.3.2) for more details."
@@ -69,7 +69,7 @@ website:
 
   repo-url: https://github.com/HALFpipe/HALFpipe
   repo-actions: [issue]
-    
+
 format:
   html:
     theme: cosmo

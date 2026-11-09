@@ -1,7 +1,7 @@
 # Welcome to ENIGMA HALFpipe!
 
-[![badges](https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml) 
-[![codecov](https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HALFpipe/HALFpipe) 
+[![badges](https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml/badge.svg)](https://github.com/HALFpipe/HALFpipe/actions/workflows/continuous_integration.yml)
+[![codecov](https://codecov.io/gh/HALFpipe/HALFpipe/branch/main/graph/badge.svg)](https://codecov.io/gh/HALFpipe/HALFpipe)
 [![codecov](https://zenodo.org/badge/DOI/10.5281/zenodo.5657185.svg)](https://doi.org/10.5281/zenodo.5657185)
 
 HALFpipe preprocesses fMRI data and runs analyses at the individual and group levels. It uses [fMRIPrep](https://fmriprep.readthedocs.io/) for preprocessing and can calculate common resting-state and task-based fMRI features. You can start with [BIDS](https://bids-specification.readthedocs.io/en/stable/) data or specify your input files in HALFpipe.
