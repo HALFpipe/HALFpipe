@@ -1,0 +1,91 @@
+---
+title: "4.3.1 T1w skull stripping"
+---
+
+::: {.qc-page-tools}
+[All report types](reports.qmd#examples-by-report-type){.btn .btn-outline-secondary .btn-sm}
+[Back to rating](reports.qmd#explore-reports){.btn .btn-outline-secondary .btn-sm}
+[Cheat Sheet](cheat-sheet.qmd){.btn .btn-outline-secondary .btn-sm}
+[Examples](#example-of-a-good-subject){.btn .btn-outline-secondary .btn-sm}
+[Summary](#summary){.btn .btn-outline-secondary .btn-sm}
+:::
+
+<span id="t1w-skull-stripping"></span>
+
+<!-- qc-source-start -->
+Skull stripping separates the brain from surrounding tissue. In the report, follow the red outline on each slice to check whether the cortex and cerebellum are included and whether tissue outside the brain has been left inside the outline.
+
+## **<span style="color: #28a745;">Example of a good subject</span>**  {#example-of-a-good-subject}
+
+- There are no skull stripping errors, such as portions of the brain missing, or too much of the skull retained
+- The red line follows the outline of the brain
+
+::: {.qc-example-gallery}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-03_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-04_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-05_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-06_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-07_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-08_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-09_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-10_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-11_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-12_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-13_crop.png){group="good-skull-stripping" width=1200}
+
+![T1w skull stripping: examples of good subjects](../images/qc/03-t1w_skull_stripping_good-14_crop.png){group="good-skull-stripping" width=1200}
+
+:::
+
+
+## **<span style="color: #d00;">Example of a bad subject</span>**  {#example-of-a-bad-subject}
+
+- There are skull stripping errors, such as portions of the brain missing, or too much of the skull retained
+- **NOTE:** check all the images (slices) in the report. If only one image (slice) looks problematic, it is possible that the subject is okay and it is just a visual issue in that particular screenshot
+
+::: {.qc-example-gallery}
+
+![T1w skull stripping: example of a bad subject: some portions of the brain have been left out. Note that in this subject, the 'ring' markers at the edge of the brain are likely indicative of high motion.](../images/qc/03-t1w_skull_stripping_bad-01_crop.png){group="bad-skull-stripping" width=1200}
+
+![T1w skull stripping: example of a bad subject: images in the upper and lower row look very distorted, possibly due to an issue with the scanner. Large portions of the brain have been left out even in the middle row.](../images/qc/03-t1w_skull_stripping_bad-02_crop.png){group="bad-skull-stripping" width=1200}
+
+![T1w skull stripping: example of a bad subject: large portions of the brain have been left out.](../images/qc/03-t1w_skull_stripping_bad-03_crop.png){group="bad-skull-stripping" width=1200}
+
+![T1w skull stripping: example of a bad subject: the red line includes areas (in the upper row) which don't contain brain tissue.](../images/qc/03-t1w_skull_stripping_bad-05_crop.png){group="bad-skull-stripping" width=1200}
+
+![T1w skull stripping: example of a bad subject: portions of the brain have been left out, parts of the cranium and the eyes are included in the red line.](../images/qc/03-t1w_skull_stripping_bad-06_crop.png){group="bad-skull-stripping" width=1200}
+
+![T1w skull stripping: example of a bad subject: parts of the cranium and the eyes are included in the red line.](../images/qc/03-t1w_skull_stripping_bad-07_crop.png){group="bad-skull-stripping" width=1200}
+
+![T1w skull stripping: example of a bad subject: portions of the brain have been left out (especially the cerebellum), parts of the cranium and the eyes are included in the red line.](../images/qc/03-t1w_skull_stripping_bad-08_crop.png){group="bad-skull-stripping" width=1200}
+
+![T1w skull stripping: example of a bad subject: portions of the brain have been left out, large parts of the cranium and the eyes are included in the red line. The shape of the brain does not correspond to the shape drawn by the red line.](../images/qc/03-t1w_skull_stripping_bad-09_crop.png){group="bad-skull-stripping" width=1200}
+
+![T1w skull stripping: example of a bad subject: portions of the brain have been left out, large parts of the cranium and the eyes are included in the red line. The shape of the brain does not correspond to the shape drawn by the red line. The jaw region, the oral cavity and the neck region look off, a scanner issue might be possible here.](../images/qc/03-t1w_skull_stripping_bad-10_crop.png){group="bad-skull-stripping" width=1200}
+
+:::
+
+
+## **Summary** {#summary}
+
+| **Good** | **Bad** |
+|:---|:---|
+| The brain is fully inside the red line | Structures like the cranium or the eyes are inside the red line |
+| The red line follows the natural outline of the brain and includes all important brain structures | Important brain structures are missing inside of the red line |
+: Table summary for skull stripping {.striped .hover}
+
+:::{.callout-note collapse="false"}
+ -> if only one slice is problematic, it could be an issue related to the visual depiction of the data instead of an issue related to the test subject
+:::
+<!-- qc-source-end -->

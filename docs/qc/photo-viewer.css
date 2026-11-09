@@ -1,0 +1,153 @@
+/* JavaScript upgrades the existing figures; without it, the image grid remains available. */
+.qc-photo-viewer {
+  margin: 1rem 0 1.5rem;
+  border: 1px solid #d7dde3;
+  border-radius: .5rem;
+  overflow: hidden;
+}
+.qc-photo-viewer .qc-example-gallery { display: block; padding: 0; }
+.qc-photo-viewer .qc-example-gallery > .quarto-figure { margin: 0; }
+.qc-photo-viewer figure > p {
+  height: clamp(220px, 42vw, 520px);
+  margin: 0;
+  background: #111;
+}
+.qc-photo-viewer figure > p > a {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+.qc-photo-viewer .qc-example-gallery img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+.qc-photo-viewer figcaption {
+  padding: .85rem 1rem;
+  font-size: .95rem;
+  margin: 0;
+}
+.qc-photo-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .5rem;
+  padding: .5rem .75rem;
+}
+.qc-photo-controls .btn { min-height: 44px; margin: 0; }
+.qc-photo-controls [role="status"] { text-align: center; font-size: .9rem; }
+.qc-photo-thumbnails {
+  position: relative;
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;
+  padding: .75rem;
+  border-top: 1px solid #d7dde3;
+}
+.qc-photo-thumbnail {
+  flex: 0 0 88px;
+  padding: 3px;
+  border: 2px solid transparent;
+  border-radius: .25rem;
+  background: #e9edf1;
+}
+.qc-photo-thumbnail img { width: 78px; height: 52px; object-fit: contain; background: #111; }
+.qc-photo-thumbnail[aria-pressed="true"] { border-color: #0759a5; background: #dceaff; }
+.qc-photo-viewer button:focus-visible { outline: 3px solid #0759a5; outline-offset: -3px; }
+@media print {
+  .qc-photo-viewer .carousel-item { display: block !important; float: none; }
+  .qc-photo-controls, .qc-photo-thumbnails { display: none; }
+}
+
+/* A native top-layer dialog avoids fitted Quarto/GLightbox ancestor dimensions. */
+body.qc-image-preview-open { overflow: hidden; }
+dialog.qc-image-dialog {
+  position: fixed;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  width: 100vw;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  max-height: none;
+  box-sizing: border-box;
+  background: #0e1218;
+  color: #eef2f7;
+  font: inherit;
+}
+.qc-image-dialog[open] { display: grid; grid-template-rows: auto auto minmax(0, 1fr) auto; }
+.qc-image-dialog::backdrop { background: #0e1218; }
+.qc-image-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  padding: .45rem .75rem;
+  border-bottom: 1px solid #35404e;
+  background: #19212c;
+}
+.qc-image-navigation, .qc-image-zoom { display: flex; align-items: center; gap: .4rem; }
+.qc-image-navigation > span, .qc-image-zoom > span { min-width: 3.5rem; text-align: center; }
+.qc-image-dialog button {
+  min-width: 44px;
+  min-height: 44px;
+  padding: .25rem .55rem;
+  border: 1px solid #758396;
+  border-radius: .3rem;
+  background: #263343;
+  color: inherit;
+  font: inherit;
+}
+.qc-image-dialog button:disabled { opacity: .4; }
+.qc-image-dialog :focus-visible { outline: 3px solid #89bfff; outline-offset: -3px; }
+.qc-image-workspace {
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.qc-image-workspace > img {
+  flex: none;
+  max-width: none;
+  max-height: none;
+  min-width: 0;
+  transform-origin: center;
+  user-select: none;
+}
+.qc-image-dialog [hidden] { display: none !important; }
+.qc-image-workspace.qc-is-zoomed { cursor: grab; }
+.qc-image-workspace.qc-is-dragging { cursor: grabbing; }
+.qc-image-message { position: absolute; }
+.qc-image-caption {
+  box-sizing: border-box;
+  min-height: 0;
+  max-height: 30vh;
+  max-height: 30dvh;
+  overflow: auto;
+  padding: .65rem 1rem;
+  line-height: 1.4;
+  border-top: 1px solid #35404e;
+  background: #19212c;
+}
+@media (max-width: 600px) {
+  .qc-image-toolbar { display: grid; grid-template-columns: 1fr auto; }
+  .qc-image-navigation { grid-row: 1; grid-column: 1; }
+  .qc-image-close { grid-row: 1; grid-column: 2; }
+  .qc-image-zoom { grid-row: 2; grid-column: 1 / -1; justify-content: center; }
+}
+
+/* Repeat the existing page and example headings where readers view the images. */
+.qc-photo-context, .qc-image-context {
+  padding: .65rem 1rem;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.qc-photo-context { background: #eef3f8; border-bottom: 1px solid #d7dde3; }
+.qc-image-context { background: #19212c; border-bottom: 1px solid #35404e; }

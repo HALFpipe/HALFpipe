@@ -1,6 +1,6 @@
 ---
-title: "Installation instructions"
-format:
+title: "1. Installation instructions"
+format: 
   html:
     css: styles.css
 ---
@@ -18,13 +18,13 @@ Please address questions and comments to [halfpipe@fmri.science](halfpipe@fmri.s
 
 ## 1. Resources
 - 8GB of RAM.
-- Disk Space :
-    - 0.1GB for Atlas and Seeds Folder
+- Disk Space : 
+    - 0.1GB for Atlas and Seeds Folder 
     - 5.32GB for HALFpipe container (23GB if running with Docker)
     - ~500 MB for a working directory for one subject, one task, and one session.
 
 ::: {.callout-note collapse="false"}
-### Processing Time
+### Processing Time 
 *Estimated with a sample size of n=155 and n=261.*
 
 On a local machine:
@@ -33,7 +33,7 @@ On a local machine:
 
 On High-Performance Cluster:
 
-- Working directory creation: >1 hour (varies by dataset).
+- Working directory creation: >1 hour (varies by dataset). 
 - Full pipeline run: Approximately 2–3 hours.
 :::
 
@@ -41,7 +41,7 @@ On High-Performance Cluster:
 Preprocessing requires a **FreeSurfer license** file which you can get for free when you submit the [FreeSurfer Registration form](https://surfer.nmr.mgh.harvard.edu/registration.html). You will receive the license in the following minutes via email.
 
 ## 3. Downloads
-Please ensure these downloaded items are accessible in your environment before proceeding. This means either placed inside your base directory or another directory available to your environment (for example, if using a High-Performing cluster, you need to put the atlas folder on your cluster).
+Please ensure these downloaded items are accessible in your environment before proceeding. This means either placed inside your base directory or another directory available to your environment (for example, if using a High-Performing cluster, you need to put the atlas folder on your cluster). 
 
 ::: {.callout-tip collapse="false"}
 We recommend that you write down the path where these files are located, you will need them later.
@@ -57,7 +57,7 @@ We recommend that you write down the path where these files are located, you wil
 - **Field map images (if available).** Three types are supported if the required metadata is available (e.g., echo spacing, echo time, etc.):
     - Siemens field maps, as phase and magnitude image pairs.
     - Philips field maps, as one field map image and one or two magnitude images.
-    - Blip-up/blip-down field maps, as a pair of EPI images with opposite phase encoding directions (mostly AP and PA).
+    - Blip-up/blip-down field maps, as a pair of EPI images with opposite phase encoding directions (mostly AP and PA). 
 
 ::: {.callout-important collapse="false"}
 **Recommended**: Processing using multiple cores or on a high-performance compute cluster (HPC) will be faster and more resource efficient. The manual is built for these conditions although single core processing is possible.
@@ -72,7 +72,7 @@ We recommend that you write down the path where these files are located, you wil
 **Select and install an option based on operating system:**
 
 ::: {.panel-tabset}
-## **Mac OS X/Windows**
+## **Mac OS X/Windows** 
 1. Use Docker from the install link below.
 2. Install Docker Desktop
 
@@ -85,7 +85,7 @@ We recommend that you write down the path where these files are located, you wil
 3. You should now have an application named Docker Desktop on your computer. Look at your applications folder.
 4. Open it to finish the installation.
 
-## **Linux & High-Performance Clusters (HPC)**
+## **Linux & High-Performance Clusters (HPC)** 
 1. Chose a container platform based on your system:
 - **On a local machine:** Use Apptainer on newer systems or otherwise Singularity (via Neurodebian repositories).
 
@@ -115,7 +115,7 @@ Here are the steps of setting up your base and working directory where HALFpipe 
 
 1. Open a terminal session. **_Only if using a HPC_**: connect to your server.
 
-2. Type `pwd` (or `cd` on Windows) and verify that this is the location where you want to begin creation of your environment.
+2. Type `pwd` (or `cd` on Windows) and verify that this is the location where you want to begin creation of your environment. 
     - If not, please move to the folder where you want to run the pipeline and save the outputs using the command `cd path/to/your_working_space/`
 
 3. To create a new base directory (output folder), type `mkdir your_enigma_directory`.
@@ -131,14 +131,14 @@ Here are the steps of setting up your base and working directory where HALFpipe 
 
 ::: {.panel-tabset}
 ## Docker desktop
-1. Open the terminal in Docker desktop. Refer to this documentation: [Explore Docker Desktop](https://docs.docker.com/desktop/use-desktop/#docker-terminal)
+1. Open the terminal in Docker desktop. Refer to this documentation: [Explore Docker Desktop](https://docs.docker.com/desktop/use-desktop/#docker-terminal) 
 2. Use the following command
 
 | Container         | Instructions                                                          |
 |:------------------|:----------------------------------------------------------------------|
 | Docker Desktop    | `docker pull --platform linux/amd64 halfpipe/halfpipe:1.3.2`          |
 
-*Note: The Docker image for HALFpipe occupies about 23 GB of disk space upon installation.*
+*Note: The Docker image for HALFpipe occupies about 23 GB of disk space upon installation.* 
 
 
 ## Singularity or Apptainer:
@@ -148,7 +148,7 @@ Here are the steps of setting up your base and working directory where HALFpipe 
 
 | Platform                       | Instructions                                                                                 |
 |:-------------------------------|:---------------------------------------------------------------------------------------------|
-| Singularity (3.x) or Apptainer | `curl -O https://download.fmri.science/singularity/halfpipe-1.3.1.sif`                       |
+| Singularity (3.x) or Apptainer | `curl -O https://download.fmri.science/singularity/halfpipe-1.3.1.sif`                       | 
 |                                | Run `find $(pwd) -maxdepth 1` to show all files in the current directory with their full path. You should see a file named `halfpipe-1.3.1.sif`, or similar, listed among the files. |
 |                                | This file is the container image that includes all software and code needed for processing. Please note down the path to this file, you will need this later. |
 | Singularity (2.x)              | `curl -O https://download.fmri.science/singularity/halfpipe-1.3.1.simg`                      |
@@ -157,7 +157,7 @@ Here are the steps of setting up your base and working directory where HALFpipe 
 
 ::: {.callout-important collapse="false"}
 ### HALFpipe version
-**Note:** We recommend installing version **1.3.1** of HALFpipe, which includes fMRIPrep 25.1.1 (As of September 2025).
+**Note:** We recommend installing version **1.3.1** of HALFpipe, which includes fMRIPrep 25.1.1 (As of September 2025). 
 
 **Additional Information:** You will need the paths to **both your data and the atlases** when running HALFpipe. You will need to specify their locations during the settings configuration. These files do not need to be in the same location as the pipeline image file—just be sure you know where they are stored. To do this, please use the command cd to navigate to your atlas or data folder, then run the command `pwd` (or `cd` on Windows).
 :::
@@ -169,18 +169,18 @@ Here we ensure that the working environment is correctly set up before beginning
 1. Open a terminal session.
 
 ::: {.panel-tabset}
-## Docker desktop:
-Open the terminal in Docker desktop. Refer to this documentation: [Explore Docker Desktop](https://docs.docker.com/desktop/use-desktop/#docker-terminal)
+## Docker desktop: 
+Open the terminal in Docker desktop. Refer to this documentation: [Explore Docker Desktop](https://docs.docker.com/desktop/use-desktop/#docker-terminal) 
 
 *Note that you need to launch HALFpipe via Docker Desktop.*
 
 ## Singularity or Apptainer:
-Open a terminal session.
+Open a terminal session. 
 
 *Only if using a HPC*: connect to your server.
 :::
 
-2. Navigate to your working directory using this command: `cd path/to/your_working_space/your_enigma_directory/your_working_dir`
+2. Navigate to your working directory using this command: `cd path/to/your_working_space/your_enigma_directory/your_working_dir` 
 
 3. Then use the command `ls`
 
@@ -196,7 +196,9 @@ Open a terminal session.
 
 7. Ensure that these items are accessible in your environment before proceeding:
 - Atlas and Seed files (downloaded in section [Before Starting](#before-starting))
-- Your unprocessed, resting-state fMRI dataset.
+- Your unprocessed, resting-state fMRI dataset. 
+
+Once HALFpipe is installed and your inputs are ready, continue to [2. Configure resting-state analysis](configure.qmd) to choose an interface.
 
 :::{.footnotes}
 _Manual adapted from the **MDD ENIGMA resting-state fMRI manual** and the **OCD ENIGMA task-based fMRI manual**._

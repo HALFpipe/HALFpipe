@@ -1,0 +1,7 @@
+body-classes: qc-manual
+lightbox: true
+toc-depth: 2
+format:
+  html:
+    css: photo-viewer.css
+    include-after-body: photo-viewer.html

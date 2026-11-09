@@ -1,0 +1,14 @@
+---
+title: "Review and rate images"
+search: false
+---
+
+The gallery index and rating instructions are now together on [Rate the reports](reports.qmd).
+
+<span id="examples-by-report-type"></span>
+
+[Browse examples by report type](reports.qmd#examples-by-report-type).
+
+<span id="optional-ica-aroma"></span>
+
+[Find the optional ICA-AROMA examples](reports.qmd#optional-ica-aroma).

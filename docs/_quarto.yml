@@ -12,20 +12,55 @@ website:
     collapse-level: 1
     contents:
       - index.qmd
-      - about.qmd
-      - installation.qmd
-      - section: "Manuals"
+      - text: "1. Get started: installation"
+        href: installation.qmd
+      - section: "2. Configure resting-state analysis"
+        href: configure.qmd
         contents:
-          - text: "Resting-state fMRI Manual - Terminal UI"
-            file: manual_old_ui.qmd
-          - text: "Resting-state fMRI Manual - Graphical UI"
-            file: new_ui.qmd
-      - quality-control.qmd
-      - check_run.qmd
-      - wonkyconn_docs.qmd
-      - troubleshooting.qmd
+          - text: "Terminal or graphical?"
+            href: configure.qmd
+          - text: "2.1 Terminal UI (recommended)"
+            href: manual_old_ui.qmd
+          - text: "2.2 Graphical UI"
+            href: new_ui.qmd
+      - text: "3. Run and check outputs"
+        href: check_run.qmd
+      - section: "4. Quality control"
+        href: quality-control.qmd
+        contents:
+          - text: "4.1 Overview"
+            href: quality-control.qmd
+          - text: "4.2 Prepare for QC"
+            href: qc/before-starting.qmd
+          - section: "4.3 Rate the reports"
+            href: qc/reports.qmd
+            contents:
+              - text: "4.3.1 T1w skull stripping"
+                href: qc/skull-stripping.qmd
+              - text: "4.3.2 dT1w spatial normalisation"
+                href: qc/t1w-normalisation.qmd
+              - text: "4.3.3 EPI tSNR"
+                href: qc/tsnr.qmd
+              - text: "4.3.4 EPI confounds (carpet plot)"
+                href: qc/confounds.qmd
+              - text: "4.3.5 EPI spatial normalisation"
+                href: qc/epi-normalisation.qmd
+              - text: "Optional ICA-AROMA examples"
+                href: qc/ica.qmd
+          - text: "4.4 Export ratings and rerun if needed"
+            href: qc/rerun.qmd
+          - text: "4.5 Cheat Sheet"
+            href: qc/cheat-sheet.qmd
+      - text: "5. Check functional connectivity with WonkyConn"
+        href: wonkyconn_docs.qmd
+      - text: "6. Run group-level analysis (ENIGMA-AN)"
+        href: group-level.qmd
+      - text: "7. Troubleshooting"
+        href: troubleshooting.qmd
+      - text: "8. About and citation"
+        href: about.qmd
 
-  announcement:
+  announcement: 
     icon: info-circle
     dismissable: true
     content: "**NEW RELEASE** - HALFpipe v1.3.2 is now available! Check out the [release notes](https://github.com/HALFpipe/HALFpipe/releases/tag/1.3.2) for more details."
@@ -34,7 +69,7 @@ website:
 
   repo-url: https://github.com/HALFpipe/HALFpipe
   repo-actions: [issue]
-
+    
 format:
   html:
     theme: cosmo

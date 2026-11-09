@@ -1,0 +1,12 @@
+---
+title: "2. Configure resting-state analysis"
+---
+
+## Terminal or graphical?
+
+Both interfaces run in your terminal, including over SSH.
+
+- [2.1 Terminal UI (recommended)](manual_old_ui.qmd) is the default. Use this guide to set up your data, preprocessing, and features.
+- [2.2 Graphical UI (in development)](new_ui.qmd) adds tabs and buttons inside the terminal using Textual. You can use it without X forwarding or a desktop session.
+
+Once your analysis is configured, continue to [3. Run and check outputs](check_run.qmd).
