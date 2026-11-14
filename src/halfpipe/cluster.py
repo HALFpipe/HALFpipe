@@ -47,12 +47,22 @@ cluster_configs = dict(
 
 #$ -t 1-{n_chunks:d}
 """,
+    lsf="""#BSUB -J "halfpipe[1-{n_chunks:d}]"
+#BSUB -o halfpipe.%J.%I.log.txt
+
+#BSUB -W 24:00
+#BSUB -n {n_cpus:d}
+#BSUB -R "span[hosts=1]"
+#BSUB -R "rusage[mem={mem_mb:d}M/job]"
+#BSUB -L /bin/bash
+""",
 )
 
 array_index_variables = dict(
     slurm="SLURM_ARRAY_TASK_ID",
     torque="PBS_ARRAY_INDEX",
     sge="SGE_TASK_ID",
+    lsf="LSB_JOBINDEX",
 )
 
 singularity_command = """
