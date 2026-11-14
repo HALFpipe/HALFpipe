@@ -170,6 +170,8 @@ jobs:
         run: |
           # Let git-annex get test resources from within the container
           git config --global --add "safe.directory" "*"
+          # Download test resources
+          datalad get tests/data
           # Run the integration tests
           py.test -k 'not test_consistency' \
             --cov --cov-report=xml --dist=loadgroup \
