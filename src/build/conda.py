@@ -116,7 +116,7 @@ def upload(keys: list[tuple[Path, str]]) -> None:
             logger.opt(exception=exception).error(f'Upload failed for "{s3_key}":')
 
 
-async def main() -> None:
+def main() -> None:
     logger.info(f'Gathering all recipes in "{base_path}"')
     recipe_paths = sorted(recipe_meta_path.parent for recipe_meta_path in base_path.rglob("meta.yaml"))
     logger.debug(f"Found {len(recipe_paths)} total recipes")
@@ -142,11 +142,13 @@ async def main() -> None:
             upload(keys)
             clean_build(config)
 
-        await index_fs(channel_directory=build_path, write_zst=False, write_shards=False)
+        # conda-build is synchronous and the rattler solver calls `asyncio.run` internally,
+        # so it must not run inside an event loop. Only the rattler index calls are async.
+        asyncio.run(index_fs(channel_directory=build_path, write_zst=False, write_shards=False))
 
     if push and endpoint_url is not None:
-        await index_s3(channel_url=f"s3://{s3_bucket}")
+        asyncio.run(index_s3(channel_url=f"s3://{s3_bucket}"))
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()
