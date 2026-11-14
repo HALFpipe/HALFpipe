@@ -18,7 +18,7 @@ RUN --mount=type=cache,target=/opt/conda/pkgs \
     "python=3.12" "nodejs" "sqlite" "halfpipe" "git-annex=*=nodep*"
 
 RUN conda clean --yes --all --force-pkgs-dirs && \
-    find /opt/conda -follow -type f -name "*.a" -delete
+    find /opt/conda -type f -name "*.a" -delete
 
 RUN conda run --name="fmriprep" python -c "from matplotlib import font_manager" && \
     sed -i '/backend:/s/^#*//;/^backend/s/: .*/: Agg/' \
