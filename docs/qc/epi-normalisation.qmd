@@ -1,0 +1,79 @@
+---
+title: "4.3.5 EPI spatial normalisation"
+---
+
+::: {.qc-page-tools}
+[All report types](reports.qmd#examples-by-report-type){.btn .btn-outline-secondary .btn-sm}
+[Back to rating](reports.qmd#explore-reports){.btn .btn-outline-secondary .btn-sm}
+[Cheat Sheet](cheat-sheet.qmd){.btn .btn-outline-secondary .btn-sm}
+[Examples](#example-of-a-good-subject-5){.btn .btn-outline-secondary .btn-sm}
+[Summary](#summary-5){.btn .btn-outline-secondary .btn-sm}
+:::
+
+<span id="epi-spatial-normalisation"></span>
+
+<!-- qc-source-start -->
+This report shows how the EPI functional image aligns to the MNI template. Compare corresponding brain structures in the two images.
+
+## **<span style="color: #28a745;">Example of a good subject</span>**  {#example-of-a-good-subject-5}
+
+- If the registration performed well, you should see an overlap (i.e., correspondence of structures) between the MNI template and the EPI registered to the MNI space.
+- If parts of the brain are missing due to the scanner field of view, this is fine. For example, the cerebellum may be cut off for a participant with a large head.
+
+::: {.qc-example-gallery}
+
+![EPI spatial normalisation: example of a good subject](../images/qc/08-epi_spatial_normalisation_good-01.jpg){group="good-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a good subject.](../images/qc/08-epi_spatial_normalisation_good-04.png){group="good-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a good subject.](../images/qc/08-epi_spatial_normalisation_good-05.png){group="good-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a good subject.](../images/qc/08-epi_spatial_normalisation_good-06.png){group="good-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a good subject.](../images/qc/08-epi_spatial_normalisation_good-07.png){group="good-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a good subject.](../images/qc/08-epi_spatial_normalisation_good-08.png){group="good-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a good subject.](../images/qc/08-epi_spatial_normalisation_good-09.png){group="good-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a good subject.](../images/qc/08-epi_spatial_normalisation_good-10.png){group="good-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a good subject.](../images/qc/08-epi_spatial_normalisation_good-11.png){group="good-epi_spatial_normalisation"}
+
+:::
+
+
+## **<span style="color: #d00;">Example of a bad subject</span>**  {#example-of-a-bad-subject-5}
+
+- In case of poor registration, you should see a misalignment of the EPI and the MNI template
+
+::: {.qc-example-gallery}
+
+![EPI spatial normalisation: example of a bad subject, the EPI and the MNI template do not properly overlap](../images/qc/08-epi_spatial_normalisation_bad-01.png){group="bad-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a bad subject, EPI and MNI template do not properly overlap](../images/qc/08-epi_spatial_normalisation_bad-02.png){group="bad-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a bad subject. EPI and MNI template do not properly overlap](../images/qc/08-epi_spatial_normalisation_bad-03.png){group="bad-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a bad subject. EPI and MNI template do not properly overlap](../images/qc/08-epi_spatial_normalisation_bad-04.png){group="bad-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a bad subject. EPI and MNI template do not properly overlap](../images/qc/08-epi_spatial_normalisation_bad-05.png){group="bad-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a bad subject. EPI and MNI template do not properly overlap, it seems like there was a significant technical issue](../images/qc/08-epi_spatial_normalisation_bad-06.png){group="bad-epi_spatial_normalisation"}
+
+![EPI spatial normalisation: example of a bad subject. EPI and MNI do not properly overlap.](../images/qc/08-epi_spatial_normalisation_bad-07.png){group="bad-epi_spatial_normalisation"}
+
+:::
+
+
+## **Summary** {#summary-5}
+
+| **good** | **bad** |
+|---|---|
+| Overlap (i.e. match of structures) between the MNI template and the EPI registered in the MNI space | Misalignment of the EPI and the MNI template |
+| If parts of the brain are missing because the field of view of the scanner is limited, the EPI spatial normalisation does not have to be excluded <br>*e.g. cerebellum cut off in person with large head* |  |
+
+:::{.callout-important collapse="false" title="Part of the brain missing"}
+If parts of the brain are missing because the field of view of the scanner is limited, the EPI spatial normalisation does not have to be excluded (e.g. cerebellum cut off in person with large head)
+:::
+<!-- qc-source-end -->

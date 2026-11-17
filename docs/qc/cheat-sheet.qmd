@@ -1,0 +1,82 @@
+---
+title: "4.5 Cheat Sheet"
+---
+
+::: {.qc-page-tools}
+[Back to rating](reports.qmd#explore-reports){.btn .btn-outline-secondary .btn-sm}
+:::
+
+<span id="cheat-sheet"></span>
+
+<!-- qc-source-start -->
+Use this checklist once you are familiar with the [QC category examples](../quality-control.qmd#qc-categories). If you are reviewing HALFpipe outputs for the first time, start with the example pages to see how each finding looks in a report.
+
+## T1w skull stripping {#skull-stripping}
+
+[View examples](skull-stripping.qmd#example-of-a-good-subject)
+
+| **Good** | **Bad** |
+|:---|:---|
+| The brain is fully inside the red line | Structures like the cranium or the eyes are inside the red line |
+| The red line follows the natural outline of the brain and includes all important brain structures | Important brain structures are missing inside of the red line |
+: Table summary for skull stripping {.striped .hover}
+
+
+## dT1w spatial normalisation {#t1w-normalisation}
+
+[View examples](t1w-normalisation.qmd#example-of-a-good-subject-1)
+
+| **Good** | **Bad** |
+|---|---|
+| Structures of the MNI template and the registered T1 are well aligned | Structures of the MNI template and the registered T1 aren't well aligned, <br><br>*e.g. brain is shifted downwards* |
+: Table summary for dT1w spatial normalisation {.striped .hover}
+
+
+## EPI tSNR {#tsnr}
+
+[View examples](tsnr.qmd#example-of-a-good-subject-2)
+
+| **Good** | **Bad** |
+|---|---|
+| Symmetrical distribution of noise and signal | Asymmetry |
+| No disruptions of the signal <br>(no “black patches”) | Potential signal disruptions <br>(could be related to artefacts) |
+| No stripes <br>(sign of high motion) | Signal drop |
+|  | Stripe artefacts <br>(“zebra” stripes due to motion) |
+: Table summary for EPI tSNR {.striped .hover}
+
+
+## EPI confounds (carpet plot) {#confounds}
+
+[View examples](confounds.qmd#example-of-a-good-subject-3)
+
+| **Good** | **Bad** |
+|---|---|
+| No changes in the heatmap | Big changes: <br>- could be related to motion <br>(change in the FD-line) |
+| Small changes in the heatmap caused by motion mean FD < 0.5 | Mean FD > 0.5 or maximum FD > 3 mm |
+| DVARS and FD “similar” |  |
+| No big spikes |  |
+: Table summary for EPI confounds (carpet plot) {.striped .hover}
+
+
+## EPI spatial normalisation {#epi-normalisation}
+
+[View examples](epi-normalisation.qmd#example-of-a-good-subject-5)
+
+| **Good** | **Bad** |
+|---|---|
+| Overlap (i.e. match of structures) between the MNI template and the EPI registered in the MNI space | Misalignment of the EPI and the MNI template |
+| If parts of the brain are missing because the field of view of the scanner is limited, the EPI spatial normalisation does not have to be excluded <br><br>*e.g. cerebellum cut off in person with large head* |  |
+: Table summary for EPI spatial normalisation {.striped .hover}
+
+## Optional ICA-AROMA {#ica}
+
+[View examples](ica.qmd#example-of-a-good-subject-4) if your run produced an ICA-AROMA report.
+
+| **Good** | **Bad** |
+|---|---|
+| Time series (at the top): no sudden jumps power (bottom) | More noise (red) than signal (green): <br>- Occurs more often with block design <br>- or “problematic” subject (lots of movement, lots of artefacts) rings, bands, artefacts <br>- should be classified as noise |
+| Spatial patterns are visible |  |
+| No sudden jumps/spikes |  |
+| No big spikes |  |
+: Table summary for EPI ICA-based artefact removal {.striped .hover}
+<!-- qc-source-end -->

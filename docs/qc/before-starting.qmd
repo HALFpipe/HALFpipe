@@ -1,0 +1,50 @@
+---
+title: "4.2 Prepare for QC"
+---
+
+::: {.qc-page-tools}
+[Quality control](../quality-control.qmd){.btn .btn-outline-secondary .btn-sm}
+[Cheat Sheet](cheat-sheet.qmd){.btn .btn-outline-secondary .btn-sm}
+:::
+
+<span id="before-starting-the-qc"></span>
+
+<!-- qc-source-start -->
+## Find the reports folder
+
+Find the `reports/` folder in your HALFpipe working directory after [checking that processing completed](../check_run.qmd). You'll use these files during QC.
+
+| File | What you use it for |
+|---|---|
+| `reportpreproc.txt` | Check which outputs are marked `done` or `missing`. |
+| `index.html` | Open the browser report to inspect images and record ratings. |
+| `reportvals.txt` | Look up numerical QC measures, such as mean framewise displacement (FD) and mean grey matter temporal signal-to-noise ratio (tSNR). |
+
+::: {.callout-tip title="Reviewing on another computer"}
+Copy the entire `reports/` folder, including the subject folders and supporting files. The browser report needs those files to display its images.
+:::
+
+## Open the summary report {#step-1-open-the-summary-report-in-the-reports-folder}
+
+Open `reports/reportpreproc.txt` in a text editor. The example below shows how the report lists processing status.
+
+| Subject | Task | Status |
+|---|---|---|
+| 1 | rest | done |
+| 2 | rest | missing |
+| 3 | rest | missing |
+| 4 | rest | done |
+
+**Done** indicates that processing produced the expected outputs. Inspect their quality in the browser report. **Missing** indicates that an expected output is absent. Use section 3 to investigate the processing issue.
+
+## Check for missing outputs {#step-1.1-check-for-missing-files-in-the-summary-report}
+
+<span id="tabset-1-1"></span>
+
+**All expected outputs are present.** Continue to [4.3 Rate the reports](reports.qmd).
+
+<span id="tabset-1-2"></span>
+<span id="step-1.1.1-re-run-missing-or-failed-subjects"></span>
+
+**Some expected outputs are missing.** Use [section 3 to check preprocessing](../check_run.qmd#check-preprocessing-outputs) and [rerun HALFpipe if needed](../check_run.qmd#rerun-halfpipe). Once the expected outputs are present, [open the QC report](reports.qmd).
+<!-- qc-source-end -->
