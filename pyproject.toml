@@ -18,7 +18,7 @@ halfpipe = "halfpipe.cli.run:main"
 
 [build-system]
 # Remember to keep in sync with requirements.in!
-requires = ["setuptools>=62", "setuptools_scm[toml]>=6.2", "wheel"]
+requires = ["setuptools>=84.0.0", "setuptools_scm[toml]>=10.2.1", "wheel"]
 
 [tool.pyright]
 typeCheckingMode = "off"
