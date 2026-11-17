@@ -32,7 +32,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup Micromamba
-        uses: mamba-org/setup-micromamba@v3.2.0
+        uses: mamba-org/setup-micromamba@v3.2.1
         with:
           condarc: |
             channels:
