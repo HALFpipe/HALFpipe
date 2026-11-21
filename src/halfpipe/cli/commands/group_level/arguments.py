@@ -4,6 +4,8 @@
 
 from argparse import ArgumentParser
 
+algorithms = ("descriptive", "flame1", "heterogeneity", "mcartest")
+
 
 def setup_argument_parser(argument_parser: ArgumentParser):
     group = argument_parser.add_argument_group(title="paths", description="define the input and output paths")
@@ -200,14 +202,12 @@ def setup_argument_parser(argument_parser: ArgumentParser):
     )
 
     group = argument_parser.add_argument_group(title="stats", description="arguments for defining the statistics to run")
-    algorithms = ("descriptive", "flame1", "heterogeneity", "mcartest")
     group.add_argument(
         "--algorithm",
         choices=algorithms,
-        default=list(algorithms),
         nargs="+",
         action="extend",
-        help="the algorithms to run for the analysis",
+        help="the algorithms to run for the analysis (default: all)",
     )
 
     group = argument_parser.add_argument_group(title="export", description="arguments for exporting variables")
