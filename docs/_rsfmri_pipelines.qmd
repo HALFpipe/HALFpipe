@@ -1,0 +1,46 @@
+##### Pipeline 1
+✅ aCompCor (top five components)
+
+##### Pipeline 2
+✅ Motion parameters
+
+✅ Derivatives of motion parameters
+
+✅ Motion parameters squared
+
+✅ Derivatives of motion parameters squared
+
+✅ Motion scrubbing
+
+##### Pipeline 3
+✅ Motion parameters
+
+✅ Derivatives of motion parameters
+
+✅ Motion parameters squared
+
+✅ Derivatives of motion parameters squared
+
+✅ Motion scrubbing
+
+✅ Global signal
+
+##### Pipeline 4 (optional)
+✅ Motion parameters
+
+✅ Derivatives of motion parameters
+
+✅ Motion parameters squared
+
+✅ Derivatives of motion parameters squared
+
+##### Pipeline 5 (optional)
+✅ Motion parameters
+
+✅ Derivatives of motion parameters
+
+✅ Motion parameters squared
+
+✅ Derivatives of motion parameters squared
+
+✅ Global signal
