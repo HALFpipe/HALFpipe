@@ -22,6 +22,7 @@ from ....stats.algorithms import modelfit_aliases
 from ....stats.fit import fit
 from ....utils.data_frame import combine_first
 from ....utils.format import format_tags
+from .arguments import algorithms
 from .base import aliases
 from .design import DesignBase
 from .export import Atlas, DiscreteAtlas, ProbabilisticAtlas, export
@@ -136,7 +137,7 @@ class BetweenBase:
                 mask_paths,
                 regressor_list,
                 contrast_list,
-                algorithms_to_run=self.arguments.algorithm,
+                algorithms_to_run=self.arguments.algorithm or list(algorithms),
                 num_threads=self.arguments.nipype_n_procs,
             )
         )
