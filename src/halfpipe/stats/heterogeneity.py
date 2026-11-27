@@ -59,7 +59,7 @@ class ReMLTerms(NamedTuple):
 
 
 def reml_terms(ϑ: float, x: npt.NDArray[np.float64], s: npt.NDArray[np.float64]) -> ReMLTerms:
-    inverse_variance = np.reciprocal(1.0 / (s + ϑ)).ravel()
+    inverse_variance = np.reciprocal(s + ϑ).ravel()
 
     a = x.T * inverse_variance
     gram_matrix = a @ x
@@ -75,7 +75,7 @@ def reml_neg_log_lik(
     x: npt.NDArray[np.float64],
     s: npt.NDArray[np.float64],
 ) -> float:
-    if np.isclose(ϑ, 0) or ϑ < 0:
+    if ϑ < 0 or np.any(s + ϑ <= 0):
         return np.inf
     terms = reml_terms(ϑ, x, s)
 
